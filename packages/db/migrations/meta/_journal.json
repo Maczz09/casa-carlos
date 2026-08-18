@@ -29,6 +29,20 @@
       "when": 1786864354287,
       "tag": "0003_secret_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1787026644172,
+      "tag": "0004_bumpy_scream",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787027037924,
+      "tag": "0005_powerful_wolverine",
+      "breakpoints": true
     }
   ]
 }

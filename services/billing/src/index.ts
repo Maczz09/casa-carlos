@@ -10,6 +10,11 @@ export function createBillingService(db: Db, sales: SalesPort, sunatClient: Suna
   return new BillingService(new BillingRepo(db), sales, sunatClient, emisor, cert);
 }
 
+/** Debe correr una vez al arrancar el servidor, antes de aceptar requests — ver `BillingRepo.ensureAllCorrelativosSeeded`. */
+export async function ensureBillingCorrelativosSeeded(db: Db): Promise<void> {
+  await new BillingRepo(db).ensureAllCorrelativosSeeded();
+}
+
 export type { EmisorInfo, ReceptorInfo } from "./domain/ubl.js";
 export type { CertificateMaterial } from "./domain/signature.js";
 export { loadPfxCertificate } from "./domain/signature.js";

@@ -17,7 +17,7 @@ import { createCashboxService } from "@casacarlos/cashbox";
 import { createReportingService } from "@casacarlos/reporting";
 import { ConsoleSender, WhatsAppSender, createNotificationsService, startNotificationsWorker } from "@casacarlos/notifications";
 import type { CertificateMaterial, EmisorInfo, SunatClient } from "@casacarlos/billing";
-import { MockSunatClient, RealSunatClient, createBillingService, loadPfxCertificate } from "@casacarlos/billing";
+import { MockSunatClient, RealSunatClient, createBillingService, ensureBillingCorrelativosSeeded, loadPfxCertificate } from "@casacarlos/billing";
 import { startScheduler } from "@casacarlos/scheduler";
 import { seedIfEmpty } from "./seed.js";
 import { registerAuth } from "./auth.js";
@@ -126,6 +126,7 @@ async function main() {
     process.env.CASACARLOS_WHATSAPP === "1" ? new WhatsAppSender(resolve(dataDir, "whatsapp-session")) : new ConsoleSender();
   const notifications = await createNotificationsService(db, bus, rooms, identity, notificationSender);
   const { emisor, sunatClient, cert } = configureSunat();
+  await ensureBillingCorrelativosSeeded(db);
   const billing = createBillingService(db, sales, sunatClient, emisor, cert);
   const kiosk = new KioskStore(rooms, pricing, stays, sales, bus);
 

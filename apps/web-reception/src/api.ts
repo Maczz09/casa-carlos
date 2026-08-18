@@ -13,6 +13,7 @@ import type {
   DateRange,
   Floor,
   FloorBoard,
+  IssueNotaInput,
   KioskSession,
   Modality,
   NotificationEventCode,
@@ -175,6 +176,9 @@ export const api = {
   comprobantePdfUrl: (id: string) => `/api/billing/${id}/pdf`,
   bajaForComprobante: (id: string) => get<ComunicacionBaja | null>(`/api/billing/${id}/baja`),
   voidComprobante: (id: string, motivo: string) => post<ComunicacionBaja>(`/api/billing/${id}/void`, { motivo }),
+  notasForComprobante: (id: string) => get<Comprobante[]>(`/api/billing/${id}/notas`),
+  issueNotaCredito: (comprobanteId: string, input: IssueNotaInput) => post<Comprobante>(`/api/billing/${comprobanteId}/nota-credito`, input),
+  issueNotaDebito: (comprobanteId: string, input: IssueNotaInput) => post<Comprobante>(`/api/billing/${comprobanteId}/nota-debito`, input),
 };
 
 export { ApiError };

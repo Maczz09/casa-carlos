@@ -1,4 +1,4 @@
-import type { Comprobante, ComunicacionBaja } from "../entities/billing.js";
+import type { Comprobante, ComunicacionBaja, IssueNotaInput } from "../entities/billing.js";
 import type { DateRange } from "../entities/common.js";
 
 export interface IssueFacturaInput {
@@ -33,11 +33,23 @@ export interface BillingPort {
   /**
    * Envía una Comunicación de Baja para anular un comprobante ACEPTADO
    * (SUNAT solo la admite hasta 7 días calendario después de la aceptación —
-   * pasado ese plazo, rechaza y se necesita una Nota de Crédito en su lugar,
-   * que este sistema no emite). El envío es asíncrono: si ya existe una baja
+   * pasado ese plazo, rechaza y hace falta una Nota de Crédito en su lugar,
+   * ver `issueNotaCredito`). El envío es asíncrono: si ya existe una baja
    * PENDIENTE para este comprobante, esta llamada solo reconsulta su estado
    * en vez de reenviarla.
    */
   voidComprobante(comprobanteId: string, motivo: string, usuarioId: string): Promise<ComunicacionBaja>;
   getBajaForComprobante(comprobanteId: string): Promise<ComunicacionBaja | null>;
+
+  /**
+   * Emite una nota de crédito/débito contra un comprobante ya ACEPTADO —
+   * a diferencia de la Comunicación de Baja, no tiene límite de 7 días y es
+   * el mecanismo correcto para corregir un comprobante después de ese plazo
+   * (descuento, devolución, error). El envío a SUNAT es síncrono, igual que
+   * `issueBoleta`/`issueFactura`.
+   */
+  issueNotaCredito(comprobanteAfectadoId: string, input: IssueNotaInput, usuarioId: string): Promise<Comprobante>;
+  issueNotaDebito(comprobanteAfectadoId: string, input: IssueNotaInput, usuarioId: string): Promise<Comprobante>;
+  /** Notas ya emitidas contra un comprobante — para mostrarlas junto al comprobante en la UI. */
+  listNotasForComprobante(comprobanteAfectadoId: string): Promise<Comprobante[]>;
 }

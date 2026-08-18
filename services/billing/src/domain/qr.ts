@@ -1,6 +1,6 @@
 import type { Comprobante } from "@casacarlos/contracts";
 import QRCode from "qrcode";
-import { codigoTipoDocumento } from "./series.js";
+import { codigoTipoComprobante } from "./series.js";
 import { schemeIdReceptor } from "./ubl.js";
 
 /**
@@ -11,7 +11,7 @@ import { schemeIdReceptor } from "./ubl.js";
 export function buildQrPayload(comprobante: Comprobante, rucEmisor: string, fechaEmision: string): string {
   const fields = [
     rucEmisor,
-    codigoTipoDocumento(comprobante.tipo),
+    codigoTipoComprobante(comprobante.tipo),
     comprobante.serie,
     String(comprobante.correlativo),
     (comprobante.igvCentimos / 100).toFixed(2),

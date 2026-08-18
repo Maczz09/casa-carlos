@@ -1,10 +1,10 @@
 import JSZip from "jszip";
-import type { DocumentType } from "@casacarlos/contracts";
-import { codigoTipoDocumento } from "./series.js";
+import type { ComprobanteTipo } from "@casacarlos/contracts";
+import { codigoTipoComprobante } from "./series.js";
 
-/** `{RUC}-{tipoDoc}-{serie}-{correlativo}` — la convención de nombre que SUNAT exige, sin extensión. */
-export function comprobanteFileName(ruc: string, tipo: DocumentType, serie: string, correlativo: number): string {
-  return `${ruc}-${codigoTipoDocumento(tipo)}-${serie}-${correlativo}`;
+/** `{RUC}-{tipoDoc}-{serie}-{correlativo}` — la convención de nombre que SUNAT exige, sin extensión. Acepta cualquiera de los 4 tipos de `Comprobante` (boleta/factura/nota de crédito/nota de débito). */
+export function comprobanteFileName(ruc: string, tipo: ComprobanteTipo, serie: string, correlativo: number): string {
+  return `${ruc}-${codigoTipoComprobante(tipo)}-${serie}-${correlativo}`;
 }
 
 /** El nombre del ZIP es idéntico al del XML que contiene, solo cambia la extensión. */

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import type { IssueNotaInput } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
 import { requireAuth } from "../auth.js";
 
@@ -62,6 +63,24 @@ export function billingRoutes(services: Services) {
     app.post<{ Params: { id: string }; Body: { motivo: string } }>("/api/billing/:id/void", auth, async (request, reply) => {
       try {
         return await services.billing.voidComprobante(request.params.id, request.body.motivo, request.user!.id);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.get<{ Params: { id: string } }>("/api/billing/:id/notas", auth, async (request) => services.billing.listNotasForComprobante(request.params.id));
+
+    app.post<{ Params: { id: string }; Body: IssueNotaInput }>("/api/billing/:id/nota-credito", auth, async (request, reply) => {
+      try {
+        return await services.billing.issueNotaCredito(request.params.id, request.body, request.user!.id);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post<{ Params: { id: string }; Body: IssueNotaInput }>("/api/billing/:id/nota-debito", auth, async (request, reply) => {
+      try {
+        return await services.billing.issueNotaDebito(request.params.id, request.body, request.user!.id);
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }

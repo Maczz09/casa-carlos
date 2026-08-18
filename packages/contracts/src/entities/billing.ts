@@ -1,8 +1,42 @@
 import { z } from "zod";
 
-/** Catálogo 01 de SUNAT: 03 = Boleta de venta, 01 = Factura. */
+/** Catálogo 01 de SUNAT: 03 = Boleta de venta, 01 = Factura. Boleta/factura únicamente — ver `NotaTipoSchema`/`ComprobanteTipoSchema` para las notas. */
 export const DocumentTypeSchema = z.enum(["BOLETA", "FACTURA"]);
 export type DocumentType = z.infer<typeof DocumentTypeSchema>;
+
+/** Catálogo 01 de SUNAT: 07 = Nota de crédito, 08 = Nota de débito. */
+export const NotaTipoSchema = z.enum(["NOTA_CREDITO", "NOTA_DEBITO"]);
+export type NotaTipo = z.infer<typeof NotaTipoSchema>;
+
+export interface MotivoNota {
+  codigo: string;
+  descripcion: string;
+}
+
+/** Catálogo 09 de SUNAT — motivos válidos para una nota de crédito. Fuente única compartida entre `services/billing` (valida) y el frontend (selector). */
+export const MOTIVOS_NOTA_CREDITO: MotivoNota[] = [
+  { codigo: "01", descripcion: "Anulación de la operación" },
+  { codigo: "02", descripcion: "Anulación por error en el RUC" },
+  { codigo: "03", descripcion: "Corrección por error en la descripción" },
+  { codigo: "04", descripcion: "Descuento global" },
+  { codigo: "05", descripcion: "Descuento por ítem" },
+  { codigo: "06", descripcion: "Devolución total" },
+  { codigo: "07", descripcion: "Devolución por ítem" },
+  { codigo: "08", descripcion: "Bonificación" },
+  { codigo: "09", descripcion: "Disminución en el valor" },
+  { codigo: "10", descripcion: "Otros conceptos" },
+];
+
+/** Catálogo 10 de SUNAT — motivos válidos para una nota de débito. */
+export const MOTIVOS_NOTA_DEBITO: MotivoNota[] = [
+  { codigo: "01", descripcion: "Intereses por mora" },
+  { codigo: "02", descripcion: "Aumento en el valor" },
+  { codigo: "03", descripcion: "Penalidades / otros conceptos" },
+];
+
+/** Unión de los cuatro tipos que puede tomar una fila de `billing_comprobantes` — boleta/factura son comprobantes propios, las notas siempre están contra otro comprobante (`comprobanteAfectadoId`). */
+export const ComprobanteTipoSchema = z.enum(["BOLETA", "FACTURA", "NOTA_CREDITO", "NOTA_DEBITO"]);
+export type ComprobanteTipo = z.infer<typeof ComprobanteTipoSchema>;
 
 /** Catálogo 06 de SUNAT (subconjunto que usamos): 1 = DNI, 6 = RUC. */
 export const RecipientDocTypeSchema = z.enum(["DNI", "RUC"]);
@@ -42,7 +76,7 @@ export type ComprobanteLine = z.infer<typeof ComprobanteLineSchema>;
 export const ComprobanteSchema = z.object({
   id: z.string(),
   ventaId: z.string(),
-  tipo: DocumentTypeSchema,
+  tipo: ComprobanteTipoSchema,
   serie: z.string(),
   correlativo: z.number().int().positive(),
   receptorTipoDoc: RecipientDocTypeSchema,
@@ -59,5 +93,18 @@ export const ComprobanteSchema = z.object({
   usuarioId: z.string(),
   creadoEn: z.string(),
   enviadoEn: z.string().nullable(),
+  /** Solo presente en una nota — el comprobante (boleta/factura) que corrige. `null` en boleta/factura. */
+  comprobanteAfectadoId: z.string().nullable(),
+  /** Código catálogo 09 (nota de crédito) o 10 (nota de débito) de SUNAT — `null` en boleta/factura. */
+  motivoCodigo: z.string().nullable(),
+  motivoDescripcion: z.string().nullable(),
 });
 export type Comprobante = z.infer<typeof ComprobanteSchema>;
+
+/** Input para emitir una nota de crédito o débito contra un comprobante ya `ACEPTADO`. */
+export const IssueNotaInputSchema = z.object({
+  motivoCodigo: z.string(),
+  motivoDescripcion: z.string(),
+  lineas: z.array(ComprobanteLineSchema).min(1),
+});
+export type IssueNotaInput = z.infer<typeof IssueNotaInputSchema>;

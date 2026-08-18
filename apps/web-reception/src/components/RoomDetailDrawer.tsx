@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import type { Comprobante, ComunicacionBaja, PaymentDetailInput, RoomBoardEntry, SaleWithLines, StayWithCustomer } from "@casacarlos/contracts";
+import type { Comprobante, ComunicacionBaja, IssueNotaInput, NotaTipo, PaymentDetailInput, RoomBoardEntry, SaleWithLines, StayWithCustomer } from "@casacarlos/contracts";
+import { MOTIVOS_NOTA_CREDITO, MOTIVOS_NOTA_DEBITO } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { api, ApiError, getToken } from "../api.js";
 import { STATUS_STYLE } from "@casacarlos/ui";
@@ -28,6 +29,10 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
   const [baja, setBaja] = useState<ComunicacionBaja | null>(null);
   const [anulando, setAnulando] = useState(false);
   const [motivoAnulacion, setMotivoAnulacion] = useState("");
+  const [notas, setNotas] = useState<Comprobante[]>([]);
+  const [emitiendoNota, setEmitiendoNota] = useState<NotaTipo | null>(null);
+  const [notaMotivoCodigo, setNotaMotivoCodigo] = useState("");
+  const [notaMontoSoles, setNotaMontoSoles] = useState("");
 
   const remaining = useCountdown(entry.desocupaEn);
 
@@ -39,6 +44,7 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
     const c = sl ? await api.comprobanteForSale(sl.id) : null;
     setComprobante(c);
     setBaja(c ? await api.bajaForComprobante(c.id) : null);
+    setNotas(c && c.estadoSunat === "ACEPTADO" ? await api.notasForComprobante(c.id) : []);
   };
 
   useEffect(() => {
@@ -189,6 +195,32 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
     }
   };
 
+  const emitNota = async () => {
+    if (!comprobante || !emitiendoNota || !notaMotivoCodigo || !notaMontoSoles) return;
+    const centimos = Math.round(parseFloat(notaMontoSoles) * 100);
+    if (!Number.isFinite(centimos) || centimos <= 0) return;
+    const catalogo = emitiendoNota === "NOTA_CREDITO" ? MOTIVOS_NOTA_CREDITO : MOTIVOS_NOTA_DEBITO;
+    const motivoDescripcion = catalogo.find((m) => m.codigo === notaMotivoCodigo)?.descripcion ?? notaMotivoCodigo;
+    setBusy(true);
+    setError(null);
+    try {
+      const input: IssueNotaInput = {
+        motivoCodigo: notaMotivoCodigo,
+        motivoDescripcion,
+        lineas: [{ descripcion: motivoDescripcion, cantidad: 1, precioUnitarioCentimos: centimos, subtotalCentimos: centimos }],
+      };
+      const nota = emitiendoNota === "NOTA_CREDITO" ? await api.issueNotaCredito(comprobante.id, input) : await api.issueNotaDebito(comprobante.id, input);
+      setNotas((prev) => [nota, ...prev]);
+      setEmitiendoNota(null);
+      setNotaMotivoCodigo("");
+      setNotaMontoSoles("");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo emitir la nota.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const downloadPdf = async () => {
     if (!comprobante) return;
     const token = getToken();
@@ -320,6 +352,11 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
                       Anular
                     </button>
                   )}
+                  {comprobante.estadoSunat === "ACEPTADO" && !emitiendoNota && (
+                    <button onClick={() => setEmitiendoNota("NOTA_CREDITO")} disabled={busy} className="rounded-lg bg-amber-700 px-3 py-1.5 text-xs text-white hover:bg-amber-600 disabled:opacity-50">
+                      Nota de crédito/débito
+                    </button>
+                  )}
                 </div>
 
                 {anulando && (
@@ -358,6 +395,78 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
                     <button onClick={voidComprobante} disabled={busy} className="mt-2 rounded-lg bg-slate-700 px-3 py-1 text-white hover:bg-slate-600 disabled:opacity-50">
                       {baja.estadoSunat === "PENDIENTE" ? "Revisar estado" : "Reintentar anulación"}
                     </button>
+                  </div>
+                )}
+
+                {emitiendoNota && (
+                  <div className="mt-1 flex flex-col gap-2 rounded-lg bg-slate-800 p-3">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          setEmitiendoNota("NOTA_CREDITO");
+                          setNotaMotivoCodigo("");
+                        }}
+                        className={`flex-1 rounded-lg py-1.5 text-xs ${emitiendoNota === "NOTA_CREDITO" ? "bg-amber-600 text-white" : "bg-slate-700 text-slate-300"}`}
+                      >
+                        Nota de crédito
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEmitiendoNota("NOTA_DEBITO");
+                          setNotaMotivoCodigo("");
+                        }}
+                        className={`flex-1 rounded-lg py-1.5 text-xs ${emitiendoNota === "NOTA_DEBITO" ? "bg-amber-600 text-white" : "bg-slate-700 text-slate-300"}`}
+                      >
+                        Nota de débito
+                      </button>
+                    </div>
+                    <select
+                      value={notaMotivoCodigo}
+                      onChange={(e) => setNotaMotivoCodigo(e.target.value)}
+                      className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
+                    >
+                      <option value="">Motivo…</option>
+                      {(emitiendoNota === "NOTA_CREDITO" ? MOTIVOS_NOTA_CREDITO : MOTIVOS_NOTA_DEBITO).map((m) => (
+                        <option key={m.codigo} value={m.codigo}>
+                          {m.descripcion}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      placeholder="Monto (S/)"
+                      value={notaMontoSoles}
+                      onChange={(e) => setNotaMontoSoles(e.target.value)}
+                      className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-sm text-white"
+                    />
+                    <div className="flex gap-2">
+                      <button onClick={() => setEmitiendoNota(null)} className="flex-1 rounded-lg bg-slate-700 py-1.5 text-xs text-white hover:bg-slate-600">
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={emitNota}
+                        disabled={busy || !notaMotivoCodigo || !notaMontoSoles}
+                        className="flex-1 rounded-lg bg-amber-600 py-1.5 text-xs text-white hover:bg-amber-500 disabled:opacity-50"
+                      >
+                        Emitir nota
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {notas.length > 0 && (
+                  <div className="mt-1 flex flex-col gap-1 rounded-lg bg-slate-800 p-3 text-xs">
+                    <p className="mb-1 font-medium text-slate-300">Notas emitidas</p>
+                    {notas.map((n) => (
+                      <div key={n.id} className="flex items-center justify-between text-slate-300">
+                        <span>
+                          {n.tipo === "NOTA_CREDITO" ? "Crédito" : "Débito"} {n.serie}-{n.correlativo} — {n.motivoDescripcion}
+                        </span>
+                        <span className={n.estadoSunat === "ACEPTADO" ? "text-teal-400" : "text-rose-400"}>{n.estadoSunat === "ACEPTADO" ? "Aceptada" : n.estadoSunat}</span>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

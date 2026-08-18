@@ -1,10 +1,11 @@
 import { newId } from "@casacarlos/contracts";
-import type { BajaStatus, BillingPort, Comprobante, ComunicacionBaja, DateRange, DocumentType, IssueFacturaInput, SunatStatus } from "@casacarlos/contracts";
+import type { BajaStatus, BillingPort, Comprobante, ComunicacionBaja, DateRange, DocumentType, IssueFacturaInput, IssueNotaInput, NotaTipo, SunatStatus } from "@casacarlos/contracts";
 import type { SaleWithLines, SalesPort } from "@casacarlos/contracts";
+import { esMotivoNotaCreditoValido, esMotivoNotaDebitoValido } from "./domain/catalogos-notas.js";
 import { desglosarIgv } from "./domain/igv.js";
 import { montoEnLetras } from "./domain/monto-letras.js";
-import { serieForTipo } from "./domain/series.js";
-import { buildInvoiceXml, type EmisorInfo, type ReceptorInfo, type UblLineInput } from "./domain/ubl.js";
+import { serieForNota, serieForTipo } from "./domain/series.js";
+import { buildCreditNoteXml, buildDebitNoteXml, buildInvoiceXml, type EmisorInfo, type ReceptorInfo, type UblLineInput } from "./domain/ubl.js";
 import { bajaFileName, buildVoidedDocumentsXml } from "./domain/voided.js";
 import { type CertificateMaterial, signInvoiceXml } from "./domain/signature.js";
 import { comprobanteFileName, zipXml } from "./domain/zip.js";
@@ -225,6 +226,115 @@ export class BillingService implements BillingPort {
     return baja;
   }
 
+  async issueNotaCredito(comprobanteAfectadoId: string, input: IssueNotaInput, usuarioId: string): Promise<Comprobante> {
+    return this.emitNota("NOTA_CREDITO", comprobanteAfectadoId, input, usuarioId);
+  }
+
+  async issueNotaDebito(comprobanteAfectadoId: string, input: IssueNotaInput, usuarioId: string): Promise<Comprobante> {
+    return this.emitNota("NOTA_DEBITO", comprobanteAfectadoId, input, usuarioId);
+  }
+
+  async listNotasForComprobante(comprobanteAfectadoId: string): Promise<Comprobante[]> {
+    return this.repo.listNotasForComprobante(comprobanteAfectadoId);
+  }
+
+  /**
+   * A diferencia de la Comunicación de Baja (solo hasta 7 días, solo
+   * factura), una nota no tiene límite de plazo y aplica tanto a boleta como
+   * a factura — es el mecanismo correcto para corregir un comprobante ya
+   * ACEPTADO después de esa ventana. Envío síncrono, mismo `trySend` que
+   * `emit()` — sin cambiar el modelo de envío del resto del sistema.
+   */
+  private async emitNota(tipoNota: NotaTipo, comprobanteAfectadoId: string, input: IssueNotaInput, usuarioId: string): Promise<Comprobante> {
+    const afectado = await this.getComprobante(comprobanteAfectadoId);
+    if (afectado.tipo !== "BOLETA" && afectado.tipo !== "FACTURA") {
+      throw new Error("Solo se puede emitir una nota contra una boleta o factura, no contra otra nota.");
+    }
+    if (afectado.estadoSunat !== "ACEPTADO") {
+      throw new Error("Solo se puede emitir una nota contra un comprobante ACEPTADO por SUNAT.");
+    }
+    const motivoValido = tipoNota === "NOTA_CREDITO" ? esMotivoNotaCreditoValido(input.motivoCodigo) : esMotivoNotaDebitoValido(input.motivoCodigo);
+    if (!motivoValido) {
+      const catalogo = tipoNota === "NOTA_CREDITO" ? "09 (nota de crédito)" : "10 (nota de débito)";
+      throw new Error(`Código de motivo "${input.motivoCodigo}" no pertenece al catálogo SUNAT ${catalogo}.`);
+    }
+
+    const tipoAfectado: DocumentType = afectado.tipo;
+
+    const lineasConIgv: UblLineInput[] = input.lineas.map((l, idx) => {
+      const { valorVentaCentimos, igvCentimos } = desglosarIgv(l.subtotalCentimos);
+      return {
+        id: idx + 1,
+        descripcion: l.descripcion,
+        cantidad: l.cantidad,
+        valorVentaUnitarioCentimos: Math.round(valorVentaCentimos / l.cantidad),
+        precioUnitarioCentimos: l.precioUnitarioCentimos,
+        valorVentaCentimos,
+        igvCentimos,
+        subtotalCentimos: l.subtotalCentimos,
+      };
+    });
+    const valorVentaCentimos = lineasConIgv.reduce((s, l) => s + l.valorVentaCentimos, 0);
+    const igvCentimos = lineasConIgv.reduce((s, l) => s + l.igvCentimos, 0);
+    const totalCentimos = lineasConIgv.reduce((s, l) => s + l.subtotalCentimos, 0);
+    const montoLetras = montoEnLetras(totalCentimos);
+
+    const serie = serieForNota(tipoNota, tipoAfectado);
+    const correlativo = await this.repo.nextCorrelativo(serie);
+    const now = new Date();
+
+    const buildNotaXml = tipoNota === "NOTA_CREDITO" ? buildCreditNoteXml : buildDebitNoteXml;
+    const unsignedXml = buildNotaXml({
+      serie,
+      correlativo,
+      fechaEmision: now.toISOString().slice(0, 10),
+      emisor: this.emisor,
+      receptor: { tipoDoc: afectado.receptorTipoDoc, numeroDoc: afectado.receptorNumeroDoc, razonSocial: afectado.receptorRazonSocial },
+      lineas: lineasConIgv,
+      valorVentaCentimos,
+      igvCentimos,
+      totalCentimos,
+      documentoAfectado: { tipo: tipoAfectado, serie: afectado.serie, correlativo: afectado.correlativo },
+      motivoCodigo: input.motivoCodigo,
+      motivoDescripcion: input.motivoDescripcion,
+    });
+    const finalXml = this.cert ? signInvoiceXml(unsignedXml, this.cert) : unsignedXml;
+
+    const fileName = comprobanteFileName(this.emisor.ruc, tipoNota, serie, correlativo);
+    const { result, hadException } = await this.trySend(fileName, finalXml);
+
+    const nota = await this.repo.insertComprobante({
+      id: newId(),
+      ventaId: afectado.ventaId,
+      tipo: tipoNota,
+      serie,
+      correlativo,
+      receptorTipoDoc: afectado.receptorTipoDoc,
+      receptorNumeroDoc: afectado.receptorNumeroDoc,
+      receptorRazonSocial: afectado.receptorRazonSocial,
+      lineasJson: JSON.stringify(lineasConIgv.map((l) => ({ descripcion: l.descripcion, cantidad: l.cantidad, precioUnitarioCentimos: l.precioUnitarioCentimos, subtotalCentimos: l.subtotalCentimos }))),
+      valorVentaCentimos,
+      igvCentimos,
+      totalCentimos,
+      montoLetras,
+      estadoSunat: this.estadoFor(result, hadException),
+      sunatCodigo: result.codigo,
+      sunatDescripcion: result.descripcion,
+      xmlBase64: null,
+      cdrBase64: null,
+      usuarioId,
+      creadoEn: now.toISOString(),
+      enviadoEn: now.toISOString(),
+      comprobanteAfectadoId,
+      motivoCodigo: input.motivoCodigo,
+      motivoDescripcion: input.motivoDescripcion,
+    });
+
+    await this.repo.saveArtifacts(nota.id, Buffer.from(finalXml, "utf-8").toString("base64"), result.cdrXml ? Buffer.from(result.cdrXml, "utf-8").toString("base64") : null);
+
+    return nota;
+  }
+
   private async emit(sale: SaleWithLines, tipo: DocumentType, receptor: ReceptorInfo, usuarioId: string): Promise<Comprobante> {
     const activeLines = sale.lineas.filter((l) => !l.anulada);
     if (activeLines.length === 0) {
@@ -302,6 +412,9 @@ export class BillingService implements BillingPort {
       usuarioId,
       creadoEn: now.toISOString(),
       enviadoEn: now.toISOString(),
+      comprobanteAfectadoId: null,
+      motivoCodigo: null,
+      motivoDescripcion: null,
     });
 
     await this.repo.saveArtifacts(comprobante.id, Buffer.from(finalXml, "utf-8").toString("base64"), result.cdrXml ? Buffer.from(result.cdrXml, "utf-8").toString("base64") : null);
