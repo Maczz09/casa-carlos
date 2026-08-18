@@ -8,11 +8,15 @@ function greeting(): string {
 /** What's on screen until a receptionist starts a session — no call to action, since the guest never initiates. */
 export function IdleScreen() {
   return (
-    <div className="flex h-screen flex-col items-center justify-center bg-[#F7F3EA] px-10 text-center">
-      <p className="font-serif text-xl italic text-teal-700/70">{greeting()}</p>
-      <h1 className="mt-3 font-serif text-6xl text-stone-800">Casa Carlos</h1>
-      <div className="mt-8 h-px w-24 bg-stone-300" />
-      <p className="mt-8 max-w-md text-lg text-stone-500">Un momento — recepción está preparando tu registro.</p>
+    <div className="animate-fade flex h-screen flex-col items-center justify-center bg-bg px-10 text-center">
+      <p className="animate-fade-up font-serif text-xl italic text-brand/70">{greeting()}</p>
+      <h1 className="animate-fade-up mt-3 font-serif text-6xl text-ink" style={{ animationDelay: "80ms" }}>
+        Casa Carlos
+      </h1>
+      <div className="animate-fade-up mt-8 h-px w-24 bg-subtle/50" style={{ animationDelay: "160ms" }} />
+      <p className="animate-fade-up mt-8 max-w-md text-lg text-muted" style={{ animationDelay: "220ms" }}>
+        Un momento — recepción está preparando tu registro.
+      </p>
     </div>
   );
 }

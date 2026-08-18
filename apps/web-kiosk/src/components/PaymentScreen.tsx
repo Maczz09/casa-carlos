@@ -58,16 +58,16 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
   if (!method) {
     return (
       <Shell title="¿Cómo vas a pagar?" step="Paso 3 de 3" onBack={onCancel}>
-        <div className="mb-8 rounded-2xl bg-white px-8 py-6 text-center shadow-sm ring-1 ring-stone-900/5">
-          <p className="text-sm uppercase tracking-wide text-stone-400">Total a pagar</p>
-          <p className="font-serif text-5xl text-stone-800">{format(cents(totalCentimos))}</p>
+        <div className="animate-fade-up mb-8 rounded-2xl bg-surface px-8 py-6 text-center shadow-[var(--shadow-card)] ring-1 ring-line">
+          <p className="text-sm uppercase tracking-wide text-subtle">Total a pagar</p>
+          <p className="font-serif text-5xl text-ink">{format(cents(totalCentimos))}</p>
         </div>
-        <div className="grid flex-1 grid-cols-2 gap-5 content-start">
-          <MethodButton icon={IconCash} label="Efectivo" onClick={() => setMethod("EFECTIVO")} />
-          <MethodButton icon={IconWallet} label="Yape" onClick={() => setMethod("YAPE")} />
-          <MethodButton icon={IconWallet} label="Plin" onClick={() => setMethod("PLIN")} />
-          <MethodButton icon={IconBank} label="Transferencia" onClick={() => setMethod("TRANSFERENCIA")} />
-          <MethodButton icon={IconCombine} label="Combinar métodos" onClick={() => setMethod("HIBRIDO")} wide />
+        <div className="stagger grid flex-1 grid-cols-2 gap-5 content-start">
+          <MethodButton i={0} icon={IconCash} label="Efectivo" onClick={() => setMethod("EFECTIVO")} />
+          <MethodButton i={1} icon={IconWallet} label="Yape" onClick={() => setMethod("YAPE")} />
+          <MethodButton i={2} icon={IconWallet} label="Plin" onClick={() => setMethod("PLIN")} />
+          <MethodButton i={3} icon={IconBank} label="Transferencia" onClick={() => setMethod("TRANSFERENCIA")} />
+          <MethodButton i={4} icon={IconCombine} label="Combinar métodos" onClick={() => setMethod("HIBRIDO")} wide />
         </div>
       </Shell>
     );
@@ -75,58 +75,58 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
 
   return (
     <Shell title={method === "HIBRIDO" ? "Combinar métodos" : METHOD_LABEL[method]} onBack={() => setMethod(null)}>
-      <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center">
+      <div className="animate-fade-up flex flex-1 flex-col items-center justify-center gap-6 text-center">
         {method === "EFECTIVO" && (
           <>
-            <p className="text-lg text-stone-500">Entrega este monto en efectivo al recepcionista</p>
-            <p className="font-serif text-6xl text-stone-800">{format(cents(totalCentimos))}</p>
+            <p className="text-lg text-muted">Entrega este monto en efectivo al recepcionista</p>
+            <p className="font-serif text-6xl text-ink">{format(cents(totalCentimos))}</p>
           </>
         )}
 
         {(method === "YAPE" || method === "PLIN") &&
           (wallet ? (
             <>
-              <p className="text-lg text-stone-500">Escanea el código y muéstrale la confirmación al recepcionista</p>
-              {qrUrl && <img src={qrUrl} alt={`Código QR de ${METHOD_LABEL[method]}`} className="rounded-2xl shadow-md" width={260} height={260} />}
-              <p className="font-serif text-3xl text-stone-800">{format(cents(totalCentimos))}</p>
+              <p className="text-lg text-muted">Escanea el código y muéstrale la confirmación al recepcionista</p>
+              {qrUrl && <img src={qrUrl} alt={`Código QR de ${METHOD_LABEL[method]}`} className="animate-pop rounded-2xl shadow-[var(--shadow-pop)]" width={260} height={260} />}
+              <p className="font-serif text-3xl text-ink">{format(cents(totalCentimos))}</p>
             </>
           ) : (
-            <p className="text-lg text-stone-500">Este método no está disponible por ahora — elige otro.</p>
+            <p className="text-lg text-muted">Este método no está disponible por ahora — elige otro.</p>
           ))}
 
         {method === "TRANSFERENCIA" &&
           (bank ? (
-            <div className="w-full max-w-md rounded-2xl bg-white p-8 text-left shadow-sm ring-1 ring-stone-900/5">
-              <p className="text-sm uppercase tracking-wide text-stone-400">Transfiere a</p>
-              <p className="mt-1 font-serif text-2xl text-stone-800">{bank.titular}</p>
-              <dl className="mt-4 space-y-2 text-sm text-stone-600">
+            <div className="w-full max-w-md rounded-2xl bg-surface p-8 text-left shadow-[var(--shadow-card)] ring-1 ring-line">
+              <p className="text-sm uppercase tracking-wide text-subtle">Transfiere a</p>
+              <p className="mt-1 font-serif text-2xl text-ink">{bank.titular}</p>
+              <dl className="mt-4 space-y-2 text-sm text-ink">
                 <div className="flex justify-between">
-                  <dt className="text-stone-400">Banco</dt>
+                  <dt className="text-subtle">Banco</dt>
                   <dd className="font-medium">{bank.proveedor}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-stone-400">Cuenta</dt>
+                  <dt className="text-subtle">Cuenta</dt>
                   <dd className="font-mono font-medium">{bank.numeroCuenta}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-stone-400">CCI</dt>
+                  <dt className="text-subtle">CCI</dt>
                   <dd className="font-mono font-medium">{bank.cci}</dd>
                 </div>
               </dl>
-              <p className="mt-5 text-center font-serif text-3xl text-stone-800">{format(cents(totalCentimos))}</p>
+              <p className="mt-5 text-center font-serif text-3xl text-ink">{format(cents(totalCentimos))}</p>
             </div>
           ) : (
-            <p className="text-lg text-stone-500">Este método no está disponible por ahora — elige otro.</p>
+            <p className="text-lg text-muted">Este método no está disponible por ahora — elige otro.</p>
           ))}
 
         {method === "HIBRIDO" && (
           <div className="w-full max-w-md space-y-4 text-left">
             {hybridRows.map((row, idx) => (
-              <div key={idx} className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-stone-900/5">
+              <div key={idx} className="flex items-center gap-3 rounded-2xl bg-surface p-4 shadow-[var(--shadow-card)] ring-1 ring-line">
                 <select
                   value={row.metodo}
                   onChange={(e) => setHybridRows((rs) => rs.map((r, i) => (i === idx ? { ...r, metodo: e.target.value } : r)))}
-                  className="flex-1 rounded-lg border border-stone-200 bg-white px-3 py-2 text-stone-700"
+                  className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-ink"
                 >
                   {Object.entries(METHOD_LABEL).map(([v, l]) => (
                     <option key={v} value={v}>
@@ -139,11 +139,11 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
                   placeholder="S/"
                   value={row.monto}
                   onChange={(e) => setHybridRows((rs) => rs.map((r, i) => (i === idx ? { ...r, monto: e.target.value } : r)))}
-                  className="w-28 rounded-lg border border-stone-200 bg-white px-3 py-2 text-right text-stone-700"
+                  className="w-28 rounded-lg border border-line bg-surface px-3 py-2 text-right text-ink"
                 />
               </div>
             ))}
-            <p className={`text-center text-sm ${hybridOk ? "text-teal-700" : "text-rose-600"}`}>
+            <p className={`text-center text-sm ${hybridOk ? "text-brand" : "text-danger"}`}>
               {format(hybridTotal)} de {format(cents(totalCentimos))}
             </p>
           </div>
@@ -158,7 +158,7 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
                 : [{ metodo: method, montoCentimos: totalCentimos }],
             )
           }
-          className="mt-2 w-full max-w-md rounded-2xl bg-teal-700 py-5 text-xl font-medium text-white shadow-md transition active:scale-[0.98] disabled:opacity-40"
+          className="mt-2 w-full max-w-md rounded-2xl bg-brand py-5 text-xl font-medium text-brand-ink shadow-[var(--shadow-card)] transition-transform active:scale-[0.98] disabled:opacity-40"
         >
           Ya pagué, avisar a recepción
         </button>
@@ -167,14 +167,15 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
   );
 }
 
-function MethodButton({ icon: Icon, label, onClick, wide }: { icon: typeof IconCash; label: string; onClick: () => void; wide?: boolean }) {
+function MethodButton({ icon: Icon, label, onClick, wide, i }: { icon: typeof IconCash; label: string; onClick: () => void; wide?: boolean; i: number }) {
   return (
     <button
+      style={{ ["--i" as string]: i }}
       onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-3 rounded-3xl bg-white py-8 shadow-md ring-1 ring-stone-900/5 transition active:scale-[0.98] ${wide ? "col-span-2" : ""}`}
+      className={`flex flex-col items-center justify-center gap-3 rounded-3xl bg-surface py-8 shadow-[var(--shadow-card)] ring-1 ring-line transition-all duration-200 active:scale-[0.98] hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)] ${wide ? "col-span-2" : ""}`}
     >
-      <Icon className="h-9 w-9 text-teal-700" />
-      <span className="text-lg font-medium text-stone-800">{label}</span>
+      <Icon className="h-9 w-9 text-brand" />
+      <span className="text-lg font-medium text-ink">{label}</span>
     </button>
   );
 }

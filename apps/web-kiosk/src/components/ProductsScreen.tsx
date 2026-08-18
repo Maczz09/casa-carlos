@@ -29,16 +29,18 @@ export function ProductsScreen({ products, totalCentimos, onAdd, onFinish, onCan
     return (
       <Shell title="¿Desea agregar un producto a su habitación?" step="Opcional — productos y bebidas" onBack={onCancel}>
         <div className="flex flex-1 flex-col items-center justify-center gap-6">
-          <div className="flex gap-6">
+          <div className="stagger flex gap-6">
             <button
+              style={{ ["--i" as string]: 0 }}
               onClick={() => setWantsProducts(true)}
-              className="rounded-2xl bg-teal-700 px-12 py-6 text-2xl font-medium text-white active:scale-[0.98]"
+              className="rounded-2xl bg-brand px-12 py-6 text-2xl font-medium text-brand-ink shadow-[var(--shadow-card)] transition-transform active:scale-[0.98]"
             >
               Sí
             </button>
             <button
+              style={{ ["--i" as string]: 1 }}
               onClick={onFinish}
-              className="rounded-2xl bg-stone-200 px-12 py-6 text-2xl font-medium text-stone-700 active:scale-[0.98]"
+              className="rounded-2xl bg-inset px-12 py-6 text-2xl font-medium text-ink transition-transform active:scale-[0.98]"
             >
               No
             </button>
@@ -51,32 +53,33 @@ export function ProductsScreen({ products, totalCentimos, onAdd, onFinish, onCan
   return (
     <Shell title="¿Algo más?" step="Opcional — productos y bebidas" onBack={onCancel}>
       {products.length === 0 ? (
-        <div className="flex flex-1 items-center justify-center text-lg text-stone-500">No hay productos disponibles ahora.</div>
+        <div className="flex flex-1 items-center justify-center text-lg text-muted">No hay productos disponibles ahora.</div>
       ) : (
-        <div className="grid flex-1 grid-cols-3 gap-4 content-start overflow-y-auto">
-          {products.map((p) => (
+        <div className="stagger grid flex-1 grid-cols-3 gap-4 content-start overflow-y-auto">
+          {products.map((p, i) => (
             <button
               key={p.id}
+              style={{ ["--i" as string]: i }}
               onClick={() => add(p.id)}
               disabled={busyId === p.id || !p.enStock}
-              className="flex flex-col gap-1 rounded-2xl bg-white p-4 text-left shadow-md ring-1 ring-stone-900/5 transition active:scale-[0.98] disabled:opacity-50"
+              className="flex flex-col gap-1 rounded-2xl bg-surface p-4 text-left shadow-[var(--shadow-card)] ring-1 ring-line transition-all duration-200 active:scale-[0.98] disabled:opacity-50 enabled:hover:-translate-y-0.5 enabled:hover:shadow-[var(--shadow-pop)]"
             >
-              <span className="font-serif text-lg text-stone-800">{p.nombre}</span>
-              {p.categoria && <span className="text-xs text-stone-400">{p.categoria}</span>}
-              {p.descripcion && <span className="text-xs text-stone-500">{p.descripcion}</span>}
-              <span className="text-lg font-semibold text-teal-700">{format(cents(p.precioCentimos))}</span>
-              {!p.enStock && <span className="text-xs font-medium text-rose-500">Agotado</span>}
+              <span className="font-serif text-lg text-ink">{p.nombre}</span>
+              {p.categoria && <span className="text-xs text-subtle">{p.categoria}</span>}
+              {p.descripcion && <span className="text-xs text-muted">{p.descripcion}</span>}
+              <span className="text-lg font-semibold text-brand">{format(cents(p.precioCentimos))}</span>
+              {!p.enStock && <span className="text-xs font-medium text-danger">Agotado</span>}
             </button>
           ))}
         </div>
       )}
 
-      <div className="mt-6 flex items-center justify-between rounded-2xl bg-white p-5 shadow-md ring-1 ring-stone-900/5">
+      <div className="animate-fade-up mt-6 flex items-center justify-between rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] ring-1 ring-line">
         <div>
-          <p className="text-sm text-stone-500">Total hasta ahora</p>
-          <p className="font-serif text-2xl text-stone-800">{format(cents(totalCentimos))}</p>
+          <p className="text-sm text-muted">Total hasta ahora</p>
+          <p className="font-serif text-2xl text-ink">{format(cents(totalCentimos))}</p>
         </div>
-        <button onClick={onFinish} className="rounded-2xl bg-teal-700 px-8 py-4 text-lg font-medium text-white active:scale-[0.98]">
+        <button onClick={onFinish} className="rounded-2xl bg-brand px-8 py-4 text-lg font-medium text-brand-ink transition-transform active:scale-[0.98]">
           Continuar
         </button>
       </div>
