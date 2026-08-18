@@ -99,7 +99,7 @@ El número de franjas es dato, no código: si el admin pone 3, hay 3; si pone 6,
 | Modalidad | Duración | Check-in | Check-out | Tolerancia |
 |---|---|---|---|---|
 | Por horas | 3 h por bloque | Al momento | inicio + 3 h | 15 min |
-| Noche A | 20 h | 14:00 | 10:00 (día+1) | 15 min |
+| Día (código NOCHE_A) | 20 h | 14:00 | 10:00 (día+1) | 15 min |
 | Noche B | 12 h | 20:00 | 08:00 (día+1) | 15 min |
 | Multi-noche | n × noche | según modalidad | último día | 15 min |
 

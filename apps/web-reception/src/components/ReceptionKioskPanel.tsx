@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import type { Attribute, Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails } from "@casacarlos/contracts";
+import type { Attribute, Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails, SaleWithLines } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { RoomIllustration } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
@@ -24,6 +24,7 @@ export function ReceptionKioskPanel({ floors, categories, attributes, session, o
   const [payment, setPayment] = useState<PaymentWithDetails | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [productSale, setProductSale] = useState<SaleWithLines | null>(null);
 
   useEffect(() => {
     api.modalities().then((list) => {
@@ -35,6 +36,14 @@ export function ReceptionKioskPanel({ floors, categories, attributes, session, o
   useEffect(() => {
     if (!session) setPayment(null);
   }, [session?.id]);
+
+  useEffect(() => {
+    if (session?.estado !== "SELECCION_PRODUCTOS" || !session.saleId) {
+      setProductSale(null);
+      return;
+    }
+    api.getSale(session.saleId).then(setProductSale);
+  }, [session?.estado, session?.saleId, session?.totalCentimos]);
 
   const cancel = async () => {
     setBusy(true);
@@ -233,6 +242,18 @@ export function ReceptionKioskPanel({ floors, categories, attributes, session, o
       <Modal title="Cliente eligiendo productos" onClose={onClose} busy={busy}>
         <div className="flex flex-col items-center gap-3 py-4 text-center">
           <p className="text-sm text-slate-400">El cliente puede agregar productos desde el kiosco, o pasar directo a pagar.</p>
+          {productSale && productSale.lineas.length > 0 && (
+            <div className="w-full rounded-lg bg-slate-900 p-3 text-left text-sm">
+              {productSale.lineas.map((l) => (
+                <div key={l.id} className="flex items-center justify-between text-slate-300">
+                  <span>
+                    {l.cantidad}× {l.descripcion}
+                  </span>
+                  <span>{format(cents(l.subtotalCentimos))}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <p className="text-2xl font-semibold text-white">{format(cents(session.totalCentimos ?? 0))}</p>
           <button
             disabled={busy}

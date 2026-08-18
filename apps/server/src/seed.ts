@@ -64,7 +64,7 @@ export async function seedIfEmpty(
   const modalidadHoras = await pricing.createModality({ codigo: "HORAS_3", nombre: "Por horas", duracionHoras: 3, toleranciaMin: 15 });
   const modalidadNocheA = await pricing.createModality({
     codigo: "NOCHE_A",
-    nombre: "Noche — check-in 14:00",
+    nombre: "Día — check-in 14:00",
     duracionHoras: 20,
     checkinFijo: "14:00",
     checkoutFijo: "10:00",

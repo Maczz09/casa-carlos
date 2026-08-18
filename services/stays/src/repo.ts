@@ -44,6 +44,12 @@ export class StaysRepo {
     return toCustomer(row);
   }
 
+  async updateCustomer(id: string, data: Pick<CustomerRow, "nombres" | "apellidos" | "telefono">): Promise<Customer> {
+    await this.db.update(schema.staysClientes).set(data).where(eq(schema.staysClientes.id, id));
+    const row = await this.db.select().from(schema.staysClientes).where(eq(schema.staysClientes.id, id)).get();
+    return toCustomer(row!);
+  }
+
   async insertStay(row: StayRow): Promise<Stay> {
     await this.db.insert(schema.staysEstadias).values(row);
     return toStay(row);

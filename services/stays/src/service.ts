@@ -30,7 +30,13 @@ export class StaysService implements StaysPort {
 
   async findOrCreateCustomer(input: CustomerInput): Promise<Customer> {
     const existing = await this.repo.findCustomerByDni(input.dni);
-    if (existing) return existing;
+    if (existing) {
+      return this.repo.updateCustomer(existing.id, {
+        nombres: input.nombres,
+        apellidos: input.apellidos,
+        telefono: input.telefono ?? null,
+      });
+    }
     return this.repo.insertCustomer({
       id: newId(),
       nombres: input.nombres,

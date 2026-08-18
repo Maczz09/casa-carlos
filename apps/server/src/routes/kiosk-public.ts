@@ -17,12 +17,20 @@ export function kioskPublicRoutes(services: Services) {
     app.get("/api/kiosk/collection-accounts", async () => services.payments.listCollectionAccounts());
     app.get("/api/kiosk/modalities", async () => services.pricing.listModalities());
 
-    // Solo lo que el huésped necesita para decidir — sin costoCentimos/stockMinimo (dato de negocio, ver KioskProductSchema).
+    // Solo lo que el huésped necesita para decidir — sin costoCentimos/stock exacto (dato de negocio, ver KioskProductSchema).
+    // Se listan también los agotados (enStock: false) para que el huésped vea el catálogo completo, no que "desaparezcan" productos.
     app.get("/api/kiosk/products", async () => {
       const products = await services.inventory.listProducts();
       return products
-        .filter((p) => p.activo && p.estado !== "AGOTADO" && p.stock > 0)
-        .map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, categoria: p.categoria, precioCentimos: p.precioCentimos }));
+        .filter((p) => p.activo && p.estado !== "DESCONTINUADO")
+        .map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          descripcion: p.descripcion,
+          categoria: p.categoria,
+          precioCentimos: p.precioCentimos,
+          enStock: p.estado !== "AGOTADO" && p.stock > 0,
+        }));
     });
 
     app.post<{ Body: { pisoId: string } }>("/api/kiosk/select-floor", async (request, reply) => {
