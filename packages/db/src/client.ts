@@ -30,15 +30,25 @@ export function openDatabase(filePath: string): Connection {
       stmt.run(...params);
       return { rows: [] };
     }
+
+    // Drizzle mapea las columnas POR POSICIÓN, así que las filas tienen que
+    // llegar como arrays. No alcanza con `Object.values(row)`: en un JOIN entre
+    // tablas con columnas homónimas (id, nombre, creado_en…) las claves del
+    // objeto colisionan y la fila pierde columnas enteras, corriendo todo el
+    // mapeo — se veía como el nombre de la categoría apareciendo en el nombre
+    // del producto. `setReturnArrays` devuelve la fila posicional de verdad.
+    stmt.setReturnArrays(true);
+
+    // Los tipos de node:sqlite declaran siempre `Record<string, …>` porque no
+    // modelan el modo array de `setReturnArrays`, de ahí el doble cast.
     if (method === "get") {
-      const row = stmt.get(...params) as Record<string, unknown> | undefined;
-      // `rows: undefined` here (not `[]`) is what tells Drizzle "no matching row" —
-      // an empty array is truthy and would be read back as a zero-column match.
-      // The AsyncRemoteCallback type doesn't express this, hence the cast.
-      return { rows: row ? Object.values(row) : undefined } as { rows: unknown[] };
+      const row = stmt.get(...params) as unknown as unknown[] | undefined;
+      // `rows: undefined` (y no `[]`) es lo que le dice a Drizzle "no hubo fila":
+      // un array vacío es truthy y se leería como una coincidencia sin columnas.
+      // El tipo AsyncRemoteCallback no expresa esto, de ahí el cast.
+      return { rows: row } as { rows: unknown[] };
     }
-    const rows = stmt.all(...params) as Record<string, unknown>[];
-    return { rows: rows.map((r) => Object.values(r)) };
+    return { rows: stmt.all(...params) as unknown as unknown[][] };
   }, { schema });
 
   return { db, sqlite };

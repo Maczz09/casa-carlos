@@ -1,11 +1,25 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+/**
+ * Categorías de producto. Antes la categoría era texto libre en cada producto,
+ * lo que producía duplicados por tipeo ("Bebidas" / "bebidas" / "Bebida") y
+ * hacía imposible filtrar de forma confiable. Ahora es una tabla propia y el
+ * producto la referencia.
+ */
+export const inventoryCategorias = sqliteTable("inventory_categorias", {
+  id: text("id").primaryKey(),
+  nombre: text("nombre").notNull().unique(),
+  descripcion: text("descripcion"),
+  activo: integer("activo", { mode: "boolean" }).notNull().default(true),
+  creadoEn: text("creado_en").notNull(),
+});
+
 export const inventoryProductos = sqliteTable("inventory_productos", {
   id: text("id").primaryKey(),
   codigoBarras: text("codigo_barras").unique(),
   nombre: text("nombre").notNull(),
   descripcion: text("descripcion"),
-  categoria: text("categoria"),
+  categoriaId: text("categoria_id").references(() => inventoryCategorias.id),
   precioCentimos: integer("precio_centimos").notNull(),
   costoCentimos: integer("costo_centimos").notNull().default(0),
   stock: integer("stock").notNull().default(0),

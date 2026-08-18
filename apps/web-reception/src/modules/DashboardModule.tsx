@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useState } from "react";
-import type { DashboardReport, HoraPico } from "@casacarlos/contracts";
+import type { DashboardReport, HoraPico, Product } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
+import { IconBox } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
-import { Button, Card, Field, Input, Notice, PageHeader, Section, Skeleton, cx } from "../components/ui.js";
+import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Skeleton, cx } from "../components/ui.js";
 import { METHOD_LABEL } from "./CashboxModule.js";
 
 const DIAS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
@@ -94,10 +95,15 @@ function Heatmap({ data }: { data: HoraPico[] }) {
   );
 }
 
-export function DashboardModule() {
+interface Props {
+  onGoToInventory: () => void;
+}
+
+export function DashboardModule({ onGoToInventory }: Props) {
   const [desde, setDesde] = useState(daysAgoIso(6));
   const [hasta, setHasta] = useState(todayIso());
   const [report, setReport] = useState<DashboardReport | null>(null);
+  const [lowStock, setLowStock] = useState<Product[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -115,6 +121,8 @@ export function DashboardModule() {
 
   useEffect(() => {
     loadRange(desde, hasta);
+    // El stock bajo no depende del rango de fechas: es el estado de hoy en bodega.
+    api.lowStock().then(setLowStock);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -166,6 +174,45 @@ export function DashboardModule() {
           ))}
         </div>
       )}
+
+      {/* Reposición de bodega — fuera del rango de fechas a propósito: es el estado de hoy. */}
+      <div className="mb-5">
+        <Section
+          title="Productos por reponer"
+          subtitle="Stock en o por debajo del mínimo configurado"
+          actions={
+            <Button size="sm" onClick={onGoToInventory}>
+              Ir a bodega
+            </Button>
+          }
+        >
+          {lowStock === null ? (
+            <Skeleton className="h-12" />
+          ) : lowStock.length === 0 ? (
+            <EmptyState icon={<IconBox className="h-6 w-6" />} title="Todo con stock suficiente" hint="Ningún producto está en o debajo de su mínimo." />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {lowStock.map((p, i) => {
+                const faltante = Math.max(0, p.stockMinimo - p.stock);
+                return (
+                  <div key={p.id} className="stagger flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line px-4 py-2.5" style={{ ["--i" as string]: i }}>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-ink">{p.nombre}</p>
+                      <p className="truncate text-xs text-muted">
+                        {p.categoria ?? "Sin categoría"} · mínimo {p.stockMinimo}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Badge tone={p.stock === 0 ? "tone-red" : "tone-amber"}>{p.stock === 0 ? "Agotado" : `stock ${p.stock}`}</Badge>
+                      {faltante > 0 && <span className="text-xs text-muted">faltan {faltante}</span>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Section>
+      </div>
 
       {report && (
         <div className="flex flex-col gap-5">

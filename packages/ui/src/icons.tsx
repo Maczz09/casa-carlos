@@ -298,3 +298,12 @@ export function IconPrinter({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconTag({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M2.8 8.6V3.6a.8.8 0 0 1 .8-.8h5l8.6 8.6a1.1 1.1 0 0 1 0 1.6l-4 4a1.1 1.1 0 0 1-1.6 0Z" />
+      <path d="M6.2 6.2h.01" />
+    </svg>
+  );
+}

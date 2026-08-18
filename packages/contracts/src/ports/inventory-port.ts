@@ -1,10 +1,10 @@
-import type { Product, ProductMovement, ProductState } from "../entities/inventory.js";
+import type { Product, ProductCategory, ProductMovement, ProductState } from "../entities/inventory.js";
 
 export interface CreateProductInput {
   codigoBarras?: string | null;
   nombre: string;
   descripcion?: string | null;
-  categoria?: string | null;
+  categoriaId?: string | null;
   precioCentimos: number;
   costoCentimos?: number;
   stockInicial?: number;
@@ -15,11 +15,22 @@ export interface CreateProductInput {
 export interface UpdateProductInput {
   nombre?: string;
   descripcion?: string | null;
-  categoria?: string | null;
+  categoriaId?: string | null;
   precioCentimos?: number;
   costoCentimos?: number;
   stockMinimo?: number;
   estado?: ProductState;
+}
+
+export interface CreateProductCategoryInput {
+  nombre: string;
+  descripcion?: string | null;
+}
+
+export interface UpdateProductCategoryInput {
+  nombre?: string;
+  descripcion?: string | null;
+  activo?: boolean;
 }
 
 export interface DispatchInput {
@@ -46,6 +57,12 @@ export interface StockAdjustmentInput {
  * directamente sobre el stock.
  */
 export interface InventoryPort {
+  listCategories(): Promise<ProductCategory[]>;
+  createCategory(input: CreateProductCategoryInput): Promise<ProductCategory>;
+  updateCategory(id: string, patch: UpdateProductCategoryInput): Promise<ProductCategory>;
+  /** Falla si la categoría todavía tiene productos: borrarla los dejaría huérfanos sin aviso. */
+  deleteCategory(id: string): Promise<void>;
+
   createProduct(input: CreateProductInput): Promise<Product>;
   updateProduct(id: string, patch: UpdateProductInput): Promise<Product>;
   getProduct(id: string): Promise<Product>;

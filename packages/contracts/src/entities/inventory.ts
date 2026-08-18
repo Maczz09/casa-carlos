@@ -3,11 +3,23 @@ import { z } from "zod";
 export const ProductStateSchema = z.enum(["ACTIVO", "AGOTADO", "DESCONTINUADO"]);
 export type ProductState = z.infer<typeof ProductStateSchema>;
 
+/** Categoría de producto de bodega. Se llama `ProductCategory` y no `Category` porque ese nombre ya lo usa la categoría de CUARTO (entities/rooms.ts). */
+export const ProductCategorySchema = z.object({
+  id: z.string(),
+  nombre: z.string().min(1),
+  descripcion: z.string().nullable(),
+  activo: z.boolean(),
+  creadoEn: z.string(),
+});
+export type ProductCategory = z.infer<typeof ProductCategorySchema>;
+
 export const ProductSchema = z.object({
   id: z.string(),
   codigoBarras: z.string().nullable(),
   nombre: z.string(),
   descripcion: z.string().nullable(),
+  categoriaId: z.string().nullable(),
+  /** Nombre de la categoría ya resuelto — se sirve por join, no se guarda en el producto. */
   categoria: z.string().nullable(),
   precioCentimos: z.number().int().nonnegative(),
   costoCentimos: z.number().int().nonnegative(),

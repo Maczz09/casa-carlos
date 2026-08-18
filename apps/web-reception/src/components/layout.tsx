@@ -14,6 +14,7 @@ import {
   IconPlus,
   IconReceipt,
   IconSun,
+  IconTag,
   IconX,
 } from "@casacarlos/ui";
 import { cx } from "./ui.js";
@@ -47,6 +48,7 @@ export const NAV: NavGroup[] = [
     items: [
       { id: "caja", label: "Caja", icon: <IconCash className={ICON} /> },
       { id: "bodega", label: "Bodega", icon: <IconBox className={ICON} /> },
+      { id: "categorias", label: "Categorías", icon: <IconTag className={ICON} /> },
       { id: "comprobantes", label: "Comprobantes", icon: <IconReceipt className={ICON} />, adminOnly: true },
     ],
   },

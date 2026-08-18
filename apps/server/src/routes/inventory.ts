@@ -10,6 +10,37 @@ export function inventoryRoutes(services: Services) {
     app.get("/api/inventory/products", auth, async () => services.inventory.listProducts());
     app.get("/api/inventory/low-stock", auth, async () => services.inventory.listLowStock());
 
+    app.get("/api/inventory/categories", auth, async () => services.inventory.listCategories());
+
+    app.post<{ Body: { nombre: string; descripcion?: string | null } }>("/api/inventory/categories", auth, async (request, reply) => {
+      try {
+        return await services.inventory.createCategory(request.body);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.patch<{ Params: { id: string }; Body: { nombre?: string; descripcion?: string | null; activo?: boolean } }>(
+      "/api/inventory/categories/:id",
+      auth,
+      async (request, reply) => {
+        try {
+          return await services.inventory.updateCategory(request.params.id, request.body);
+        } catch (err) {
+          return reply.code(400).send({ error: (err as Error).message });
+        }
+      },
+    );
+
+    app.delete<{ Params: { id: string } }>("/api/inventory/categories/:id", auth, async (request, reply) => {
+      try {
+        await services.inventory.deleteCategory(request.params.id);
+        return reply.code(204).send();
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
     app.get<{ Params: { id: string } }>("/api/inventory/products/:id", auth, async (request, reply) => {
       try {
         return await services.inventory.getProduct(request.params.id);
@@ -31,7 +62,7 @@ export function inventoryRoutes(services: Services) {
         codigoBarras?: string | null;
         nombre: string;
         descripcion?: string | null;
-        categoria?: string | null;
+        categoriaId?: string | null;
         precioCentimos: number;
         costoCentimos?: number;
         stockInicial?: number;
@@ -50,7 +81,7 @@ export function inventoryRoutes(services: Services) {
       Body: {
         nombre?: string;
         descripcion?: string | null;
-        categoria?: string | null;
+        categoriaId?: string | null;
         precioCentimos?: number;
         costoCentimos?: number;
         stockMinimo?: number;

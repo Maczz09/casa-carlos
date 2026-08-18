@@ -13,6 +13,7 @@ import { SaleModule } from "./modules/SaleModule.js";
 import { ReservationsModule } from "./modules/ReservationsModule.js";
 import { CashboxModule } from "./modules/CashboxModule.js";
 import { InventoryModule } from "./modules/InventoryModule.js";
+import { CategoriesModule } from "./modules/CategoriesModule.js";
 import { ComprobantesModule } from "./modules/ComprobantesModule.js";
 import { DashboardModule } from "./modules/DashboardModule.js";
 import { NotificationsModule } from "./modules/NotificationsModule.js";
@@ -77,11 +78,13 @@ export default function App() {
       case "caja":
         return <CashboxModule />;
       case "bodega":
-        return <InventoryModule />;
+        return <InventoryModule onManageCategories={() => navigate("/categorias")} />;
+      case "categorias":
+        return <CategoriesModule />;
       case "comprobantes":
         return <ComprobantesModule />;
       case "dashboard":
-        return <DashboardModule />;
+        return <DashboardModule onGoToInventory={() => navigate("/bodega")} />;
       case "notificaciones":
         return <NotificationsModule />;
       default:

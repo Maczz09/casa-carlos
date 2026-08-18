@@ -145,11 +145,15 @@ export async function seedIfEmpty(
   await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "YAPE", titular: "Hoteles Casa Carlos", orden: 1 });
   await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "PLIN", titular: "Hoteles Casa Carlos", orden: 2 });
 
-  await inventory.createProduct({ codigoBarras: "7750182001019", nombre: "Agua San Luis 625ml", categoria: "Bebidas", precioCentimos: 300, costoCentimos: 150, stockInicial: 30, stockMinimo: 8, usuarioId: admin.id });
-  await inventory.createProduct({ codigoBarras: "7750182002016", nombre: "Inca Kola 500ml", categoria: "Bebidas", precioCentimos: 500, costoCentimos: 250, stockInicial: 24, stockMinimo: 6, usuarioId: admin.id });
-  await inventory.createProduct({ codigoBarras: "7750182003013", nombre: "Cerveza Pilsen 650ml", categoria: "Bebidas", precioCentimos: 1200, costoCentimos: 700, stockInicial: 18, stockMinimo: 6, usuarioId: admin.id });
-  await inventory.createProduct({ codigoBarras: "7750182004010", nombre: "Papas Lays", categoria: "Snacks", precioCentimos: 600, costoCentimos: 300, stockInicial: 20, stockMinimo: 5, usuarioId: admin.id });
-  await inventory.createProduct({ codigoBarras: "7750182005017", nombre: "Preservativos (unidad)", categoria: "Higiene", precioCentimos: 500, costoCentimos: 200, stockInicial: 40, stockMinimo: 10, usuarioId: admin.id });
+  const catBebidas = await inventory.createCategory({ nombre: "Bebidas" });
+  const catSnacks = await inventory.createCategory({ nombre: "Snacks" });
+  const catHigiene = await inventory.createCategory({ nombre: "Higiene" });
+
+  await inventory.createProduct({ codigoBarras: "7750182001019", nombre: "Agua San Luis 625ml", categoriaId: catBebidas.id, precioCentimos: 300, costoCentimos: 150, stockInicial: 30, stockMinimo: 8, usuarioId: admin.id });
+  await inventory.createProduct({ codigoBarras: "7750182002016", nombre: "Inca Kola 500ml", categoriaId: catBebidas.id, precioCentimos: 500, costoCentimos: 250, stockInicial: 24, stockMinimo: 6, usuarioId: admin.id });
+  await inventory.createProduct({ codigoBarras: "7750182003013", nombre: "Cerveza Pilsen 650ml", categoriaId: catBebidas.id, precioCentimos: 1200, costoCentimos: 700, stockInicial: 18, stockMinimo: 6, usuarioId: admin.id });
+  await inventory.createProduct({ codigoBarras: "7750182004010", nombre: "Papas Lays", categoriaId: catSnacks.id, precioCentimos: 600, costoCentimos: 300, stockInicial: 20, stockMinimo: 5, usuarioId: admin.id });
+  await inventory.createProduct({ codigoBarras: "7750182005017", nombre: "Preservativos (unidad)", categoriaId: catHigiene.id, precioCentimos: 500, costoCentimos: 200, stockInicial: 40, stockMinimo: 10, usuarioId: admin.id });
 
   await cashbox.createShiftTemplate({ nombre: "Turno día", horaInicio: "07:00", horaFin: "19:00" });
   await cashbox.createShiftTemplate({ nombre: "Turno noche", horaInicio: "19:00", horaFin: "07:00" });

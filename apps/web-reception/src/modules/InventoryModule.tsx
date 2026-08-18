@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Product, ProductMovement } from "@casacarlos/contracts";
+import type { Product, ProductCategory, ProductMovement } from "@casacarlos/contracts";
 import { cents, format, soles } from "@casacarlos/money";
 import { IconBox, IconChevronDown, IconPlus, IconSearch } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
-import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Skeleton, StatCard, cx } from "../components/ui.js";
+import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Skeleton, StatCard, cx } from "../components/ui.js";
 
 const MOVEMENT_LABEL: Record<string, string> = { INGRESO: "Ingreso", SALIDA: "Salida", AJUSTE: "Ajuste", ANULACION: "Anulación" };
 
-export function InventoryModule() {
+interface Props {
+  onManageCategories: () => void;
+}
+
+export function InventoryModule({ onManageCategories }: Props) {
   const [products, setProducts] = useState<Product[] | null>(null);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [creating, setCreating] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -18,6 +23,7 @@ export function InventoryModule() {
 
   useEffect(() => {
     reload();
+    api.productCategories().then(setCategories);
   }, []);
 
   const filtered = useMemo(() => {
@@ -36,11 +42,16 @@ export function InventoryModule() {
         title="Bodega"
         subtitle="Productos, stock y kardex de movimientos"
         actions={
-          !creating && (
-            <Button variant="primary" size="lg" icon={<IconPlus className="h-4 w-4" />} onClick={() => setCreating(true)}>
-              Nuevo producto
+          <>
+            <Button size="lg" onClick={onManageCategories}>
+              Categorías
             </Button>
-          )
+            {!creating && (
+              <Button variant="primary" size="lg" icon={<IconPlus className="h-4 w-4" />} onClick={() => setCreating(true)}>
+                Nuevo producto
+              </Button>
+            )}
+          </>
         }
       />
 
@@ -59,6 +70,8 @@ export function InventoryModule() {
       {creating && (
         <div className="mb-5">
           <NewProductForm
+            categories={categories}
+            onManageCategories={onManageCategories}
             onCancel={() => setCreating(false)}
             onCreated={() => {
               setCreating(false);
@@ -125,14 +138,30 @@ export function InventoryModule() {
   );
 }
 
-function NewProductForm({ onCancel, onCreated, onError }: { onCancel: () => void; onCreated: () => void; onError: (e: string | null) => void }) {
+function NewProductForm({
+  categories,
+  onManageCategories,
+  onCancel,
+  onCreated,
+  onError,
+}: {
+  categories: ProductCategory[];
+  onManageCategories: () => void;
+  onCancel: () => void;
+  onCreated: () => void;
+  onError: (e: string | null) => void;
+}) {
   const [codigoBarras, setCodigoBarras] = useState("");
   const [nombre, setNombre] = useState("");
-  const [categoria, setCategoria] = useState("");
+  const [categoriaId, setCategoriaId] = useState("");
   const [precio, setPrecio] = useState("");
   const [stockInicial, setStockInicial] = useState("");
   const [stockMinimo, setStockMinimo] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Solo las activas se ofrecen para productos nuevos; las inactivas siguen
+  // existiendo para los productos viejos que ya las tienen asignadas.
+  const activas = categories.filter((c) => c.activo);
 
   const submit = async () => {
     setBusy(true);
@@ -141,7 +170,7 @@ function NewProductForm({ onCancel, onCreated, onError }: { onCancel: () => void
       await api.createProduct({
         codigoBarras: codigoBarras || null,
         nombre,
-        categoria: categoria || null,
+        categoriaId: categoriaId || null,
         precioCentimos: soles(Number(precio) || 0),
         stockInicial: Number(stockInicial) || 0,
         stockMinimo: Number(stockMinimo) || 0,
@@ -164,8 +193,21 @@ function NewProductForm({ onCancel, onCreated, onError }: { onCancel: () => void
           <Field label="Nombre">
             <Input placeholder="Nombre del producto" value={nombre} onChange={(e) => setNombre(e.target.value)} />
           </Field>
-          <Field label="Categoría (opcional)">
-            <Input placeholder="Bebidas, snacks…" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
+          <Field label="Categoría">
+            {activas.length === 0 ? (
+              <Button size="sm" onClick={onManageCategories}>
+                Crear una categoría primero
+              </Button>
+            ) : (
+              <Select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
+                <option value="">Sin categoría</option>
+                {activas.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </Select>
+            )}
           </Field>
           <Field label="Precio de venta (S/)">
             <Input type="number" placeholder="0.00" value={precio} onChange={(e) => setPrecio(e.target.value)} />

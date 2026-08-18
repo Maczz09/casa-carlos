@@ -29,6 +29,7 @@ import type {
   PaymentDetailInput,
   PaymentWithDetails,
   Product,
+  ProductCategory,
   ProductMovement,
   ProductState,
   ResolvedRate,
@@ -76,6 +77,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 const get = <T>(path: string) => request<T>(path);
 const post = <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body: body !== undefined ? JSON.stringify(body) : undefined });
 const patch = <T>(path: string, body?: unknown) => request<T>(path, { method: "PATCH", body: body !== undefined ? JSON.stringify(body) : undefined });
+const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 
 export const api = {
   login: (usuario: string, password: string) => post<AuthResult>("/api/auth/login", { usuario, password }),
@@ -134,7 +136,7 @@ export const api = {
     codigoBarras?: string | null;
     nombre: string;
     descripcion?: string | null;
-    categoria?: string | null;
+    categoriaId?: string | null;
     precioCentimos: number;
     costoCentimos?: number;
     stockInicial?: number;
@@ -142,8 +144,14 @@ export const api = {
   }) => post<Product>("/api/inventory/products", input),
   updateProduct: (
     id: string,
-    patchBody: { nombre?: string; descripcion?: string | null; categoria?: string | null; precioCentimos?: number; costoCentimos?: number; stockMinimo?: number; estado?: ProductState },
+    patchBody: { nombre?: string; descripcion?: string | null; categoriaId?: string | null; precioCentimos?: number; costoCentimos?: number; stockMinimo?: number; estado?: ProductState },
   ) => patch<Product>(`/api/inventory/products/${id}`, patchBody),
+
+  productCategories: () => get<ProductCategory[]>("/api/inventory/categories"),
+  createProductCategory: (input: { nombre: string; descripcion?: string | null }) => post<ProductCategory>("/api/inventory/categories", input),
+  updateProductCategory: (id: string, patchBody: { nombre?: string; descripcion?: string | null; activo?: boolean }) =>
+    patch<ProductCategory>(`/api/inventory/categories/${id}`, patchBody),
+  deleteProductCategory: (id: string) => del<void>(`/api/inventory/categories/${id}`),
   stockIn: (id: string, cantidad: number, motivo: string) => post<ProductMovement>(`/api/inventory/products/${id}/stock-in`, { cantidad, motivo }),
   adjustStock: (id: string, cantidad: number, motivo: string) => post<ProductMovement>(`/api/inventory/products/${id}/adjust`, { cantidad, motivo }),
 

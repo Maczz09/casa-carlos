@@ -2,13 +2,16 @@ import type { Db } from "@casacarlos/db";
 import { recordAudit } from "@casacarlos/db";
 import { newId } from "@casacarlos/contracts";
 import type {
+  CreateProductCategoryInput,
   CreateProductInput,
   DispatchInput,
   InventoryPort,
   MovementType,
   Product,
+  ProductCategory,
   ProductMovement,
   StockAdjustmentInput,
+  UpdateProductCategoryInput,
   UpdateProductInput,
 } from "@casacarlos/contracts";
 import type { EventBus } from "@casacarlos/bus";
@@ -24,15 +27,67 @@ export class InventoryService implements InventoryPort {
     this.repo = new InventoryRepo(db);
   }
 
+  /* ---------------- Categorías ---------------- */
+
+  async listCategories(): Promise<ProductCategory[]> {
+    return this.repo.listCategories();
+  }
+
+  async createCategory(input: CreateProductCategoryInput): Promise<ProductCategory> {
+    const nombre = input.nombre.trim();
+    if (!nombre) throw new Error("El nombre de la categoría no puede estar vacío.");
+    if (await this.repo.findCategoryByName(nombre)) throw new Error(`Ya existe una categoría llamada "${nombre}".`);
+    return this.repo.insertCategory({
+      id: newId(),
+      nombre,
+      descripcion: input.descripcion?.trim() || null,
+      activo: true,
+      creadoEn: new Date().toISOString(),
+    });
+  }
+
+  async updateCategory(id: string, patch: UpdateProductCategoryInput): Promise<ProductCategory> {
+    const current = await this.repo.getCategory(id);
+    if (!current) throw new Error(`Categoría ${id} no encontrada.`);
+
+    const nombre = patch.nombre?.trim();
+    if (nombre !== undefined) {
+      if (!nombre) throw new Error("El nombre de la categoría no puede estar vacío.");
+      const clash = await this.repo.findCategoryByName(nombre);
+      if (clash && clash.id !== id) throw new Error(`Ya existe una categoría llamada "${nombre}".`);
+    }
+
+    return this.repo.updateCategory(id, {
+      ...(nombre !== undefined ? { nombre } : {}),
+      ...(patch.descripcion !== undefined ? { descripcion: patch.descripcion?.trim() || null } : {}),
+      ...(patch.activo !== undefined ? { activo: patch.activo } : {}),
+    });
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    const current = await this.repo.getCategory(id);
+    if (!current) throw new Error(`Categoría ${id} no encontrada.`);
+    // Borrar dejaría los productos apuntando a una categoría inexistente. Se
+    // bloquea a propósito: primero hay que mover o dar de baja esos productos.
+    const enUso = await this.repo.countProductsInCategory(id);
+    if (enUso > 0) throw new Error(`No se puede borrar: ${enUso} producto${enUso === 1 ? "" : "s"} usa${enUso === 1 ? "" : "n"} esta categoría.`);
+    await this.repo.deleteCategory(id);
+  }
+
+  /* ---------------- Productos ---------------- */
+
   async createProduct(input: CreateProductInput): Promise<Product> {
     const now = new Date().toISOString();
     const stockInicial = input.stockInicial ?? 0;
+    if (input.categoriaId && !(await this.repo.getCategory(input.categoriaId))) {
+      throw new Error("La categoría elegida no existe.");
+    }
     const product = await this.repo.insertProduct({
       id: newId(),
       codigoBarras: input.codigoBarras ?? null,
       nombre: input.nombre,
       descripcion: input.descripcion ?? null,
-      categoria: input.categoria ?? null,
+      categoriaId: input.categoriaId ?? null,
       precioCentimos: input.precioCentimos,
       costoCentimos: input.costoCentimos ?? 0,
       stock: stockInicial,
