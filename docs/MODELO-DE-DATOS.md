@@ -1,4 +1,4 @@
-# Casa Carlos — Modelo de datos
+# Hospedaje Carlos — Modelo de datos
 
 SQLite en modo WAL. Un archivo: `casacarlos.db`.
 Cada tabla lleva el **prefijo de su servicio**; un servicio solo escribe en sus tablas.

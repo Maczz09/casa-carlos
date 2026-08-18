@@ -65,8 +65,8 @@ function configureSunat(): { emisor: EmisorInfo; sunatClient: SunatClient; cert:
 
   const emisor: EmisorInfo = {
     ruc: process.env.SUNAT_RUC ?? "20000000000",
-    razonSocial: process.env.SUNAT_RAZON_SOCIAL ?? "HOTELES CASA CARLOS SAC",
-    nombreComercial: process.env.SUNAT_NOMBRE_COMERCIAL ?? "CASA CARLOS",
+    razonSocial: process.env.SUNAT_RAZON_SOCIAL ?? "HOSPEDAJE CARLOS SAC",
+    nombreComercial: process.env.SUNAT_NOMBRE_COMERCIAL ?? "HOSPEDAJE CARLOS",
     direccion: process.env.SUNAT_DIRECCION ?? "AV PRINCIPAL S/N",
     ubigeo: process.env.SUNAT_UBIGEO ?? "150101",
     distrito: process.env.SUNAT_DISTRITO ?? "LIMA",
@@ -188,7 +188,7 @@ async function main() {
   process.on("SIGTERM", shutdown);
 
   await app.listen({ port: PORT, host: "0.0.0.0" });
-  console.log(`\nCasa Carlos — servidor listo en http://localhost:${PORT}`);
+  console.log(`\nHospedaje Carlos — servidor listo en http://localhost:${PORT}`);
   console.log(`Usuarios de prueba: admin/admin123 (PIN 0000) · recepcion/recepcion123 (PIN 1234)\n`);
 }
 

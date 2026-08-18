@@ -11,7 +11,7 @@ export function IdleScreen() {
     <div className="animate-fade flex h-screen flex-col items-center justify-center bg-bg px-10 text-center">
       <p className="animate-fade-up font-serif text-xl italic text-brand/70">{greeting()}</p>
       <h1 className="animate-fade-up mt-3 font-serif text-6xl text-ink" style={{ animationDelay: "80ms" }}>
-        Casa Carlos
+        Hospedaje Carlos
       </h1>
       <div className="animate-fade-up mt-8 h-px w-24 bg-subtle/50" style={{ animationDelay: "160ms" }} />
       <p className="animate-fade-up mt-8 max-w-md text-lg text-muted" style={{ animationDelay: "220ms" }}>

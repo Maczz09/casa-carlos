@@ -124,7 +124,7 @@ export async function seedIfEmpty(
   await pricing.createCharge({ codigo: "EXCESO", nombre: "Exceso de tiempo", precioCentimos: 2000, unidad: "FIJO" });
   await pricing.createCharge({ codigo: "EXTENSION_3H", nombre: "Extensión de 3 horas", precioCentimos: 4000, unidad: "BLOQUE" });
 
-  const admin = await identity.createUser({ usuario: "admin", password: "admin123", pin: "0000", nombres: "Administrador", apellidos: "Casa Carlos", rol: "ADMIN" });
+  const admin = await identity.createUser({ usuario: "admin", password: "admin123", pin: "0000", nombres: "Administrador", apellidos: "Hospedaje Carlos", rol: "ADMIN" });
   await identity.createUser({
     usuario: "recepcion",
     password: "recepcion123",
@@ -137,13 +137,13 @@ export async function seedIfEmpty(
   await payments.createCollectionAccount({
     tipo: "BANCO",
     proveedor: "BCP",
-    titular: "Hoteles Casa Carlos S.A.C.",
+    titular: "Hospedaje Carlos S.A.C.",
     numeroCuenta: "194-1234567-0-89",
     cci: "00219400123456789012",
     orden: 0,
   });
-  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "YAPE", titular: "Hoteles Casa Carlos", orden: 1 });
-  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "PLIN", titular: "Hoteles Casa Carlos", orden: 2 });
+  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "YAPE", titular: "Hospedaje Carlos", orden: 1 });
+  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "PLIN", titular: "Hospedaje Carlos", orden: 2 });
 
   const catBebidas = await inventory.createCategory({ nombre: "Bebidas" });
   const catSnacks = await inventory.createCategory({ nombre: "Snacks" });

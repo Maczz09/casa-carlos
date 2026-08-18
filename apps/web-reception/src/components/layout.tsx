@@ -78,7 +78,7 @@ function Brand({ collapsed }: { collapsed: boolean }) {
       </span>
       {!collapsed && (
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-tight text-ink">Casa Carlos</p>
+          <p className="truncate text-sm font-semibold leading-tight text-ink">Hospedaje Carlos</p>
           <p className="truncate text-[11px] leading-tight text-subtle">Sistema de hospedaje</p>
         </div>
       )}
@@ -224,7 +224,7 @@ function Topbar({
         </button>
 
         <div className="flex min-w-0 items-center gap-1.5 text-sm">
-          <span className="hidden text-muted sm:inline">Casa Carlos</span>
+          <span className="hidden text-muted sm:inline">Hospedaje Carlos</span>
           <IconChevronRight className="hidden h-3.5 w-3.5 text-subtle sm:inline" />
           <span className="truncate font-semibold text-ink">{title}</span>
         </div>

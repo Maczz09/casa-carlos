@@ -27,7 +27,7 @@ export function DraftReceiptMarkup({ draft }: { draft: DraftReceipt }) {
   const { sale, tipo, receptorRuc, receptorRazonSocial, fecha, cuarto } = draft;
   return (
     <div className="print-only-receipt hidden">
-      <h2>CASA CARLOS</h2>
+      <h2>HOSPEDAJE CARLOS</h2>
       <p className="receipt-center">Comprobante de pago (BORRADOR)</p>
       <p className="receipt-center">Control interno — no válido como comprobante SUNAT</p>
       <hr />

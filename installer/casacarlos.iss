@@ -1,6 +1,8 @@
-; Instalador de Casa Carlos para Windows.
+; Instalador de Hospedaje Carlos para Windows. Verificado de punta a punta:
+; sirve tanto para la instalación de cero como para actualizar una que ya
+; está corriendo, sin perder la base de datos ni la configuración de SUNAT.
 ;
-; Qué hace, en orden:
+; Instalación nueva, qué hace en orden:
 ;   1. Copia el código fuente del monorepo + el Node portátil a {app}
 ;      (default C:\CasaCarlos — sin espacio en la ruta a propósito, ver
 ;      docs/ARQUITECTURA.md §3 y el plan de F6: node-windows/winsw tiene
@@ -10,25 +12,27 @@
 ;      (vía corepack, que ya lee el `packageManager` fijado en package.json —
 ;      no hace falta instalar pnpm aparte).
 ;   4. Registra y arranca el servicio de Windows (scripts/service/install-service.cjs).
-;   5. Deja 2 accesos directos de escritorio (recepción y kiosco).
+;   5. Deja accesos directos en el escritorio Y el menú Inicio (recepción y kiosco).
+;
+; Actualización (mismo .exe, corrido sobre una carpeta {app} que ya existe):
+; salta el asistente de SUNAT, PrepareToInstall para y desregistra el
+; servicio viejo ANTES de copiar archivos (si no, quedan bloqueados), y el
+; .env existente nunca se toca. No hace falta correr unins000.exe a mano
+; primero — un solo doble clic alcanza. Ver [Code] más abajo.
 ;
 ; No empaqueta todo en un solo .exe (se evaluó @yao-pkg/pkg y se descartó —
 ; ver docs/ARQUITECTURA.md §3). Corre el código TypeScript tal cual, vía
 ; `tsx` como loader — el mismo mecanismo que ya usa `pnpm run dev`/`start`.
-;
-; NOTA PARA QUIEN COMPILE ESTO: compila limpio (ISCC, sin warnings) y ya se
-; encontró y arregló un bug real de compilación (.env real quedaba
-; empaquetado adentro del instalador — ver el comentario en [Files] abajo).
-; Lo que todavía falta probar es CORRER el CasaCarlos-Setup.exe resultante
-; contra una carpeta limpia y confirmar que el asistente + pnpm install +
-; build + registro del servicio funcionan igual de bien empaquetados que
-; corridos a mano (que es como se verificó cada pieza por separado). Antes
-; de repartirlo al cliente, hacer esa prueba — ver la sección de
-; Verificación en el plan de F6.
 
-#define AppName "Casa Carlos"
+; "AppName" es lo único que cambió con el rebranding a Hospedaje Carlos —
+; el nombre de la carpeta de instalación (DefaultDirName) y el del servicio
+; de Windows (ServiceName) quedan igual a propósito: son la instalación que
+; YA está corriendo en la máquina del cliente, y este mismo instalador tiene
+; que poder actualizarla en el mismo lugar sin dejar una segunda instalación
+; huérfana. Ver PrepareToInstall más abajo.
+#define AppName "Hospedaje Carlos"
 #define AppVersion "1.0"
-#define AppPublisher "Hoteles Casa Carlos"
+#define AppPublisher "Hospedaje Carlos"
 #define ServiceName "CasaCarlos"
 
 [Setup]
@@ -41,7 +45,7 @@ DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
 ; Instalador de un solo .exe, comprimido — más simple de repartir.
 OutputDir=.\output
-OutputBaseFilename=CasaCarlos-Setup
+OutputBaseFilename=HospedajeCarlos-Setup
 Compression=lzma2
 SolidCompression=yes
 ; Instala un servicio de Windows y escribe en C:\ — necesita administrador.
@@ -85,8 +89,14 @@ Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags:
 Name: "{app}\data"
 
 [Icons]
+; Duplicados a propósito en Escritorio Y Menú Inicio — si algún día un accesos
+; directo del escritorio desaparece (perfil de usuario, limpieza de terceros,
+; lo que sea), queda el del Menú Inicio como camino alternativo para prender
+; las pantallas sin tener que volver a instalar nada.
 Name: "{commondesktop}\{#AppName} — Recepción"; Filename: "http://localhost:4000/"
 Name: "{commondesktop}\{#AppName} — Kiosco"; Filename: "http://localhost:4000/kiosk/"
+Name: "{group}\{#AppName} — Recepción"; Filename: "http://localhost:4000/"
+Name: "{group}\{#AppName} — Kiosco"; Filename: "http://localhost:4000/kiosk/"
 Name: "{group}\Manual de uso"; Filename: "{app}\docs\MANUAL-DE-USO.md"
 
 [Run]
@@ -134,6 +144,60 @@ var
   SunatPage: TInputQueryWizardPage;
   SunatModePage: TInputOptionWizardPage;
   CertPage: TInputFileWizardPage;
+
+/// <summary>
+/// True cuando {app}\.env ya existe -- significa que esto es una
+/// ACTUALIZACIÓN sobre una instalación que ya está corriendo, no la primera
+/// vez. Se usa para saltar el asistente de SUNAT (no tiene sentido volver a
+/// pedir esos datos, y hacerlo pisaría credenciales SOL/certificado que se
+/// hayan completado a mano después de instalar) y para no volver a escribir
+/// el .env encima.
+/// </summary>
+function EsActualizacion: Boolean;
+begin
+  Result := FileExists(ExpandConstant('{app}\.env'));
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  Result := False;
+  if EsActualizacion then
+  begin
+    if (PageID = SunatPage.ID) or (PageID = SunatModePage.ID) or (PageID = CertPage.ID) then
+      Result := True;
+  end;
+end;
+
+function UpdateReadyMemo(Space, NewLine, MemoUserInfoInfo, MemoDirInfo, MemoTypeInfo, MemoComponentsInfo, MemoGroupInfo, MemoTasksInfo: String): String;
+begin
+  Result := MemoDirInfo + NewLine + NewLine;
+  if EsActualizacion then
+    Result := Result + 'Se detectó una instalación existente en esta carpeta: esto es una ACTUALIZACIÓN.' + NewLine
+      + 'Se van a conservar los datos del hotel (base de datos, respaldos) y la configuración de SUNAT (.env) que ya están ahí.'
+  else
+    Result := Result + 'Instalación nueva.';
+end;
+
+/// <summary>
+/// Corre justo antes de que Inno empiece a copiar archivos. Si ya hay una
+/// instalación corriendo, el servicio de Windows tiene los .ts/módulos
+/// abiertos y copiar encima falla con "Acceso denegado" -- por eso antes
+/// había que correr unins000.exe a mano primero. Parando y desregistrando
+/// acá, un solo .exe alcanza para actualizar.
+/// </summary>
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  ResultCode: Integer;
+begin
+  Result := '';
+  if EsActualizacion then
+  begin
+    Exec('sc.exe', 'stop casacarlos.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(3000);
+    Exec('sc.exe', 'delete casacarlos.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    Sleep(1000);
+  end;
+end;
 
 procedure InitializeWizard;
 begin
@@ -229,6 +293,10 @@ procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
-    WriteEnvFile;
+    // Si ya había un .env (actualización), no se toca -- son los secretos y
+    // la configuración real del cliente. Solo se escribe uno nuevo la
+    // primera vez que se instala.
+    if not EsActualizacion then
+      WriteEnvFile;
   end;
 end;

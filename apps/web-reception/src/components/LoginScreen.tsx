@@ -45,7 +45,7 @@ export function LoginScreen({ onLogin, onLoginByPin }: Props) {
                 <path d="M7.6 17v-4.4h4.8V17" />
               </svg>
             </span>
-            <span className="text-lg font-semibold">Casa Carlos</span>
+            <span className="text-lg font-semibold">Hospedaje Carlos</span>
           </div>
 
           <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>

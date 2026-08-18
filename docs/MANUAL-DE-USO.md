@@ -1,4 +1,4 @@
-# Casa Carlos — Manual de uso
+# Hospedaje Carlos — Manual de uso
 
 Guía rápida para el personal del hotel. No hace falta saber de computadoras
 para seguir esto — son pasos concretos, uno por uno.
@@ -9,11 +9,16 @@ para seguir esto — son pasos concretos, uno por uno.
 
 - **Recepción**: en el navegador de la PC, entrar a `http://localhost:4000/`.
   Si ya está abierto, seguramente hay un acceso directo en el escritorio que
-  dice **"Casa Carlos — Recepción"**.
-- **Kiosco** (la pantalla que ve el cliente): acceso directo **"Casa Carlos —
-  Kiosco"**, o `http://localhost:4000/kiosk/`.
+  dice **"Hospedaje Carlos — Recepción"**.
+- **Kiosco** (la pantalla que ve el cliente): acceso directo **"Hospedaje
+  Carlos — Kiosco"**, o `http://localhost:4000/kiosk/`.
 - Usuario y contraseña los da el administrador. También se puede entrar con
   PIN rápido para cambiar de recepcionista sin cerrar sesión del todo.
+- **¿No aparece el acceso directo en el escritorio?** También están en el
+  menú Inicio de Windows, dentro de la carpeta **"Hospedaje Carlos"** — sirven
+  exactamente igual. No hace falta reinstalar nada para recuperarlos: basta
+  con abrirlos desde ahí, o crear uno nuevo apuntando a las mismas
+  direcciones de arriba.
 
 El tablero de cuartos se actualiza solo, en vivo — no hace falta recargar
 la página para ver un check-in o un pago que se hizo desde otra pantalla.
@@ -27,7 +32,7 @@ Windows: arranca solo apenas la PC prende, sin que nadie tenga que abrir
 nada a mano. Esperar uno o dos minutos después de que la PC termine de
 prender, y volver a entrar a `http://localhost:4000/`.
 
-Si después de un rato la página no carga, ver la sección **6. Problemas
+Si después de un rato la página no carga, ver la sección **7. Problemas
 comunes** más abajo.
 
 ---
@@ -66,7 +71,36 @@ cargo.
 
 ---
 
-## 4. Usar el kiosco desde otro dispositivo en la red
+## 4. Cómo actualizar el sistema (sin perder nada)
+
+Esto lo hace normalmente quien dio soporte técnico — pero si alguna vez hay
+que hacerlo en el momento, así de simple es: **un solo doble clic**, nada
+más.
+
+1. Se entrega un archivo nuevo, por ejemplo `HospedajeCarlos-Setup.exe`.
+2. Se lo hace doble clic y se sigue el asistente (aceptar los permisos de
+   administrador que pida Windows).
+3. El asistente **detecta solo** que ya hay una instalación funcionando y
+   avisa en pantalla "esto es una ACTUALIZACIÓN" antes de instalar — no hay
+   que tocar nada más, no vuelve a pedir los datos de SUNAT ni el
+   certificado.
+4. Tarda unos minutos (recompila las pantallas). Mientras tanto, recepción
+   y kiosco van a estar apagados — mejor hacerlo fuera de horario, o cuando
+   no haya un huésped a mitad de un check-in en el kiosco.
+5. Al terminar, el sistema vuelve a prender solo con el código nuevo.
+
+**Qué se conserva siempre, así se actualice mil veces:** la base de datos
+completa (todos los cuartos, ventas, clientes, historial), los respaldos
+diarios, y el archivo `.env` con el RUC/certificado/credenciales de SUNAT ya
+cargados. Nada de eso se toca ni se pisa.
+
+**Lo que NO hay que hacer:** correr un desinstalador aparte antes. Con este
+instalador ya no hace falta — un solo archivo alcanza tanto para instalar
+por primera vez como para actualizar.
+
+---
+
+## 5. Usar el kiosco desde otro dispositivo en la red
 
 Si el kiosco no está en la misma PC (por ejemplo, una tablet en el
 mostrador), hace falta la dirección de red (IP) de la PC principal:
@@ -80,7 +114,7 @@ Los dos dispositivos tienen que estar en la misma red WiFi/cableada.
 
 ---
 
-## 5. Certificado SUNAT y datos de facturación
+## 6. Certificado SUNAT y datos de facturación
 
 El certificado digital para emitir boletas/facturas electrónicas vence
 cada cierto tiempo (SUNAT lo indica al momento de tramitarlo). Cuando haya
@@ -91,7 +125,7 @@ sistema** para hacer este cambio, no editarlo sin ayuda.
 
 ---
 
-## 6. Problemas comunes
+## 7. Problemas comunes
 
 **La página no carga / pantalla en blanco:**
 1. Abrir **Servicios** de Windows (`services.msc`).

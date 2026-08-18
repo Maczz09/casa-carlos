@@ -1,4 +1,4 @@
-# Casa Carlos — Catálogo de casos de uso
+# Hospedaje Carlos — Catálogo de casos de uso
 
 134 casos de uso derivados de la toma de requerimientos.
 Actores: **ADM** administrador · **REC** recepcionista · **CLI** cliente (kiosco) · **SIS** sistema (automático).

@@ -1,4 +1,4 @@
-# Casa Carlos — Reglas de negocio
+# Hospedaje Carlos — Reglas de negocio
 
 Estas son las reglas que hacen difícil el sistema. Todo lo demás es CRUD.
 

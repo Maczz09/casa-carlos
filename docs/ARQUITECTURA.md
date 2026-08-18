@@ -1,4 +1,4 @@
-# Casa Carlos — Arquitectura orientada a servicios
+# Hospedaje Carlos — Arquitectura orientada a servicios
 
 Sistema de gestión de hospedaje. Ejecutable local (`CasaCarlos.exe`) que levanta un
 servidor en la PC de recepción; el resto de pantallas (kiosco del cliente, tablet del

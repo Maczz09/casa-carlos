@@ -7,7 +7,7 @@ export interface DesgloseIgv {
 }
 
 /**
- * Los precios en Casa Carlos ya incluyen IGV (como en cualquier consumo en
+ * Los precios en Hospedaje Carlos ya incluyen IGV (como en cualquier consumo en
  * Perú) — SUNAT exige declarar el valor de venta (base imponible) y el IGV
  * por separado. `igv` absorbe el céntimo de redondeo para que
  * `valorVenta + igv === totalCentimos` siempre cierre exacto.

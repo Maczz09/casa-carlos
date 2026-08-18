@@ -1,5 +1,5 @@
 /**
- * All money in Casa Carlos is an integer number of céntimos (1/100 sol).
+ * All money in Hospedaje Carlos is an integer number of céntimos (1/100 sol).
  * Never a float. `Cents` is a nominal type so a raw `number` cannot slip in
  * without going through `cents()` or `soles()` first.
  */
