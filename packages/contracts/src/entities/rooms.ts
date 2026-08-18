@@ -15,6 +15,8 @@ export const CategorySchema = z.object({
   descripcion: z.string().nullable(),
   /** Camas reales de la categoría — nunca se infiere del nombre. */
   camas: z.number().int().positive(),
+  /** Cantidad de ventiladores — fuente de verdad del SVG del cuarto, no un booleano de "tiene o no tiene". */
+  ventiladores: z.number().int().nonnegative(),
   atributoIds: z.array(z.string()),
   activo: z.boolean(),
 });

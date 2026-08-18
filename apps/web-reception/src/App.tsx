@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { Attribute, Category } from "@casacarlos/contracts";
+import type { Category } from "@casacarlos/contracts";
 import { useAuth } from "./hooks/useAuth.js";
 import { useBoard } from "./hooks/useBoard.js";
 import { useTheme } from "./hooks/useTheme.js";
@@ -14,6 +14,7 @@ import { ReservationsModule } from "./modules/ReservationsModule.js";
 import { CashboxModule } from "./modules/CashboxModule.js";
 import { InventoryModule } from "./modules/InventoryModule.js";
 import { CategoriesModule } from "./modules/CategoriesModule.js";
+import { RoomsModule } from "./modules/RoomsModule.js";
 import { ComprobantesModule } from "./modules/ComprobantesModule.js";
 import { DashboardModule } from "./modules/DashboardModule.js";
 import { NotificationsModule } from "./modules/NotificationsModule.js";
@@ -24,14 +25,15 @@ export default function App() {
   const { segment, param, navigate } = useHashRoute();
   const { theme, toggle } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
   const handledSessionId = useRef<string | null>(null);
   const sawFirstSession = useRef(false);
 
+  const reloadCategories = () => api.categories().then(setCategories);
+
   useEffect(() => {
     if (!user) return;
-    api.categories().then(setCategories);
-    api.attributes().then(setAttributes);
+    reloadCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Una sesión de kiosco nueva trae al recepcionista al módulo de venta: es la
@@ -72,7 +74,7 @@ export default function App() {
       case "cuarto":
         return <RoomDetailModule roomId={param} floors={floors} onBack={() => navigate("/tablero")} />;
       case "venta":
-        return <SaleModule floors={floors} categories={categories} attributes={attributes} session={kioskSession} onDone={() => navigate("/tablero")} />;
+        return <SaleModule floors={floors} categories={categories} session={kioskSession} onDone={() => navigate("/tablero")} />;
       case "reservas":
         return <ReservationsModule floors={floors} />;
       case "caja":
@@ -81,6 +83,8 @@ export default function App() {
         return <InventoryModule onManageCategories={() => navigate("/categorias")} />;
       case "categorias":
         return <CategoriesModule />;
+      case "cuartos-admin":
+        return <RoomsModule floors={floors} onCatalogChanged={reloadCategories} />;
       case "comprobantes":
         return <ComprobantesModule />;
       case "dashboard":
@@ -92,7 +96,6 @@ export default function App() {
           <BoardModule
             floors={floors}
             categories={categories}
-            attributes={attributes}
             onSelectRoom={(entry) => (entry.estado === "DISPONIBLE" ? navigate("/venta") : navigate(`/cuarto/${entry.room.id}`))}
             onNewSale={() => navigate("/venta")}
           />

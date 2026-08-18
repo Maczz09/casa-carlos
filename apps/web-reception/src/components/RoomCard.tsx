@@ -7,11 +7,11 @@ import { cx } from "./ui.js";
 interface Props {
   entry: RoomBoardEntry;
   beds: number;
-  hasFan: boolean;
+  fans: number;
   onClick: (entry: RoomBoardEntry) => void;
 }
 
-export function RoomCard({ entry, beds, hasFan, onClick }: Props) {
+export function RoomCard({ entry, beds, fans, onClick }: Props) {
   const style = STATUS_STYLE[entry.estado];
   const Icon = style.icon;
   const showsCountdown = entry.estado === "OCUPADO" || entry.estado === "EN_TOLERANCIA" || entry.estado === "EXCEDIDO";
@@ -31,7 +31,7 @@ export function RoomCard({ entry, beds, hasFan, onClick }: Props) {
       <button type="button" onClick={() => clickable && onClick(entry)} disabled={!clickable} className="block w-full text-left disabled:cursor-default">
         <div className="relative bg-inset/60 p-2">
           <div className="aspect-[220/130] transition-transform duration-300 group-hover:scale-[1.03]">
-            <RoomIllustration beds={beds} hasFan={hasFan} floorFill={style.floorFill} muted={style.muted} />
+            <RoomIllustration beds={beds} fans={fans} floorFill={style.floorFill} muted={style.muted} />
           </div>
 
           <span className="absolute left-3 top-3 rounded-lg bg-surface/95 px-2 py-0.5 text-lg font-bold tabular-nums text-ink shadow-sm backdrop-blur-sm">
@@ -57,7 +57,8 @@ export function RoomCard({ entry, beds, hasFan, onClick }: Props) {
             </>
           ) : (
             <p className="text-sm text-subtle">
-              {beds} cama{beds > 1 ? "s" : ""} · {hasFan ? "con ventilador" : "sin ventilador"}
+              {beds} cama{beds > 1 ? "s" : ""}
+              {fans > 0 && ` · ${fans} ventilador${fans > 1 ? "es" : ""}`}
             </p>
           )}
         </div>

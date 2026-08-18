@@ -1,4 +1,4 @@
-import type { Attribute, Category, FloorBoard } from "@casacarlos/contracts";
+import type { Category, FloorBoard } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { RoomIllustration } from "@casacarlos/ui";
 import { Shell } from "./Shell.js";
@@ -6,14 +6,12 @@ import { Shell } from "./Shell.js";
 interface Props {
   floor: FloorBoard;
   categories: Category[];
-  attributes: Attribute[];
   preciosPorCategoria: Record<string, number>;
   onSelect: (cuartoId: string) => void;
   onCancel: () => void;
 }
 
-export function RoomScreen({ floor, categories, attributes, preciosPorCategoria, onSelect, onCancel }: Props) {
-  const fanId = attributes.find((a) => a.nombre.toLowerCase().includes("ventilador"))?.id;
+export function RoomScreen({ floor, categories, preciosPorCategoria, onSelect, onCancel }: Props) {
   const disponibles = floor.rooms.filter((r) => r.estado === "DISPONIBLE");
 
   return (
@@ -26,7 +24,6 @@ export function RoomScreen({ floor, categories, attributes, preciosPorCategoria,
         <div className="stagger grid flex-1 grid-cols-2 gap-6 content-start">
           {disponibles.map((entry, i) => {
             const categoria = categories.find((c) => c.id === entry.room.categoriaId);
-            const hasFan = fanId ? (categoria?.atributoIds.includes(fanId) ?? false) : false;
             const precio = preciosPorCategoria[entry.room.categoriaId];
             return (
               <button
@@ -37,7 +34,7 @@ export function RoomScreen({ floor, categories, attributes, preciosPorCategoria,
               >
                 <div className="bg-inset p-3">
                   <div className="aspect-[220/130]">
-                    <RoomIllustration beds={categoria?.camas ?? 1} hasFan={hasFan} floorFill="var(--room-floor-teal, #F5F1E8)" />
+                    <RoomIllustration beds={categoria?.camas ?? 1} fans={categoria?.ventiladores ?? 0} floorFill="var(--room-floor-teal, #F5F1E8)" />
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-1 p-5">

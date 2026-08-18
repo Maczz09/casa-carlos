@@ -33,6 +33,7 @@ import type {
   ProductMovement,
   ProductState,
   ResolvedRate,
+  Room,
   Sale,
   SaleLine,
   SaleWithLines,
@@ -86,10 +87,28 @@ export const api = {
 
   board: () => get<FloorBoard[]>("/api/rooms/board"),
   floors: () => get<Floor[]>("/api/rooms/floors"),
-  categories: () => get<Category[]>("/api/rooms/categories"),
+  createFloor: (input: { numero: number; nombre: string; orden: number }) => post<Floor>("/api/rooms/floors", input),
   attributes: () => get<Attribute[]>("/api/rooms/attributes"),
+  createAttribute: (nombre: string) => post<Attribute>("/api/rooms/attributes", { nombre }),
   markCleaning: (roomId: string, minutes?: number) => post<unknown>(`/api/rooms/${roomId}/cleaning`, { minutes }),
   finishCleaning: (roomId: string) => post<unknown>(`/api/rooms/${roomId}/cleaning/finish`),
+
+  categories: () => get<Category[]>("/api/rooms/categories"),
+  createRoomCategory: (input: { nombre: string; descripcion?: string | null; camas?: number; ventiladores?: number; atributoIds?: string[] }) =>
+    post<Category>("/api/rooms/categories", input),
+  updateRoomCategory: (
+    id: string,
+    patchBody: { nombre?: string; descripcion?: string | null; camas?: number; ventiladores?: number; atributoIds?: string[]; activo?: boolean },
+  ) => patch<Category>(`/api/rooms/categories/${id}`, patchBody),
+  deleteRoomCategory: (id: string) => del<void>(`/api/rooms/categories/${id}`),
+
+  rooms: () => get<Room[]>("/api/rooms"),
+  allRooms: () => get<Room[]>("/api/rooms/all"),
+  createRoom: (input: { numero: string; pisoId: string; categoriaId: string; descripcion?: string | null; incluye?: string | null }) =>
+    post<Room>("/api/rooms", input),
+  updateRoom: (id: string, patchBody: { numero?: string; pisoId?: string; categoriaId?: string; descripcion?: string | null; incluye?: string | null; activo?: boolean }) =>
+    patch<Room>(`/api/rooms/${id}`, patchBody),
+  deleteRoom: (id: string) => del<void>(`/api/rooms/${id}`),
 
   modalities: () => get<Modality[]>("/api/pricing/modalities"),
   resolveRate: (categoriaId: string, modalidadId: string) =>

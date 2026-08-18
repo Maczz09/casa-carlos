@@ -10,6 +10,8 @@ export type DomainEvents = {
   "room.status_changed": { roomId: string; from: RoomStatus; to: RoomStatus };
   "room.cleaning_started": { roomId: string; until: string };
   "room.cleaning_finished": { roomId: string };
+  /** Cuarto o categoría creado/editado/borrado — no importa cuál, solo que el tablero (WS) tiene que recalcularse. */
+  "room.catalog_changed": Record<string, never>;
 
   "stay.reserved": { stayId: string; roomId: string; from: string; to: string };
   "stay.checked_in": { stayId: string; roomId: string; modalidadId: string; at: string };

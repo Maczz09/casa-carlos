@@ -18,6 +18,15 @@ export const roomsCategorias = sqliteTable("rooms_categorias", {
   nombre: text("nombre").notNull(),
   descripcion: text("descripcion"),
   camas: integer("camas").notNull().default(1),
+  /**
+   * Cantidad de ventiladores — antes se inferia de si la categoria tenia
+   * asignado el atributo "ventilador" (presencia booleana, sin cantidad).
+   * Ahora es la fuente de verdad para el SVG del cuarto (RoomIllustration
+   * dibuja tantos ventiladores como este numero). El atributo genérico
+   * "ventilador" en rooms_atributos queda para otras cosas (filtros, etc.)
+   * pero ya no es lo que decide el dibujo.
+   */
+  ventiladores: integer("ventiladores").notNull().default(0),
   activo: integer("activo", { mode: "boolean" }).notNull().default(true),
 });
 

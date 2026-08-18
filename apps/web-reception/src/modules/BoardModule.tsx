@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { Attribute, Category, FloorBoard, RoomBoardEntry, RoomStatus } from "@casacarlos/contracts";
+import type { Category, FloorBoard, RoomBoardEntry, RoomStatus } from "@casacarlos/contracts";
 import { IconPlus, STATUS_STYLE } from "@casacarlos/ui";
 import { RoomCard } from "../components/RoomCard.js";
 import { Button, Card, EmptyState, PageHeader, Skeleton, cx } from "../components/ui.js";
@@ -7,17 +7,15 @@ import { Button, Card, EmptyState, PageHeader, Skeleton, cx } from "../component
 interface Props {
   floors: FloorBoard[];
   categories: Category[];
-  attributes: Attribute[];
   onSelectRoom: (entry: RoomBoardEntry) => void;
   onNewSale: () => void;
 }
 
 const LEGEND_ORDER: RoomStatus[] = ["DISPONIBLE", "RESERVADO", "OCUPADO", "EN_TOLERANCIA", "EXCEDIDO", "LIMPIEZA", "FUERA_DE_SERVICIO"];
 
-export function BoardModule({ floors, categories, attributes, onSelectRoom, onNewSale }: Props) {
+export function BoardModule({ floors, categories, onSelectRoom, onNewSale }: Props) {
   const [activeFloorId, setActiveFloorId] = useState<string | null>(null);
 
-  const fanAttributeId = useMemo(() => attributes.find((a) => a.nombre.toLowerCase().includes("ventilador"))?.id, [attributes]);
   const categoriesById = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
 
   const active = floors.find((f) => f.floor.id === activeFloorId) ?? floors[0];
@@ -99,10 +97,10 @@ export function BoardModule({ floors, categories, attributes, onSelectRoom, onNe
           {active?.rooms.map((entry, i) => {
             const category = categoriesById.get(entry.room.categoriaId);
             const beds = category?.camas ?? 1;
-            const hasFan = fanAttributeId ? (category?.atributoIds.includes(fanAttributeId) ?? false) : false;
+            const fans = category?.ventiladores ?? 0;
             return (
               <div key={entry.room.id} style={{ ["--i" as string]: i }}>
-                <RoomCard entry={entry} beds={beds} hasFan={hasFan} onClick={onSelectRoom} />
+                <RoomCard entry={entry} beds={beds} fans={fans} onClick={onSelectRoom} />
               </div>
             );
           })}

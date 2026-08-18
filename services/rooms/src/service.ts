@@ -13,6 +13,8 @@ import type {
   RoomsPort,
   RoomStatus,
   StaysPort,
+  UpdateCategoryInput,
+  UpdateRoomInput,
 } from "@casacarlos/contracts";
 import type { EventBus } from "@casacarlos/bus";
 import { RoomsRepo } from "./repo.js";
@@ -39,7 +41,9 @@ export class RoomsService implements RoomsPort {
   }
 
   async createFloor(input: CreateFloorInput): Promise<Floor> {
-    return this.repo.insertFloor({ id: newId(), numero: input.numero, nombre: input.nombre, orden: input.orden, activo: true });
+    const floor = await this.repo.insertFloor({ id: newId(), numero: input.numero, nombre: input.nombre, orden: input.orden, activo: true });
+    await this.bus.publish("room.catalog_changed", {});
+    return floor;
   }
 
   async listFloors(): Promise<Floor[]> {
@@ -55,10 +59,42 @@ export class RoomsService implements RoomsPort {
   }
 
   async createCategory(input: CreateCategoryInput): Promise<Category> {
-    return this.repo.insertCategory(
-      { id: newId(), nombre: input.nombre, descripcion: input.descripcion ?? null, camas: input.camas ?? 1, activo: true },
+    const category = await this.repo.insertCategory(
+      { id: newId(), nombre: input.nombre, descripcion: input.descripcion ?? null, camas: input.camas ?? 1, ventiladores: input.ventiladores ?? 0, activo: true },
       input.atributoIds ?? [],
     );
+    await this.bus.publish("room.catalog_changed", {});
+    return category;
+  }
+
+  async updateCategory(id: string, patch: UpdateCategoryInput): Promise<Category> {
+    const current = await this.repo.getCategory(id);
+    if (!current) throw new Error(`Categoría ${id} no encontrada.`);
+    const updated = await this.repo.updateCategory(
+      id,
+      {
+        ...(patch.nombre !== undefined ? { nombre: patch.nombre } : {}),
+        ...(patch.descripcion !== undefined ? { descripcion: patch.descripcion } : {}),
+        ...(patch.camas !== undefined ? { camas: patch.camas } : {}),
+        ...(patch.ventiladores !== undefined ? { ventiladores: patch.ventiladores } : {}),
+        ...(patch.activo !== undefined ? { activo: patch.activo } : {}),
+      },
+      patch.atributoIds,
+    );
+    // Cambiar camas/ventiladores no toca ningún cuarto, pero SÍ cambia lo que
+    // se dibuja para todos los cuartos de esta categoría — el tablero tiene
+    // que recalcularse igual que si hubiera cambiado un cuarto en sí.
+    await this.bus.publish("room.catalog_changed", {});
+    return updated;
+  }
+
+  async deleteCategory(id: string): Promise<void> {
+    const current = await this.repo.getCategory(id);
+    if (!current) throw new Error(`Categoría ${id} no encontrada.`);
+    const enUso = await this.repo.countRoomsInCategory(id);
+    if (enUso > 0) throw new Error(`No se puede borrar: ${enUso} cuarto${enUso === 1 ? "" : "s"} usa${enUso === 1 ? "" : "n"} esta categoría.`);
+    await this.repo.deleteCategory(id);
+    await this.bus.publish("room.catalog_changed", {});
   }
 
   async listCategories(): Promise<Category[]> {
@@ -66,7 +102,7 @@ export class RoomsService implements RoomsPort {
   }
 
   async createRoom(input: CreateRoomInput): Promise<Room> {
-    return this.repo.insertRoom({
+    const room = await this.repo.insertRoom({
       id: newId(),
       numero: input.numero,
       pisoId: input.pisoId,
@@ -79,6 +115,28 @@ export class RoomsService implements RoomsPort {
       activo: true,
       creadoEn: new Date().toISOString(),
     });
+    await this.bus.publish("room.catalog_changed", {});
+    return room;
+  }
+
+  async updateRoom(id: string, patch: UpdateRoomInput): Promise<Room> {
+    const updated = await this.repo.updateRoom(id, {
+      ...(patch.numero !== undefined ? { numero: patch.numero } : {}),
+      ...(patch.pisoId !== undefined ? { pisoId: patch.pisoId } : {}),
+      ...(patch.categoriaId !== undefined ? { categoriaId: patch.categoriaId } : {}),
+      ...(patch.descripcion !== undefined ? { descripcion: patch.descripcion } : {}),
+      ...(patch.incluye !== undefined ? { incluye: patch.incluye } : {}),
+      ...(patch.activo !== undefined ? { activo: patch.activo } : {}),
+    });
+    await this.bus.publish("room.catalog_changed", {});
+    return updated;
+  }
+
+  async deleteRoom(id: string): Promise<void> {
+    const activeStay = await this.getStaysPort().getActiveStay(id);
+    if (activeStay) throw new Error("No se puede dar de baja un cuarto con una estadía activa — hacé el check-out primero.");
+    await this.repo.updateRoom(id, { activo: false });
+    await this.bus.publish("room.catalog_changed", {});
   }
 
   async getRoom(id: string): Promise<Room> {
@@ -89,6 +147,10 @@ export class RoomsService implements RoomsPort {
 
   async listRooms(): Promise<Room[]> {
     return this.repo.listRooms();
+  }
+
+  async listAllRooms(): Promise<Room[]> {
+    return this.repo.listAllRooms();
   }
 
   async getRoomStatus(roomId: string): Promise<RoomStatus> {

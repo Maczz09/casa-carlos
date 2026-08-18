@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Attribute, Category, CollectionAccount, KioskProduct } from "@casacarlos/contracts";
+import type { Category, CollectionAccount, KioskProduct } from "@casacarlos/contracts";
 import { api } from "./api.js";
 import { useKioskState } from "./hooks/useKioskState.js";
 import { useInactivityReset } from "./hooks/useInactivityReset.js";
@@ -17,14 +17,12 @@ export default function App() {
   const { floors, session, connected } = useKioskState();
   const { theme, toggle } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
   const [products, setProducts] = useState<KioskProduct[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api.categories().then(setCategories);
-    api.attributes().then(setAttributes);
     api.collectionAccounts().then(setCollectionAccounts);
     api.products().then(setProducts);
   }, []);
@@ -48,7 +46,6 @@ export default function App() {
         <RoomScreen
           floor={floor}
           categories={categories}
-          attributes={attributes}
           preciosPorCategoria={session.preciosPorCategoria}
           onCancel={cancel}
           onSelect={(cuartoId) => void api.selectRoom(cuartoId)}

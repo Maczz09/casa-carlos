@@ -1,14 +1,15 @@
 interface RoomIllustrationProps {
   beds: number;
-  hasFan: boolean;
+  /** Cantidad de ventiladores — no un booleano de "tiene o no tiene", el SVG dibuja tantos como este número. */
+  fans: number;
   floorFill: string;
   muted?: boolean;
 }
 
 /*
  * Cada color es un `var()` con el valor original como fallback: las apps que
- * definen tokens de tema (recepción) obtienen una versión clara/oscura, y las
- * que no (el kiosco) siguen viéndose exactamente igual que antes.
+ * definen tokens de tema (recepción, kiosco) obtienen una versión clara/oscura,
+ * y cualquier consumidor futuro que no defina tokens sigue viéndose igual.
  */
 const WALL = "var(--room-wall, #78716C)";
 const BED = "var(--room-bed, #FFFFFF)";
@@ -19,6 +20,11 @@ const WOOD = "var(--room-wood, #D9C9A8)";
 const LAMP = "var(--room-lamp, #F3E7C9)";
 const FAN_HUB = "var(--room-fan-hub, #A8A29E)";
 const FAN_BLADE = "var(--room-fan-blade, #D6D3D1)";
+
+/** Franja del techo reservada para los ventiladores — separada del área de camas para que nunca se pisen sin importar cuántas haya de cada uno. */
+const CEILING = { top: 10, bottom: 34, left: 18, right: 202 };
+const FLOOR_AREA = { top: 38, bottom: 124, left: 14, right: 206 };
+const MAX_BEDS_PER_ROW = 3;
 
 function Fan({ cx, cy, scale = 1 }: { cx: number; cy: number; scale?: number }) {
   const bladeLen = 13 * scale;
@@ -45,50 +51,102 @@ function Fan({ cx, cy, scale = 1 }: { cx: number; cy: number; scale?: number }) 
   );
 }
 
-/** Cabecera de la cama — el detalle que hace que se lea como plano y no como una caja. */
-function Headboard({ x, y, width }: { x: number; y: number; width: number }) {
-  return <rect x={x} y={y} width={width} height={7} rx={3.5} fill={WOOD} stroke={LINEN} strokeWidth={1.1} />;
-}
-
-function SingleBed() {
+/** N ventiladores repartidos en la franja del techo — se van achicando para que quepan sin superponerse. */
+function FansRow({ count }: { count: number }) {
+  if (count <= 0) return null;
+  const width = CEILING.right - CEILING.left;
+  const cy = (CEILING.top + CEILING.bottom) / 2;
+  const scale = Math.max(0.32, Math.min(0.6, 0.6 - (count - 1) * 0.06));
   return (
     <g>
-      <Headboard x={26} y={14} width={100} />
-      <rect x={26} y={20} width={100} height={78} rx={10} fill={BED} stroke={BED_STROKE} strokeWidth={2} />
-      <rect x={34} y={28} width={38} height={22} rx={8} fill={PILLOW} stroke={LINEN} strokeWidth={1} />
-      <rect x={78} y={28} width={38} height={22} rx={8} fill={PILLOW} stroke={LINEN} strokeWidth={1} />
-      {/* Doblez de la sábana */}
-      <path d="M26,62 H126" stroke={LINEN} strokeWidth={1.2} opacity={0.55} />
-      <path d="M36,80 Q76,70 116,80" stroke={LINEN} strokeWidth={1.5} fill="none" opacity={0.7} />
+      {Array.from({ length: count }, (_, i) => {
+        const cx = CEILING.left + width * ((i + 0.5) / count);
+        return <Fan key={i} cx={cx} cy={cy} scale={scale} />;
+      })}
     </g>
   );
 }
 
-function TwinBeds() {
+/** Una cama a medida — cabecera + colchón + almohada(s) + doblez de sábana, todo proporcional al ancho que le toca. */
+function Bed({ x, y, width, height }: { x: number; y: number; width: number; height: number }) {
+  const headboardH = Math.max(5, height * 0.09);
+  const pillowW = Math.min(width * 0.42, 40);
+  const pillowH = Math.min(height * 0.28, 24);
+  const twoPillows = width >= 70;
   return (
     <g>
-      <Headboard x={18} y={14} width={76} />
-      <rect x={18} y={20} width={76} height={70} rx={10} fill={BED} stroke={BED_STROKE} strokeWidth={2} />
-      <rect x={26} y={28} width={60} height={20} rx={8} fill={PILLOW} stroke={LINEN} strokeWidth={1} />
-      <path d="M18,58 H94" stroke={LINEN} strokeWidth={1.2} opacity={0.55} />
-      <path d="M26,76 Q56,68 86,76" stroke={LINEN} strokeWidth={1.5} fill="none" opacity={0.7} />
+      <rect x={x} y={y - headboardH} width={width} height={headboardH} rx={headboardH / 2} fill={WOOD} stroke={LINEN} strokeWidth={1.1} />
+      <rect x={x} y={y} width={width} height={height} rx={Math.min(10, width * 0.09)} fill={BED} stroke={BED_STROKE} strokeWidth={2} />
+      {twoPillows ? (
+        <>
+          <rect x={x + width * 0.08} y={y + height * 0.1} width={pillowW} height={pillowH} rx={pillowH / 2.5} fill={PILLOW} stroke={LINEN} strokeWidth={1} />
+          <rect x={x + width - pillowW - width * 0.08} y={y + height * 0.1} width={pillowW} height={pillowH} rx={pillowH / 2.5} fill={PILLOW} stroke={LINEN} strokeWidth={1} />
+        </>
+      ) : (
+        <rect x={x + (width - pillowW) / 2} y={y + height * 0.1} width={pillowW} height={pillowH} rx={pillowH / 2.5} fill={PILLOW} stroke={LINEN} strokeWidth={1} />
+      )}
+      <path d={`M${x + width * 0.06},${y + height * 0.62} Q${x + width / 2},${y + height * 0.5} ${x + width * 0.94},${y + height * 0.62}`} stroke={LINEN} strokeWidth={1.4} fill="none" opacity={0.7} />
+    </g>
+  );
+}
 
-      <Headboard x={126} y={14} width={76} />
-      <rect x={126} y={20} width={76} height={70} rx={10} fill={BED} stroke={BED_STROKE} strokeWidth={2} />
-      <rect x={134} y={28} width={60} height={20} rx={8} fill={PILLOW} stroke={LINEN} strokeWidth={1} />
-      <path d="M126,58 H202" stroke={LINEN} strokeWidth={1.2} opacity={0.55} />
-      <path d="M134,76 Q164,68 194,76" stroke={LINEN} strokeWidth={1.5} fill="none" opacity={0.7} />
+/** Reparte N camas en una o dos filas dentro del área disponible, sin superponerse sin importar cuántas sean. */
+function BedsGrid({ count }: { count: number }) {
+  const n = Math.max(1, count);
+  const rows = n > MAX_BEDS_PER_ROW ? 2 : 1;
+  const perRow = Math.ceil(n / rows);
+  const gap = 8;
+  const rowGap = 10;
+  const rowHeight = (FLOOR_AREA.bottom - FLOOR_AREA.top - (rows - 1) * rowGap) / rows;
+  const totalWidth = FLOOR_AREA.right - FLOOR_AREA.left;
+
+  const beds: { x: number; y: number; width: number; height: number }[] = [];
+  let remaining = n;
+  for (let row = 0; row < rows; row++) {
+    const inRow = Math.min(perRow, remaining);
+    remaining -= inRow;
+    const bedWidth = (totalWidth - (inRow - 1) * gap) / inRow;
+    for (let i = 0; i < inRow; i++) {
+      beds.push({
+        x: FLOOR_AREA.left + i * (bedWidth + gap),
+        y: FLOOR_AREA.top + row * (rowHeight + rowGap) + rowHeight * 0.1,
+        width: bedWidth,
+        height: rowHeight * 0.82,
+      });
+    }
+  }
+
+  return (
+    <g>
+      {beds.map((b, i) => (
+        <Bed key={i} {...b} />
+      ))}
+    </g>
+  );
+}
+
+/** Velador con lámpara — solo cuando hay espacio real para no amontonar cuartos con muchas camas. */
+function Nightstand({ x, y, size }: { x: number; y: number; size: number }) {
+  return (
+    <g>
+      <rect x={x} y={y} width={size} height={size} rx={size * 0.16} fill={WOOD} stroke={LINEN} strokeWidth={1.3} />
+      <circle cx={x + size / 2} cy={y + size * 0.28} r={size * 0.26} fill={LAMP} stroke={LINEN} strokeWidth={1.2} />
+      <circle cx={x + size / 2} cy={y + size * 0.28} r={size * 0.06} fill={LINEN} />
     </g>
   );
 }
 
 /**
- * Plano del cuarto visto desde arriba: cama(s) según `beds`, velador con lámpara,
- * ventilador de techo solo si `hasFan`, y el arco de la puerta abajo a la izquierda.
- * Un recepcionista o un huésped tiene que poder ver de un vistazo qué tiene el
- * cuarto, no solo si está libre. Compartido entre web-reception y web-kiosk.
+ * Plano del cuarto visto desde arriba, totalmente dinámico: `beds` camas
+ * repartidas en el piso sin superponerse, `fans` ventiladores en la franja
+ * del techo — ambos números vienen de la categoría del cuarto, no hay casos
+ * fijos para 1 o 2. Compartido entre web-reception y web-kiosk.
  */
-export function RoomIllustration({ beds, hasFan, floorFill, muted }: RoomIllustrationProps) {
+export function RoomIllustration({ beds, fans, floorFill, muted }: RoomIllustrationProps) {
+  const bedCount = Math.max(1, Math.round(beds));
+  const fanCount = Math.max(0, Math.round(fans));
+  const showNightstand = bedCount <= 3;
+
   return (
     <svg
       viewBox="0 0 220 130"
@@ -98,21 +156,9 @@ export function RoomIllustration({ beds, hasFan, floorFill, muted }: RoomIllustr
     >
       <rect x={6} y={6} width={208} height={118} rx={16} fill={floorFill} stroke={WALL} strokeWidth={2} />
 
-      {beds >= 2 ? <TwinBeds /> : <SingleBed />}
-
-      {beds >= 2 ? (
-        <g>
-          <rect x={100} y={38} width={22} height={22} rx={4} fill={WOOD} stroke={LINEN} strokeWidth={1.3} />
-          <circle cx={111} cy={45} r={6.5} fill={LAMP} stroke={LINEN} strokeWidth={1.2} />
-          <circle cx={111} cy={45} r={1.5} fill={LINEN} />
-        </g>
-      ) : (
-        <g>
-          <rect x={136} y={36} width={26} height={26} rx={4} fill={WOOD} stroke={LINEN} strokeWidth={1.3} />
-          <circle cx={149} cy={43} r={7} fill={LAMP} stroke={LINEN} strokeWidth={1.2} />
-          <circle cx={149} cy={43} r={1.6} fill={LINEN} />
-        </g>
-      )}
+      <FansRow count={fanCount} />
+      <BedsGrid count={bedCount} />
+      {showNightstand && <Nightstand x={FLOOR_AREA.right - 24} y={FLOOR_AREA.bottom - 26} size={22} />}
 
       {/* Puerta: hueco en la pared + arco de apertura */}
       <g opacity={0.75}>
@@ -120,8 +166,6 @@ export function RoomIllustration({ beds, hasFan, floorFill, muted }: RoomIllustr
         <path d="M14,100 A24,24 0 0 1 38,124" fill="none" stroke={LINEN} strokeWidth={1.3} strokeDasharray="3 3" />
         <path d="M14,100 V124" stroke={LINEN} strokeWidth={1.6} />
       </g>
-
-      {hasFan && <Fan cx={beds >= 2 ? 110 : 188} cy={beds >= 2 ? 108 : 28} scale={beds >= 2 ? 0.85 : 0.95} />}
     </svg>
   );
 }

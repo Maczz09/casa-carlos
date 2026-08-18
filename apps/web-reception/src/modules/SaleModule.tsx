@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Attribute, Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails, SaleWithLines } from "@casacarlos/contracts";
+import type { Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails, SaleWithLines } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { IconCheck, RoomIllustration } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
@@ -9,7 +9,6 @@ import { Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Sectio
 interface Props {
   floors: FloorBoard[];
   categories: Category[];
-  attributes: Attribute[];
   session: KioskSession | null;
   onDone: () => void;
 }
@@ -60,7 +59,7 @@ function Stepper({ current }: { current: number }) {
   );
 }
 
-export function SaleModule({ floors, categories, attributes, session, onDone }: Props) {
+export function SaleModule({ floors, categories, session, onDone }: Props) {
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [modalidadId, setModalidadId] = useState("");
   const [bloques, setBloques] = useState(1);
@@ -184,7 +183,6 @@ export function SaleModule({ floors, categories, attributes, session, onDone }: 
   /* ---------- Paso 2: piso / cuarto ---------- */
   if (session.estado === "SELECCION_PISO" || session.estado === "SELECCION_CUARTO") {
     const active = floors.find((f) => f.floor.id === session.pisoId) ?? floors[0];
-    const fanId = attributes.find((a) => a.nombre.toLowerCase().includes("ventilador"))?.id;
 
     return (
       <>
@@ -229,7 +227,6 @@ export function SaleModule({ floors, categories, attributes, session, onDone }: 
                 .filter((r) => r.estado === "DISPONIBLE")
                 .map((entry, i) => {
                   const categoria = categories.find((c) => c.id === entry.room.categoriaId);
-                  const hasFan = fanId ? (categoria?.atributoIds.includes(fanId) ?? false) : false;
                   const precio = session.preciosPorCategoria[entry.room.categoriaId];
                   return (
                     <button
@@ -250,7 +247,7 @@ export function SaleModule({ floors, categories, attributes, session, onDone }: 
                       className="overflow-hidden rounded-2xl border border-line bg-surface text-left transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:shadow-[var(--shadow-pop)]"
                     >
                       <div className="aspect-[220/130] bg-inset/60 p-1.5">
-                        <RoomIllustration beds={categoria?.camas ?? 1} hasFan={hasFan} floorFill="var(--room-floor-teal)" />
+                        <RoomIllustration beds={categoria?.camas ?? 1} fans={categoria?.ventiladores ?? 0} floorFill="var(--room-floor-teal)" />
                       </div>
                       <div className="flex items-center justify-between px-3 py-2.5">
                         <span className="font-semibold text-ink">{entry.room.numero}</span>

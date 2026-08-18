@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import type { User } from "@casacarlos/contracts";
 import {
+  IconBed,
   IconBell,
   IconBox,
   IconCalendar,
@@ -49,6 +50,7 @@ export const NAV: NavGroup[] = [
       { id: "caja", label: "Caja", icon: <IconCash className={ICON} /> },
       { id: "bodega", label: "Bodega", icon: <IconBox className={ICON} /> },
       { id: "categorias", label: "Categorías", icon: <IconTag className={ICON} /> },
+      { id: "cuartos-admin", label: "Cuartos", icon: <IconBed className={ICON} />, adminOnly: true },
       { id: "comprobantes", label: "Comprobantes", icon: <IconReceipt className={ICON} />, adminOnly: true },
     ],
   },
