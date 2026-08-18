@@ -14,7 +14,8 @@ const path = require("node:path");
 const { Service } = require("node-windows");
 
 const ROOT = path.resolve(__dirname, "../..");
-const SCRIPT = path.join(ROOT, "apps/server/src/index.ts");
+const SERVER_DIR = path.join(ROOT, "apps/server");
+const SCRIPT = path.join(SERVER_DIR, "src/index.ts");
 const EXEC_PATH = path.join(ROOT, "vendor/node-win-x64/node.exe");
 
 const svc = new Service({
@@ -23,7 +24,17 @@ const svc = new Service({
   script: SCRIPT,
   execPath: EXEC_PATH,
   nodeOptions: ["--import", "tsx"],
-  workingDirectory: ROOT,
+  // Tiene que ser apps/server, NO la raíz del repo: `--import tsx` resuelve
+  // el specifier "tsx" como si el import viniera del cwd del proceso, y con
+  // pnpm (node_modules aislado, no todo hoisteado a la raíz) `tsx` solo es
+  // resoluble desde apps/server/node_modules — ahí es donde está declarado
+  // como dependencia. Con cwd=ROOT esto falla con
+  // "Cannot find package 'tsx' imported from <ROOT>" — confirmado en vivo
+  // instalando el servicio (apps/server/src/daemon/casacarlos.err.log), no
+  // es una suposición. `apps/server/src/index.ts` ya resuelve `.env`/`data/`
+  // por la ubicación real del archivo (import.meta.url), no por cwd, así
+  // que cambiar esto no rompe nada de eso.
+  workingDirectory: SERVER_DIR,
   env: [{ name: "NODE_ENV", value: "production" }],
 });
 
