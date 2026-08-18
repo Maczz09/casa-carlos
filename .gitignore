@@ -17,3 +17,5 @@ vendor/
 # Generado por node-windows/winsw al instalar el servicio (scripts/service/install-service.cjs) —
 # binario + config con rutas absolutas de esta máquina, se regenera en cada instalación.
 apps/server/src/daemon/
+# El .exe compilado del instalador — se regenera con ISCC, no hace falta versionarlo.
+installer/output/

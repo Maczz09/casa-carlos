@@ -16,11 +16,15 @@
 ; ver docs/ARQUITECTURA.md §3). Corre el código TypeScript tal cual, vía
 ; `tsx` como loader — el mismo mecanismo que ya usa `pnpm run dev`/`start`.
 ;
-; NOTA PARA QUIEN COMPILE ESTO: todavía no se probó de punta a punta (compilar
-; con ISCC + correr el instalador) porque hizo falta elevación de administrador
-; que no estaba disponible en la sesión donde se escribió. Antes de repartirlo
-; al cliente, correrlo contra una carpeta de prueba y confirmar cada paso —
-; ver la sección de Verificación en el plan de F6.
+; NOTA PARA QUIEN COMPILE ESTO: compila limpio (ISCC, sin warnings) y ya se
+; encontró y arregló un bug real de compilación (.env real quedaba
+; empaquetado adentro del instalador — ver el comentario en [Files] abajo).
+; Lo que todavía falta probar es CORRER el CasaCarlos-Setup.exe resultante
+; contra una carpeta limpia y confirmar que el asistente + pnpm install +
+; build + registro del servicio funcionan igual de bien empaquetados que
+; corridos a mano (que es como se verificó cada pieza por separado). Antes
+; de repartirlo al cliente, hacer esa prueba — ver la sección de
+; Verificación en el plan de F6.
 
 #define AppName "Casa Carlos"
 #define AppVersion "1.0"
@@ -50,13 +54,22 @@ WizardStyle=modern
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Files]
-; Todo el monorepo fuente, menos lo que no hace falta o se regenera solo:
-; node_modules (se reinstala en destino), .git (no aplica a una instalación),
-; datos de desarrollo (nunca deberían viajar al cliente), dist/ de los
-; frontends (se reconstruye en destino), y el propio `vendor/` de la
-; máquina de build (el Node portátil se agrega aparte, explícito, abajo —
-; evita arrastrar cualquier otra cosa que haya quedado en esa carpeta).
-Source: "..\*"; DestDir: "{app}"; Excludes: "node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,dist,vendor,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
+; Todo el monorepo fuente, menos lo que no hace falta, se regenera solo, o
+; NUNCA debería viajar en un instalador:
+;   - .env: son los secretos reales de ESTA máquina de desarrollo (RUC,
+;     credenciales SOL, etc.) — el asistente arma uno nuevo para el cliente,
+;     jamás el nuestro. Excluirlo acá no es opcional.
+;   - apps\server\src\daemon: lo genera node-windows/winsw al instalar el
+;     servicio EN ESTA máquina — config con rutas absolutas de acá, y
+;     mientras el servicio está corriendo sus logs quedan abiertos
+;     (bloquea la compilación si no se excluye).
+;   - node_modules (se reinstala en destino), .git (no aplica a una
+;     instalación), datos de desarrollo (nunca deberían viajar al cliente),
+;     dist/ de los frontends (se reconstruye en destino), y el propio
+;     `vendor/` de la máquina de build (el Node portátil se agrega aparte,
+;     explícito, abajo — evita arrastrar cualquier otra cosa que haya
+;     quedado en esa carpeta, como el instalador de Inno Setup descargado).
+Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,dist,vendor,apps\server\src\daemon,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
 
 ; El Node portátil — runtime propio, sin depender de que el cliente lo tenga instalado.
 Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags: recursesubdirs ignoreversion
@@ -98,6 +111,7 @@ Filename: "{app}\vendor\node-win-x64\node.exe"; \
 Filename: "{app}\vendor\node-win-x64\node.exe"; \
   Parameters: "scripts\service\uninstall-service.cjs"; \
   WorkingDir: "{app}"; \
+  RunOnceId: "UninstallCasaCarlosService"; \
   Flags: runhidden waituntilterminated
 
 [UninstallDelete]
@@ -116,11 +130,11 @@ var
 
 procedure InitializeWizard;
 begin
-  { Datos del emisor — los mismos nombres de variable que ya lee
-    configureSunat() en apps/server/src/index.ts. }
+  // Datos del emisor — los mismos nombres de variable que ya lee
+  // configureSunat() en apps/server/src/index.ts.
   SunatPage := CreateInputQueryPage(wpSelectDir,
     'Datos del hotel (SUNAT)', 'Se usan para armar los comprobantes electrónicos',
-    'Podés dejarlos en blanco ahora y completarlos después a mano en {app}\.env — el sistema arranca igual, en modo de prueba (MOCK), sin tocar SUNAT de verdad.');
+    'Podés dejarlos en blanco ahora y completarlos después a mano en el .env de la instalación — el sistema arranca igual, en modo de prueba (MOCK), sin tocar SUNAT de verdad.');
   SunatPage.Add('RUC:', False);
   SunatPage.Add('Razón social:', False);
   SunatPage.Add('Nombre comercial:', False);
@@ -132,7 +146,7 @@ begin
 
   SunatModePage := CreateInputOptionPage(SunatPage.ID,
     'Modo de facturación electrónica', 'Elegí con qué ambiente de SUNAT arranca',
-    'MOCK no toca la red — sirve para probar el sistema sin certificado. Se puede cambiar después en {app}\.env (SUNAT_MODE).',
+    'MOCK no toca la red — sirve para probar el sistema sin certificado. Se puede cambiar después editando el archivo .env de la instalación (SUNAT_MODE).',
     False, False);
   SunatModePage.Add('MOCK — modo de prueba, sin SUNAT real (recomendado para empezar)');
   SunatModePage.Add('BETA — ambiente de pruebas real de SUNAT (necesita certificado)');
@@ -185,15 +199,15 @@ begin
   SetArrayLength(Lines, GetArrayLength(Lines) + 1);
   Lines[GetArrayLength(Lines) - 1] := 'SUNAT_DEPARTAMENTO=' + SunatPage.Values[7];
 
-  { El .pfx y las credenciales SOL/PRODUCCION no se piden en este asistente —
-    son secretos reales del cliente, mejor que los complete a mano en
-    {app}\.env después de instalar (queda documentado en el manual de uso)
-    en vez de que pasen por los logs del instalador. Sí copiamos el archivo
-    del certificado si lo seleccionó, para que quede ubicado y listo. }
+  // El .pfx y las credenciales SOL/PRODUCCION no se piden en este asistente —
+  // son secretos reales del cliente, mejor que los complete a mano en el
+  // .env de la instalación después (queda documentado en el manual de uso)
+  // en vez de que pasen por los logs del instalador. Sí copiamos el archivo
+  // del certificado si lo seleccionó, para que quede ubicado y listo.
   if CertPage.Values[0] <> '' then
   begin
     CertDestPath := ExpandConstant('{app}\data\sunat-cert.pfx');
-    FileCopy(CertPage.Values[0], CertDestPath, False);
+    CopyFile(CertPage.Values[0], CertDestPath, False);
     SetArrayLength(Lines, GetArrayLength(Lines) + 1);
     Lines[GetArrayLength(Lines) - 1] := 'SUNAT_CERT_PATH=' + CertDestPath;
     SetArrayLength(Lines, GetArrayLength(Lines) + 1);
