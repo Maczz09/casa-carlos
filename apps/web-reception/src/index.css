@@ -1,11 +1,328 @@
 @import "tailwindcss";
 
-@theme {
+/*
+ * Sistema de diseño Casa Carlos.
+ *
+ * Todos los colores salen de tokens `--c-*` definidos por tema más abajo, y
+ * `@theme inline` los expone como utilidades de Tailwind (bg-surface, text-muted,
+ * border-line, …). "inline" es importante: hace que la utilidad emita
+ * `var(--c-…)` en vez de resolver el color en tiempo de compilación, que es lo
+ * que permite cambiar de tema en caliente con solo tocar `data-theme` del <html>.
+ */
+@theme inline {
   --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-raised: var(--c-raised);
+  --color-inset: var(--c-inset);
+  --color-line: var(--c-line);
+  --color-line-soft: var(--c-line-soft);
+
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-subtle: var(--c-subtle);
+
+  --color-brand: var(--c-brand);
+  --color-brand-hover: var(--c-brand-hover);
+  --color-brand-ink: var(--c-brand-ink);
+  --color-brand-soft: var(--c-brand-soft);
+
+  --color-danger: var(--c-danger);
+  --color-warn: var(--c-warn);
+  --color-ok: var(--c-ok);
+}
+
+/* ---------- Tema claro ---------- */
+:root {
+  --c-bg: #f4f7fb;
+  --c-surface: #ffffff;
+  --c-raised: #f8fafc;
+  --c-inset: #f1f5f9;
+  --c-line: #e3e9f2;
+  --c-line-soft: #eef2f8;
+
+  --c-ink: #0f1b33;
+  --c-muted: #55637d;
+  --c-subtle: #8c9ab3;
+
+  --c-brand: #0d9488;
+  --c-brand-hover: #0f766e;
+  --c-brand-ink: #ffffff;
+  --c-brand-soft: #e3f5f2;
+
+  --c-danger: #e11d48;
+  --c-warn: #d97706;
+  --c-ok: #059669;
+
+  --shadow-card: 0 1px 2px rgb(15 27 51 / 0.06), 0 8px 24px -12px rgb(15 27 51 / 0.14);
+  --shadow-pop: 0 12px 40px -12px rgb(15 27 51 / 0.28);
+
+  /* Tintes de estado — fondo/texto de las píldoras y del piso de la ilustración */
+  --st-teal-bg: #e0f4f1;
+  --st-teal-fg: #0f766e;
+  --st-violet-bg: #efeafd;
+  --st-violet-fg: #6d28d9;
+  --st-rose-bg: #fde8ed;
+  --st-rose-fg: #be123c;
+  --st-amber-bg: #fdf0dc;
+  --st-amber-fg: #b45309;
+  --st-red-bg: #fce4e4;
+  --st-red-fg: #b91c1c;
+  --st-sky-bg: #e2f1fd;
+  --st-sky-fg: #0369a1;
+  --st-stone-bg: #eeeeef;
+  --st-stone-fg: #57534e;
+
+  /* Ilustración del cuarto */
+  --room-paper: #f7f5f0;
+  --room-wall: #8b8378;
+  --room-bed: #ffffff;
+  --room-bed-stroke: #6b6259;
+  --room-linen: #a89f93;
+  --room-pillow: #f0ebe2;
+  --room-wood: #dcc9a5;
+  --room-lamp: #f7ecd2;
+  --room-fan-hub: #b0aaa3;
+  --room-fan-blade: #dedbd7;
+  --room-floor-teal: #eef7f4;
+  --room-floor-violet: #f3effc;
+  --room-floor-rose: #fdf0f2;
+  --room-floor-amber: #fdf5e8;
+  --room-floor-red: #fceded;
+  --room-floor-sky: #eef4f9;
+  --room-floor-stone: #f0eeec;
+}
+
+/* ---------- Tema oscuro (navy) ---------- */
+[data-theme="dark"] {
+  --c-bg: #080e1c;
+  --c-surface: #101a2f;
+  --c-raised: #16223c;
+  --c-inset: #1b2947;
+  --c-line: #223256;
+  --c-line-soft: #1a2743;
+
+  --c-ink: #e8eef9;
+  --c-muted: #93a3c1;
+  --c-subtle: #64748b;
+
+  --c-brand: #2dd4bf;
+  --c-brand-hover: #5eead4;
+  --c-brand-ink: #04201d;
+  --c-brand-soft: #14312f;
+
+  --c-danger: #fb7185;
+  --c-warn: #fbbf24;
+  --c-ok: #34d399;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -16px rgb(0 0 0 / 0.7);
+  --shadow-pop: 0 20px 50px -16px rgb(0 0 0 / 0.75);
+
+  --st-teal-bg: #10312e;
+  --st-teal-fg: #5eead4;
+  --st-violet-bg: #241d43;
+  --st-violet-fg: #c4b5fd;
+  --st-rose-bg: #3a1526;
+  --st-rose-fg: #fda4af;
+  --st-amber-bg: #37260f;
+  --st-amber-fg: #fcd34d;
+  --st-red-bg: #3a1717;
+  --st-red-fg: #fca5a5;
+  --st-sky-bg: #10283f;
+  --st-sky-fg: #7dd3fc;
+  --st-stone-bg: #232a35;
+  --st-stone-fg: #cbd5e1;
+
+  --room-paper: #16223c;
+  --room-wall: #4a5a7d;
+  --room-bed: #24344f;
+  --room-bed-stroke: #56688c;
+  --room-linen: #4a5a7d;
+  --room-pillow: #33455f;
+  --room-wood: #4a4436;
+  --room-lamp: #6b6141;
+  --room-fan-hub: #4a5a7d;
+  --room-fan-blade: #34455f;
+  --room-floor-teal: #12262b;
+  --room-floor-violet: #1e1d3a;
+  --room-floor-rose: #2c1a29;
+  --room-floor-amber: #2a2418;
+  --room-floor-red: #2b1a20;
+  --room-floor-sky: #14263a;
+  --room-floor-stone: #1c2437;
+}
+
+html {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 body {
-  background-color: #0f172a;
+  background-color: var(--c-bg);
+  color: var(--c-ink);
+  /* El cambio de tema se anima en el body y no en `*` a propósito: animar
+     todos los elementos hace que el hover de cada botón arrastre 200ms. */
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+::selection {
+  background: var(--c-brand);
+  color: var(--c-brand-ink);
+}
+
+/* Scrollbar discreta, coherente con el tema */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--c-line) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--c-line);
+  border-radius: 99px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--c-subtle);
+  background-clip: content-box;
+}
+
+/* ---------- Píldoras de estado ---------- */
+.tone-teal {
+  background: var(--st-teal-bg);
+  color: var(--st-teal-fg);
+}
+.tone-violet {
+  background: var(--st-violet-bg);
+  color: var(--st-violet-fg);
+}
+.tone-rose {
+  background: var(--st-rose-bg);
+  color: var(--st-rose-fg);
+}
+.tone-amber {
+  background: var(--st-amber-bg);
+  color: var(--st-amber-fg);
+}
+.tone-red {
+  background: var(--st-red-bg);
+  color: var(--st-red-fg);
+}
+.tone-sky {
+  background: var(--st-sky-bg);
+  color: var(--st-sky-fg);
+}
+.tone-stone {
+  background: var(--st-stone-bg);
+  color: var(--st-stone-fg);
+}
+
+/* ---------- Animaciones ---------- */
+@keyframes cc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes cc-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cc-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cc-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@keyframes cc-pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--c-danger) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.animate-fade-up {
+  animation: cc-fade-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade {
+  animation: cc-fade 0.28s ease both;
+}
+.animate-slide-left {
+  animation: cc-slide-left 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-pop {
+  animation: cc-pop 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-pulse-ring {
+  animation: cc-pulse-ring 2s ease-out infinite;
+}
+
+/* Entrada escalonada de grillas/listas: --i lo pone el componente por item. */
+.stagger > * {
+  animation: cc-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--c-inset);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--c-surface) 70%, transparent), transparent);
+  animation: cc-shimmer 1.4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /*

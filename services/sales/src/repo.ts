@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, lte } from "drizzle-orm";
 import type { Db } from "@casacarlos/db";
 import { schema } from "@casacarlos/db";
 import type { Sale, SaleLine } from "@casacarlos/contracts";
@@ -69,6 +69,21 @@ export class SalesRepo {
   async listOpen(): Promise<Sale[]> {
     const rows = await this.db.select().from(schema.salesVentas).where(eq(schema.salesVentas.estado, "ABIERTA")).all();
     return rows.map(toSale);
+  }
+
+  /**
+   * Ventas creadas dentro del rango, más nueva primero. `desde`/`hasta` son días
+   * (YYYY-MM-DD) y se comparan contra el ISO completo guardado en `creado_en`:
+   * el ISO-8601 ordena igual como texto que como fecha, así que alcanza con
+   * comparar strings — por eso `hasta` se extiende al final del día.
+   */
+  async listByRange(desde: string, hasta: string): Promise<Sale[]> {
+    const rows = await this.db
+      .select()
+      .from(schema.salesVentas)
+      .where(and(gte(schema.salesVentas.creadoEn, `${desde}T00:00:00.000Z`), lte(schema.salesVentas.creadoEn, `${hasta}T23:59:59.999Z`)))
+      .all();
+    return rows.map(toSale).sort((a, b) => b.creadoEn.localeCompare(a.creadoEn));
   }
 
   async updateSale(id: string, patch: Partial<SaleRow>): Promise<Sale> {

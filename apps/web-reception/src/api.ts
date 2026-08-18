@@ -32,6 +32,7 @@ import type {
   ProductMovement,
   ProductState,
   ResolvedRate,
+  Sale,
   SaleLine,
   SaleWithLines,
   Shift,
@@ -112,6 +113,7 @@ export const api = {
 
   getSale: (id: string) => get<SaleWithLines>(`/api/sales/${id}`),
   getSaleForStay: (stayId: string) => get<SaleWithLines | null>(`/api/sales/for-stay/${stayId}`),
+  salesByRange: (range: { desde: string; hasta: string }) => get<Sale[]>(`/api/sales?desde=${range.desde}&hasta=${range.hasta}`),
   addExtraCharge: (saleId: string, codigo: ChargeCode, cantidad: number) => post<SaleLine>(`/api/sales/${saleId}/extra-charge`, { codigo, cantidad }),
   addProductLine: (saleId: string, productoId: string, cantidad: number) =>
     post<SaleLine>(`/api/sales/${saleId}/product-line`, { productoId, cantidad }),

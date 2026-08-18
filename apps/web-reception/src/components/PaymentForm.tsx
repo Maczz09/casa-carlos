@@ -70,18 +70,18 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between rounded-lg bg-slate-900 px-4 py-3">
-        <span className="text-slate-400">Total a cobrar</span>
-        <span className="text-xl font-semibold text-white">{format(total)}</span>
+      <div className="flex items-center justify-between rounded-lg bg-raised px-4 py-3">
+        <span className="text-muted">Total a cobrar</span>
+        <span className="text-xl font-semibold text-ink">{format(total)}</span>
       </div>
 
       {rows.map((row, idx) => (
-        <div key={idx} className="rounded-lg border border-slate-700 p-3">
+        <div key={idx} className="rounded-lg border border-line p-3">
           <div className="mb-2 flex items-center gap-2">
             <select
               value={row.metodo}
               onChange={(e) => update(idx, { metodo: e.target.value as PaymentMethod })}
-              className="flex-1 rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-white"
+              className="flex-1 rounded-lg border border-line bg-raised px-2 py-1.5 text-ink"
             >
               {Object.entries(METHOD_LABEL).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -95,10 +95,10 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
               value={row.monto}
               onChange={(e) => update(idx, { monto: e.target.value })}
               placeholder="Monto S/"
-              className="w-28 rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-white"
+              className="w-28 rounded-lg border border-line bg-raised px-2 py-1.5 text-ink"
             />
             {rows.length > 1 && (
-              <button onClick={() => removeRow(idx)} className="rounded-md px-2 py-1 text-rose-400 hover:bg-rose-900/30">
+              <button onClick={() => removeRow(idx)} className="rounded-lg px-2 py-1 text-danger hover:bg-danger/10">
                 ✕
               </button>
             )}
@@ -112,10 +112,10 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                 value={row.recibido}
                 onChange={(e) => update(idx, { recibido: e.target.value })}
                 placeholder="Recibido S/ (opcional)"
-                className="w-40 rounded-md border border-slate-600 bg-slate-900 px-2 py-1 text-white"
+                className="w-40 rounded-lg border border-line bg-raised px-2 py-1 text-ink"
               />
               {row.recibido && Number(row.recibido) * 100 >= (amounts[idx] ?? 0) && (
-                <span className="text-slate-400">Vuelto: {format(cents(Math.round(Number(row.recibido) * 100) - (amounts[idx] ?? 0)))}</span>
+                <span className="text-muted">Vuelto: {format(cents(Math.round(Number(row.recibido) * 100) - (amounts[idx] ?? 0)))}</span>
               )}
             </div>
           )}
@@ -125,7 +125,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
               value={row.codigoOperacion}
               onChange={(e) => update(idx, { codigoOperacion: e.target.value })}
               placeholder={row.metodo === "YAPE" ? "Código de 3 dígitos" : "Código de operación"}
-              className="w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
+              className="w-full rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
             />
           )}
 
@@ -135,25 +135,25 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                 value={row.codigoOperacion}
                 onChange={(e) => update(idx, { codigoOperacion: e.target.value })}
                 placeholder="ID de operación"
-                className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                className="rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
               />
               <input
                 value={row.bancoOrigen}
                 onChange={(e) => update(idx, { bancoOrigen: e.target.value })}
                 placeholder="Banco origen"
-                className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                className="rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
               />
               <input
                 value={row.ordenanteNombres}
                 onChange={(e) => update(idx, { ordenanteNombres: e.target.value })}
                 placeholder="Nombres del ordenante"
-                className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                className="rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
               />
               <input
                 value={row.ordenanteApellidos}
                 onChange={(e) => update(idx, { ordenanteApellidos: e.target.value })}
                 placeholder="Apellidos del ordenante"
-                className="rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
+                className="rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
               />
             </div>
           )}
@@ -163,27 +163,27 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
               value={row.codigoOperacion}
               onChange={(e) => update(idx, { codigoOperacion: e.target.value })}
               placeholder="N.º de operación del voucher"
-              className="w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-1.5 text-sm text-white"
+              className="w-full rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
             />
           )}
         </div>
       ))}
 
-      <button onClick={addRow} className="self-start text-sm text-emerald-400 hover:text-emerald-300">
+      <button onClick={addRow} className="self-start text-sm text-brand hover:opacity-80">
         + Combinar con otro método
       </button>
 
       <div className="flex items-center justify-between text-sm">
-        <span className="text-slate-400">Ingresado: {format(entered)}</span>
-        {diff !== 0 && <span className="text-rose-400">Falta {format(diff)}</span>}
+        <span className="text-muted">Ingresado: {format(entered)}</span>
+        {diff !== 0 && <span className="text-danger">Falta {format(diff)}</span>}
       </div>
 
-      {error && <p className="text-sm text-rose-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <button
         onClick={submit}
         disabled={busy || diff !== 0}
-        className="rounded-lg bg-emerald-600 py-2.5 font-medium text-white transition hover:bg-emerald-500 disabled:opacity-50"
+        className="rounded-lg bg-brand py-2.5 font-medium text-brand-ink transition hover:bg-brand-hover disabled:opacity-50"
       >
         {busy ? "Registrando…" : "Registrar pago"}
       </button>

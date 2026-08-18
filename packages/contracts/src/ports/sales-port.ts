@@ -38,6 +38,8 @@ export interface SalesPort {
   getSale(id: string): Promise<SaleWithLines>;
   getSaleForStay(stayId: string): Promise<SaleWithLines | null>;
   listOpenSales(): Promise<Sale[]>;
+  /** Ventas del rango de días (YYYY-MM-DD, inclusive), más nueva primero — historial de caja. */
+  listSalesByRange(desde: string, hasta: string): Promise<Sale[]>;
 
   cancelSale(saleId: string, motivo: string, usuarioId: string): Promise<Sale>;
 }

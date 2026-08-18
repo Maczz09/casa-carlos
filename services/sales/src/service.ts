@@ -191,6 +191,10 @@ export class SalesService implements SalesPort {
     return this.repo.listOpen();
   }
 
+  async listSalesByRange(desde: string, hasta: string): Promise<Sale[]> {
+    return this.repo.listByRange(desde, hasta);
+  }
+
   async cancelSale(saleId: string, motivo: string, usuarioId: string): Promise<Sale> {
     const sale = await this.mustGet(saleId);
     const updated = await this.repo.updateSale(saleId, { estado: "ANULADA", motivoAnulacion: motivo });

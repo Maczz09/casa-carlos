@@ -53,26 +53,26 @@ export function ProductPicker({ onAdd }: Props) {
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Buscar producto o escanear código de barras"
-        className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white"
+        className="rounded-lg border border-line bg-raised px-3 py-2 text-ink"
       />
-      {error && <p className="text-sm text-rose-400">{error}</p>}
-      <div className="max-h-56 overflow-y-auto rounded-lg border border-slate-700">
+      {error && <p className="text-sm text-danger">{error}</p>}
+      <div className="max-h-56 overflow-y-auto rounded-lg border border-line">
         {filtered.length === 0 ? (
-          <p className="p-3 text-sm text-slate-500">Sin resultados.</p>
+          <p className="p-3 text-sm text-subtle">Sin resultados.</p>
         ) : (
           filtered.map((p) => (
-            <div key={p.id} className="flex items-center justify-between border-b border-slate-700 px-3 py-2 last:border-0">
+            <div key={p.id} className="flex items-center justify-between border-b border-line px-3 py-2 last:border-0">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-white">{p.nombre}</p>
-                <p className="text-xs text-slate-500">
+                <p className="truncate text-sm font-medium text-ink">{p.nombre}</p>
+                <p className="text-xs text-subtle">
                   {format(cents(p.precioCentimos))} · stock {p.stock}
-                  {p.stock <= p.stockMinimo && <span className="ml-1 text-amber-400">bajo</span>}
+                  {p.stock <= p.stockMinimo && <span className="ml-1 text-warn">bajo</span>}
                 </p>
               </div>
               <button
                 onClick={() => add(p)}
                 disabled={busyId === p.id || p.stock <= 0}
-                className="rounded-md bg-emerald-600 px-3 py-1 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-40"
+                className="rounded-lg bg-brand px-3 py-1 text-sm font-medium text-brand-ink hover:bg-brand-hover disabled:opacity-40"
               >
                 {p.stock <= 0 ? "Sin stock" : "+ Agregar"}
               </button>

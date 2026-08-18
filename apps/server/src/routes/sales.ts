@@ -9,6 +9,12 @@ export function salesRoutes(services: Services) {
 
     app.get("/api/sales/open", auth, async () => services.sales.listOpenSales());
 
+    app.get<{ Querystring: { desde?: string; hasta?: string } }>("/api/sales", auth, async (request, reply) => {
+      const { desde, hasta } = request.query;
+      if (!desde || !hasta) return reply.code(400).send({ error: "Se requieren los parámetros desde y hasta (YYYY-MM-DD)." });
+      return services.sales.listSalesByRange(desde, hasta);
+    });
+
     app.get<{ Params: { id: string } }>("/api/sales/:id", auth, async (request, reply) => {
       try {
         return await services.sales.getSale(request.params.id);

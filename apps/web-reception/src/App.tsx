@@ -1,33 +1,31 @@
-import { useEffect, useState } from "react";
-import type { Attribute, Category, RoomBoardEntry } from "@casacarlos/contracts";
+import { useEffect, useRef, useState } from "react";
+import type { Attribute, Category } from "@casacarlos/contracts";
 import { useAuth } from "./hooks/useAuth.js";
 import { useBoard } from "./hooks/useBoard.js";
+import { useTheme } from "./hooks/useTheme.js";
+import { useHashRoute } from "./hooks/useHashRoute.js";
 import { api } from "./api.js";
 import { LoginScreen } from "./components/LoginScreen.js";
-import { Board } from "./components/Board.js";
-import { ReceptionKioskPanel } from "./components/ReceptionKioskPanel.js";
-import { RoomDetailDrawer } from "./components/RoomDetailDrawer.js";
-import { CashboxPanel } from "./components/CashboxPanel.js";
-import { ProductCatalog } from "./components/ProductCatalog.js";
-import { DashboardPanel } from "./components/DashboardPanel.js";
-import { NotificationsPanel } from "./components/NotificationsPanel.js";
-import { ComprobantesPagoPanel } from "./components/ComprobantesPagoPanel.js";
-import { ReservationModal } from "./components/ReservationModal.js";
+import { AppShell, NAV_LABEL } from "./components/layout.js";
+import { BoardModule } from "./modules/BoardModule.js";
+import { RoomDetailModule } from "./modules/RoomDetailModule.js";
+import { SaleModule } from "./modules/SaleModule.js";
+import { ReservationsModule } from "./modules/ReservationsModule.js";
+import { CashboxModule } from "./modules/CashboxModule.js";
+import { InventoryModule } from "./modules/InventoryModule.js";
+import { ComprobantesModule } from "./modules/ComprobantesModule.js";
+import { DashboardModule } from "./modules/DashboardModule.js";
+import { NotificationsModule } from "./modules/NotificationsModule.js";
 
 export default function App() {
   const { user, loading, login, loginByPin, logout } = useAuth();
   const { floors, kioskSession, connected } = useBoard(!!user);
-  const [selected, setSelected] = useState<RoomBoardEntry | null>(null);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [dismissedSessionId, setDismissedSessionId] = useState<string | null>(null);
-  const [cashboxOpen, setCashboxOpen] = useState(false);
-  const [catalogOpen, setCatalogOpen] = useState(false);
-  const [dashboardOpen, setDashboardOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [comprobantesPagoOpen, setComprobantesPagoOpen] = useState(false);
-  const [reservationOpen, setReservationOpen] = useState(false);
+  const { segment, param, navigate } = useHashRoute();
+  const { theme, toggle } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const handledSessionId = useRef<string | null>(null);
+  const sawFirstSession = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -35,89 +33,82 @@ export default function App() {
     api.attributes().then(setAttributes);
   }, [user]);
 
+  // Una sesión de kiosco nueva trae al recepcionista al módulo de venta: es la
+  // contraparte de que el cliente ya está operando la otra pantalla. Solo una vez
+  // por sesión, para no secuestrar la navegación si se sale a propósito.
+  //
+  // La sesión que YA estaba viva al abrir la app no redirige: si se entró por un
+  // enlace directo (#/cuarto/…), mandarlo a /venta al recargar pisaría lo que el
+  // usuario pidió ver.
+  useEffect(() => {
+    if (!kioskSession || kioskSession.estado === "ESPERA") return;
+    if (kioskSession.id === handledSessionId.current) return;
+    const isFirst = !sawFirstSession.current;
+    sawFirstSession.current = true;
+    handledSessionId.current = kioskSession.id;
+    if (!isFirst) navigate("/venta");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kioskSession?.id, kioskSession?.estado]);
+
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-900 text-slate-400">Cargando…</div>;
+    return (
+      <div className="grid min-h-screen place-items-center bg-bg">
+        <div className="flex flex-col items-center gap-3">
+          <span className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-brand" />
+          <p className="text-sm text-muted">Cargando…</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!user) {
-    return <LoginScreen onLogin={login} onLoginByPin={loginByPin} />;
-  }
+  if (!user) return <LoginScreen onLogin={login} onLoginByPin={loginByPin} />;
 
-  const showKioskPanel = panelOpen || (kioskSession !== null && kioskSession.estado !== "ESPERA" && kioskSession.id !== dismissedSessionId);
+  const active = segment === "" ? "tablero" : segment === "cuarto" ? "tablero" : segment;
+  const title = segment === "cuarto" ? "Detalle del cuarto" : (NAV_LABEL[active] ?? "Tablero de cuartos");
+
+  const render = () => {
+    switch (segment) {
+      case "cuarto":
+        return <RoomDetailModule roomId={param} floors={floors} onBack={() => navigate("/tablero")} />;
+      case "venta":
+        return <SaleModule floors={floors} categories={categories} attributes={attributes} session={kioskSession} onDone={() => navigate("/tablero")} />;
+      case "reservas":
+        return <ReservationsModule floors={floors} />;
+      case "caja":
+        return <CashboxModule />;
+      case "bodega":
+        return <InventoryModule />;
+      case "comprobantes":
+        return <ComprobantesModule />;
+      case "dashboard":
+        return <DashboardModule />;
+      case "notificaciones":
+        return <NotificationsModule />;
+      default:
+        return (
+          <BoardModule
+            floors={floors}
+            categories={categories}
+            attributes={attributes}
+            onSelectRoom={(entry) => (entry.estado === "DISPONIBLE" ? navigate("/venta") : navigate(`/cuarto/${entry.room.id}`))}
+            onNewSale={() => navigate("/venta")}
+          />
+        );
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <header className="flex items-center justify-between border-b border-slate-800 px-6 py-4">
-        <div>
-          <h1 className="text-lg font-semibold text-white">Casa Carlos</h1>
-          <p className="text-xs text-slate-500">
-            {connected ? <span className="text-emerald-400">● en vivo</span> : <span className="text-amber-400">● reconectando…</span>}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setPanelOpen(true)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500">
-            + Nueva venta
-          </button>
-          <button onClick={() => setReservationOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
-            + Reservar
-          </button>
-          <button onClick={() => setCashboxOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
-            Caja
-          </button>
-          <button onClick={() => setCatalogOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
-            Bodega
-          </button>
-          {user.rol === "ADMIN" && (
-            <>
-              <button onClick={() => setDashboardOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
-                Dashboard
-              </button>
-              <button onClick={() => setNotificationsOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
-                Notificaciones
-              </button>
-              <button onClick={() => setComprobantesPagoOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
-                Comprobantes
-              </button>
-            </>
-          )}
-          <span className="ml-2 text-sm text-slate-300">
-            {user.nombres} {user.apellidos} · {user.rol}
-          </span>
-          <button onClick={logout} className="rounded-lg bg-slate-800 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-700">
-            Salir
-          </button>
-        </div>
-      </header>
-
-      <main className="p-6">
-        <Board
-          floors={floors}
-          categories={categories}
-          attributes={attributes}
-          onSelectRoom={(entry) => (entry.estado === "DISPONIBLE" ? setPanelOpen(true) : setSelected(entry))}
-        />
-      </main>
-
-      {showKioskPanel && (
-        <ReceptionKioskPanel
-          floors={floors}
-          categories={categories}
-          attributes={attributes}
-          session={kioskSession}
-          onClose={() => {
-            setPanelOpen(false);
-            if (kioskSession) setDismissedSessionId(kioskSession.id);
-          }}
-        />
-      )}
-
-      {selected && selected.estado !== "DISPONIBLE" && <RoomDetailDrawer entry={selected} onClose={() => setSelected(null)} />}
-      {cashboxOpen && <CashboxPanel onClose={() => setCashboxOpen(false)} />}
-      {catalogOpen && <ProductCatalog onClose={() => setCatalogOpen(false)} />}
-      {dashboardOpen && <DashboardPanel onClose={() => setDashboardOpen(false)} />}
-      {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
-      {comprobantesPagoOpen && <ComprobantesPagoPanel onClose={() => setComprobantesPagoOpen(false)} />}
-      {reservationOpen && <ReservationModal floors={floors} onClose={() => setReservationOpen(false)} />}
-    </div>
+    <AppShell
+      user={user}
+      active={active}
+      title={title}
+      connected={connected}
+      theme={theme}
+      onToggleTheme={toggle}
+      onNavigate={(id) => navigate(`/${id}`)}
+      onLogout={logout}
+    >
+      {render()}
+    </AppShell>
   );
 }

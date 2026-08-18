@@ -29,24 +29,27 @@ export function DenominationCounter({ value, onChange }: Props) {
   const total = sumDenominaciones(value);
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg bg-slate-900 p-3">
+    <div className="flex flex-col gap-3 rounded-xl border border-line bg-raised p-3">
       <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-        {DENOMINACIONES.map((d) => (
-          <label key={d.centimos} className="flex items-center justify-between gap-2 text-sm text-slate-300">
-            <span>{d.label}</span>
-            <input
-              type="number"
-              min={0}
-              value={value[String(d.centimos)] ?? ""}
-              onChange={(e) => onChange({ ...value, [String(d.centimos)]: Math.max(0, Number(e.target.value) || 0) })}
-              className="w-16 rounded border border-slate-600 bg-slate-800 px-2 py-1 text-right text-white"
-            />
-          </label>
-        ))}
+        {DENOMINACIONES.map((d) => {
+          const count = value[String(d.centimos)] ?? 0;
+          return (
+            <label key={d.centimos} className="flex items-center justify-between gap-2 text-sm">
+              <span className={count > 0 ? "font-medium text-ink" : "text-muted"}>{d.label}</span>
+              <input
+                type="number"
+                min={0}
+                value={value[String(d.centimos)] ?? ""}
+                onChange={(e) => onChange({ ...value, [String(d.centimos)]: Math.max(0, Number(e.target.value) || 0) })}
+                className="w-16 rounded-lg border border-line bg-surface px-2 py-1 text-right text-ink transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+              />
+            </label>
+          );
+        })}
       </div>
-      <div className="flex justify-between border-t border-slate-700 pt-2 text-sm font-medium text-white">
-        <span>Total contado</span>
-        <span>{format(cents(total))}</span>
+      <div className="flex justify-between border-t border-line pt-2 text-sm font-semibold">
+        <span className="text-muted">Total contado</span>
+        <span className="tabular-nums text-ink">{format(cents(total))}</span>
       </div>
     </div>
   );
