@@ -1,0 +1,38 @@
+{
+  "name": "@casacarlos/server",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@casacarlos/billing": "workspace:*",
+    "@casacarlos/bus": "workspace:*",
+    "@casacarlos/cashbox": "workspace:*",
+    "@casacarlos/contracts": "workspace:*",
+    "@casacarlos/db": "workspace:*",
+    "@casacarlos/identity": "workspace:*",
+    "@casacarlos/inventory": "workspace:*",
+    "@casacarlos/money": "workspace:*",
+    "@casacarlos/notifications": "workspace:*",
+    "@casacarlos/payments": "workspace:*",
+    "@casacarlos/pricing": "workspace:*",
+    "@casacarlos/reporting": "workspace:*",
+    "@casacarlos/rooms": "workspace:*",
+    "@casacarlos/sales": "workspace:*",
+    "@casacarlos/scheduler": "workspace:*",
+    "@casacarlos/stays": "workspace:*",
+    "@fastify/websocket": "^11.0.2",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.9.0",
+    "ws": "^8.18.0"
+  }
+}
