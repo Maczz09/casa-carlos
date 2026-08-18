@@ -227,6 +227,32 @@ export function ReceptionKioskPanel({ floors, categories, attributes, session, o
     );
   }
 
+  // ---- Productos — paso opcional, el cliente elige en el kiosco; recepción solo mira y puede saltar por él. ----
+  if (session.estado === "SELECCION_PRODUCTOS") {
+    return (
+      <Modal title="Cliente eligiendo productos" onClose={onClose} busy={busy}>
+        <div className="flex flex-col items-center gap-3 py-4 text-center">
+          <p className="text-sm text-slate-400">El cliente puede agregar productos desde el kiosco, o pasar directo a pagar.</p>
+          <p className="text-2xl font-semibold text-white">{format(cents(session.totalCentimos ?? 0))}</p>
+          <button
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await api.finishKioskProducts();
+              } finally {
+                setBusy(false);
+              }
+            }}
+            className="mt-2 rounded-lg bg-emerald-600 px-6 py-2.5 font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+          >
+            Continuar a pago
+          </button>
+        </div>
+      </Modal>
+    );
+  }
+
   // ---- Selección de pago — el cliente ya vio el total; recepción registra el pago real.
   // PAGO_PENDIENTE aquí es la propuesta del cliente en el kiosco, no un Payment real todavía. ----
   if ((session.estado === "SELECCION_PAGO" || session.estado === "PAGO_PENDIENTE") && !payment) {

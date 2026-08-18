@@ -19,6 +19,16 @@ export const ProductSchema = z.object({
 });
 export type Product = z.infer<typeof ProductSchema>;
 
+/** Vista pública de un producto para el kiosco — sin `costoCentimos`/`stockMinimo` (dato de negocio, no del cliente), mismo criterio que `rooms.getBoard(true)` no serializa datos de huésped. */
+export const KioskProductSchema = z.object({
+  id: z.string(),
+  nombre: z.string(),
+  descripcion: z.string().nullable(),
+  categoria: z.string().nullable(),
+  precioCentimos: z.number().int().nonnegative(),
+});
+export type KioskProduct = z.infer<typeof KioskProductSchema>;
+
 export const MovementTypeSchema = z.enum(["INGRESO", "SALIDA", "AJUSTE", "ANULACION"]);
 export type MovementType = z.infer<typeof MovementTypeSchema>;
 

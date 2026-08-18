@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import type { CashSummary, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import type { Arqueo, CashSummary, Shift, ShiftTemplate } from "@casacarlos/contracts";
 import { cents, format, soles } from "@casacarlos/money";
 import { api, ApiError } from "../api.js";
+import { DenominationCounter, sumDenominaciones } from "./DenominationCounter.js";
 
 interface Props {
   onClose: () => void;
@@ -39,14 +40,18 @@ export function CashboxPanel({ onClose }: Props) {
   const [plantillaId, setPlantillaId] = useState("");
   const [apertura, setApertura] = useState("");
 
-  const [movTipo, setMovTipo] = useState<"INGRESO" | "EGRESO">("INGRESO");
+  const [movTipo, setMovTipo] = useState<"INGRESO" | "EGRESO" | "AJUSTE">("INGRESO");
   const [movMonto, setMovMonto] = useState("");
   const [movMotivo, setMovMotivo] = useState("");
   const [showMovForm, setShowMovForm] = useState(false);
 
   const [closing, setClosing] = useState(false);
-  const [declarado, setDeclarado] = useState("");
+  const [denominacionesCierre, setDenominacionesCierre] = useState<Record<string, number>>({});
   const [justificacion, setJustificacion] = useState("");
+
+  const [arqueando, setArqueando] = useState(false);
+  const [denominacionesArqueo, setDenominacionesArqueo] = useState<Record<string, number>>({});
+  const [arqueos, setArqueos] = useState<Arqueo[]>([]);
 
   const [desde, setDesde] = useState(daysAgoIso(7));
   const [hasta, setHasta] = useState(todayIso());
@@ -56,7 +61,10 @@ export function CashboxPanel({ onClose }: Props) {
   const loadShift = async () => {
     const current = await api.myShift();
     setShift(current);
-    if (current) setSummary(await api.shiftSummary(current.id));
+    if (current) {
+      setSummary(await api.shiftSummary(current.id));
+      setArqueos(await api.arqueos(current.id));
+    }
   };
 
   useEffect(() => {
@@ -110,11 +118,29 @@ export function CashboxPanel({ onClose }: Props) {
     setBusy(true);
     setError(null);
     try {
-      await api.closeShift(shift.id, { efectivoDeclaradoCentimos: soles(Number(declarado) || 0), justificacion: justificacion || null });
+      await api.closeShift(shift.id, { denominaciones: denominacionesCierre, justificacion: justificacion || null });
       setClosing(false);
       await loadShift();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo cerrar el turno.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const loadArqueos = async (turnoId: string) => setArqueos(await api.arqueos(turnoId));
+
+  const registrarArqueo = async () => {
+    if (!shift) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await api.registrarArqueo(shift.id, denominacionesArqueo);
+      setDenominacionesArqueo({});
+      setArqueando(false);
+      await loadArqueos(shift.id);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo registrar el arqueo.");
     } finally {
       setBusy(false);
     }
@@ -235,8 +261,17 @@ export function CashboxPanel({ onClose }: Props) {
                       <button onClick={() => setMovTipo("EGRESO")} className={`flex-1 rounded-md py-1.5 text-sm ${movTipo === "EGRESO" ? "bg-rose-600 text-white" : "bg-slate-800 text-slate-400"}`}>
                         Egreso
                       </button>
+                      <button onClick={() => setMovTipo("AJUSTE")} className={`flex-1 rounded-md py-1.5 text-sm ${movTipo === "AJUSTE" ? "bg-amber-600 text-white" : "bg-slate-800 text-slate-400"}`}>
+                        Ajuste
+                      </button>
                     </div>
-                    <input type="number" placeholder="Monto S/" value={movMonto} onChange={(e) => setMovMonto(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white" />
+                    <input
+                      type="number"
+                      placeholder={movTipo === "AJUSTE" ? "Monto S/ (negativo para restar)" : "Monto S/"}
+                      value={movMonto}
+                      onChange={(e) => setMovMonto(e.target.value)}
+                      className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white"
+                    />
                     <input placeholder="Motivo" value={movMotivo} onChange={(e) => setMovMotivo(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white" />
                     <div className="flex gap-2">
                       <button onClick={() => setShowMovForm(false)} className="flex-1 rounded-lg bg-slate-700 py-2 text-white hover:bg-slate-600">
@@ -249,8 +284,39 @@ export function CashboxPanel({ onClose }: Props) {
                   </div>
                 ) : (
                   <button onClick={() => setShowMovForm(true)} className="rounded-lg bg-slate-700 py-2.5 font-medium text-white hover:bg-slate-600">
-                    + Ingreso / egreso manual
+                    + Ingreso / egreso / ajuste manual
                   </button>
+                )}
+
+                {arqueando ? (
+                  <div className="flex flex-col gap-2 rounded-lg bg-slate-900 p-4">
+                    <p className="text-sm text-slate-400">Conteo de caja sin cerrar el turno — Efectivo esperado: {format(cents(summary.efectivoEsperadoCentimos))}</p>
+                    <DenominationCounter value={denominacionesArqueo} onChange={setDenominacionesArqueo} />
+                    <div className="flex gap-2">
+                      <button onClick={() => setArqueando(false)} className="flex-1 rounded-lg bg-slate-700 py-2 text-white hover:bg-slate-600">
+                        Cancelar
+                      </button>
+                      <button onClick={registrarArqueo} disabled={busy} className="flex-1 rounded-lg bg-sky-600 py-2 text-white hover:bg-sky-500 disabled:opacity-50">
+                        Registrar arqueo
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button onClick={() => setArqueando(true)} className="rounded-lg bg-slate-700 py-2.5 font-medium text-white hover:bg-slate-600">
+                    Arqueo intermedio
+                  </button>
+                )}
+
+                {arqueos.length > 0 && (
+                  <div className="rounded-lg bg-slate-900 p-4 text-sm text-slate-300">
+                    <p className="mb-2 font-medium text-white">Arqueos de este turno</p>
+                    {arqueos.map((a) => (
+                      <div key={a.id} className="flex justify-between">
+                        <span>{new Date(a.creadoEn).toLocaleTimeString("es-PE")}</span>
+                        <span className={a.diferenciaCentimos === 0 ? "text-emerald-400" : "text-amber-400"}>{format(cents(a.diferenciaCentimos))}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 <button onClick={() => setClosing(true)} className="rounded-lg bg-amber-600 py-2.5 font-medium text-white hover:bg-amber-500">
@@ -262,17 +328,10 @@ export function CashboxPanel({ onClose }: Props) {
             {shift && closing && summary && (
               <div className="flex flex-col gap-3">
                 <p className="text-sm text-slate-400">Efectivo esperado: {format(cents(summary.efectivoEsperadoCentimos))}</p>
-                <input
-                  type="number"
-                  autoFocus
-                  placeholder="Efectivo contado S/"
-                  value={declarado}
-                  onChange={(e) => setDeclarado(e.target.value)}
-                  className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white"
-                />
-                {declarado && (
-                  <p className={`text-sm ${soles(Number(declarado)) - summary.efectivoEsperadoCentimos === 0 ? "text-emerald-400" : "text-amber-400"}`}>
-                    Diferencia: {format(cents(soles(Number(declarado)) - summary.efectivoEsperadoCentimos))}
+                <DenominationCounter value={denominacionesCierre} onChange={setDenominacionesCierre} />
+                {Object.keys(denominacionesCierre).length > 0 && (
+                  <p className={`text-sm ${sumDenominaciones(denominacionesCierre) - summary.efectivoEsperadoCentimos === 0 ? "text-emerald-400" : "text-amber-400"}`}>
+                    Diferencia: {format(cents(sumDenominaciones(denominacionesCierre) - summary.efectivoEsperadoCentimos))}
                   </p>
                 )}
                 <textarea
@@ -286,7 +345,7 @@ export function CashboxPanel({ onClose }: Props) {
                   <button onClick={() => setClosing(false)} className="flex-1 rounded-lg bg-slate-700 py-2.5 text-white hover:bg-slate-600">
                     Atrás
                   </button>
-                  <button onClick={closeShift} disabled={busy || !declarado} className="flex-1 rounded-lg bg-amber-600 py-2.5 font-medium text-white hover:bg-amber-500 disabled:opacity-50">
+                  <button onClick={closeShift} disabled={busy} className="flex-1 rounded-lg bg-amber-600 py-2.5 font-medium text-white hover:bg-amber-500 disabled:opacity-50">
                     Confirmar cierre
                   </button>
                 </div>

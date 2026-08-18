@@ -1,4 +1,4 @@
-import type { Comprobante, ComunicacionBaja, IssueNotaInput } from "../entities/billing.js";
+import type { Comprobante, ComprobantePago, ComunicacionBaja, CreateComprobantePagoInput, IssueNotaInput } from "../entities/billing.js";
 import type { DateRange } from "../entities/common.js";
 
 export interface IssueFacturaInput {
@@ -52,4 +52,12 @@ export interface BillingPort {
   issueNotaDebito(comprobanteAfectadoId: string, input: IssueNotaInput, usuarioId: string): Promise<Comprobante>;
   /** Notas ya emitidas contra un comprobante — para mostrarlas junto al comprobante en la UI. */
   listNotasForComprobante(comprobanteAfectadoId: string): Promise<Comprobante[]>;
+
+  /**
+   * "Comprobante de pago" interno — control previo, imprimible, antes de
+   * emitir el comprobante SUNAT real. Un solo borrador vigente por venta.
+   */
+  createComprobantePago(ventaId: string, input: CreateComprobantePagoInput, usuarioId: string): Promise<ComprobantePago>;
+  getComprobantePagoForSale(ventaId: string): Promise<ComprobantePago | null>;
+  listComprobantesPago(range?: DateRange): Promise<ComprobantePago[]>;
 }

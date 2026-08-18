@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import type { Denominaciones } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
 import { requireAuth } from "../auth.js";
 
@@ -39,7 +40,7 @@ export function cashboxRoutes(services: Services) {
       }
     });
 
-    app.post<{ Params: { id: string }; Body: { efectivoDeclaradoCentimos: number; justificacion?: string | null } }>(
+    app.post<{ Params: { id: string }; Body: { denominaciones: Denominaciones; justificacion?: string | null } }>(
       "/api/cashbox/shifts/:id/close",
       auth,
       async (request, reply) => {
@@ -51,7 +52,7 @@ export function cashboxRoutes(services: Services) {
       },
     );
 
-    app.post<{ Params: { id: string }; Body: { tipo: "INGRESO" | "EGRESO"; montoCentimos: number; motivo: string } }>(
+    app.post<{ Params: { id: string }; Body: { tipo: "INGRESO" | "EGRESO" | "AJUSTE"; montoCentimos: number; motivo: string } }>(
       "/api/cashbox/shifts/:id/movements",
       auth,
       async (request, reply) => {
@@ -64,6 +65,16 @@ export function cashboxRoutes(services: Services) {
     );
 
     app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/movements", auth, async (request) => services.cashbox.listMovements(request.params.id));
+
+    app.post<{ Params: { id: string }; Body: { denominaciones: Denominaciones } }>("/api/cashbox/shifts/:id/arqueo", auth, async (request, reply) => {
+      try {
+        return await services.cashbox.registrarArqueo({ turnoId: request.params.id, denominaciones: request.body.denominaciones, usuarioId: request.user!.id });
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/arqueos", auth, async (request) => services.cashbox.listArqueos(request.params.id));
 
     app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/summary", auth, async (request, reply) => {
       try {

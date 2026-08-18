@@ -5,6 +5,7 @@ export const KioskSessionStateSchema = z.enum([
   "SELECCION_PISO",
   "SELECCION_CUARTO",
   "DATOS_CLIENTE",
+  "SELECCION_PRODUCTOS",
   "SELECCION_PAGO",
   "PAGO_PENDIENTE",
   "ACEPTADO",

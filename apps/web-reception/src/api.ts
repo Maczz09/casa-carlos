@@ -1,8 +1,10 @@
 import type {
+  Arqueo,
   AuthResult,
   Attribute,
   CashMovement,
   CashSummary,
+  Denominaciones,
   Category,
   ChargeCode,
   CollectionAccount,
@@ -12,6 +14,9 @@ import type {
   DashboardReport,
   DateRange,
   Floor,
+  ComprobantePago,
+  CreateComprobantePagoInput,
+  CreateReservationInput,
   FloorBoard,
   IssueNotaInput,
   KioskSession,
@@ -97,11 +102,13 @@ export const api = {
   cancelKiosk: (motivo?: string) => post<{ ok: true }>("/api/reception/kiosk/cancel", { motivo }),
   selectKioskFloor: (pisoId: string) => post<KioskSession>("/api/kiosk/select-floor", { pisoId }),
   selectKioskRoom: (cuartoId: string) => post<KioskSession>("/api/kiosk/select-room", { cuartoId }),
+  finishKioskProducts: () => post<KioskSession>("/api/kiosk/finish-products"),
 
   activeStays: () => get<StayWithCustomer[]>("/api/stays/active"),
   getStay: (id: string) => get<StayWithCustomer>(`/api/stays/${id}`),
   cancelStay: (id: string, motivo: string) => post<Stay>(`/api/stays/${id}/cancel`, { motivo }),
   checkInReservation: (id: string) => post<Stay>(`/api/stays/${id}/check-in`),
+  createReservation: (input: Omit<CreateReservationInput, "usuarioId">) => post<Stay>("/api/stays/reservations", input),
 
   getSale: (id: string) => get<SaleWithLines>(`/api/sales/${id}`),
   getSaleForStay: (stayId: string) => get<SaleWithLines | null>(`/api/sales/for-stay/${stayId}`),
@@ -146,13 +153,15 @@ export const api = {
     get<Shift[]>(`/api/cashbox/shifts${range ? `?desde=${range.desde}&hasta=${range.hasta}` : ""}`),
   shift: (id: string) => get<Shift>(`/api/cashbox/shifts/${id}`),
   openShift: (input: { plantillaId?: string | null; aperturaCentimos: number }) => post<Shift>("/api/cashbox/shifts/open", input),
-  closeShift: (id: string, input: { efectivoDeclaradoCentimos: number; justificacion?: string | null }) =>
+  closeShift: (id: string, input: { denominaciones: Denominaciones; justificacion?: string | null }) =>
     post<Shift>(`/api/cashbox/shifts/${id}/close`, input),
-  addCashMovement: (id: string, input: { tipo: "INGRESO" | "EGRESO"; montoCentimos: number; motivo: string }) =>
+  addCashMovement: (id: string, input: { tipo: "INGRESO" | "EGRESO" | "AJUSTE"; montoCentimos: number; motivo: string }) =>
     post<CashMovement>(`/api/cashbox/shifts/${id}/movements`, input),
   shiftMovements: (id: string) => get<CashMovement[]>(`/api/cashbox/shifts/${id}/movements`),
   shiftSummary: (id: string) => get<CashSummary>(`/api/cashbox/shifts/${id}/summary`),
   rangeSummary: (range: { desde: string; hasta: string }) => get<CashSummary>(`/api/cashbox/summary?desde=${range.desde}&hasta=${range.hasta}`),
+  registrarArqueo: (id: string, denominaciones: Denominaciones) => post<Arqueo>(`/api/cashbox/shifts/${id}/arqueo`, { denominaciones }),
+  arqueos: (id: string) => get<Arqueo[]>(`/api/cashbox/shifts/${id}/arqueos`),
 
   // ---- reporting ----
   dashboard: (range: DateRange) => get<DashboardReport>(`/api/reporting/dashboard?desde=${range.desde}&hasta=${range.hasta}`),
@@ -179,6 +188,9 @@ export const api = {
   notasForComprobante: (id: string) => get<Comprobante[]>(`/api/billing/${id}/notas`),
   issueNotaCredito: (comprobanteId: string, input: IssueNotaInput) => post<Comprobante>(`/api/billing/${comprobanteId}/nota-credito`, input),
   issueNotaDebito: (comprobanteId: string, input: IssueNotaInput) => post<Comprobante>(`/api/billing/${comprobanteId}/nota-debito`, input),
+  createComprobantePago: (ventaId: string, input: CreateComprobantePagoInput) => post<ComprobantePago>("/api/billing/comprobante-pago", { ventaId, ...input }),
+  comprobantePagoForSale: (ventaId: string) => get<ComprobantePago | null>(`/api/billing/comprobante-pago/for-sale/${ventaId}`),
+  listComprobantesPago: () => get<ComprobantePago[]>("/api/billing/comprobantes-pago"),
 };
 
 export { ApiError };

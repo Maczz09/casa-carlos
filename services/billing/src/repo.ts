@@ -1,11 +1,25 @@
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import type { Db } from "@casacarlos/db";
 import { schema } from "@casacarlos/db";
-import type { Comprobante, ComprobanteLine, ComunicacionBaja } from "@casacarlos/contracts";
+import type { Comprobante, ComprobanteLine, ComprobantePago, ComunicacionBaja } from "@casacarlos/contracts";
 import { SERIE_BAJA, SERIE_BOLETA, SERIE_FACTURA, SERIE_NOTA_CREDITO_BOLETA, SERIE_NOTA_CREDITO_FACTURA, SERIE_NOTA_DEBITO_BOLETA, SERIE_NOTA_DEBITO_FACTURA } from "./domain/series.js";
 
 type ComprobanteRow = typeof schema.billingComprobantes.$inferSelect;
 type BajaRow = typeof schema.billingBajas.$inferSelect;
+type ComprobantePagoRow = typeof schema.billingComprobantesPago.$inferSelect;
+
+const toComprobantePago = (r: ComprobantePagoRow): ComprobantePago => ({
+  id: r.id,
+  ventaId: r.ventaId,
+  tipo: r.tipo,
+  receptorRuc: r.receptorRuc,
+  receptorRazonSocial: r.receptorRazonSocial,
+  estado: r.estado,
+  comprobanteId: r.comprobanteId,
+  usuarioId: r.usuarioId,
+  creadoEn: r.creadoEn,
+  emitidoEn: r.emitidoEn,
+});
 
 const toComprobante = (r: ComprobanteRow): Comprobante => ({
   id: r.id,
@@ -182,5 +196,38 @@ export class BillingRepo {
     const row = await this.db.select({ xmlBase64: schema.billingBajas.xmlBase64 }).from(schema.billingBajas).where(eq(schema.billingBajas.id, id)).get();
     if (!row?.xmlBase64) return null;
     return Buffer.from(row.xmlBase64, "base64").toString("utf-8");
+  }
+
+  async insertComprobantePago(row: ComprobantePagoRow): Promise<ComprobantePago> {
+    await this.db.insert(schema.billingComprobantesPago).values(row);
+    return toComprobantePago(row);
+  }
+
+  async getComprobantePagoForSale(ventaId: string): Promise<ComprobantePago | null> {
+    const row = await this.db.select().from(schema.billingComprobantesPago).where(eq(schema.billingComprobantesPago.ventaId, ventaId)).get();
+    return row ? toComprobantePago(row) : null;
+  }
+
+  async getComprobantePago(id: string): Promise<ComprobantePago | null> {
+    const row = await this.db.select().from(schema.billingComprobantesPago).where(eq(schema.billingComprobantesPago.id, id)).get();
+    return row ? toComprobantePago(row) : null;
+  }
+
+  async listComprobantesPago(range?: { desde: string; hasta: string }): Promise<ComprobantePago[]> {
+    const rows = range
+      ? await this.db
+          .select()
+          .from(schema.billingComprobantesPago)
+          .where(and(gte(schema.billingComprobantesPago.creadoEn, `${range.desde}T00:00:00.000Z`), lte(schema.billingComprobantesPago.creadoEn, `${range.hasta}T23:59:59.999Z`)))
+          .all()
+      : await this.db.select().from(schema.billingComprobantesPago).all();
+    return rows.map(toComprobantePago).sort((a, b) => (a.creadoEn < b.creadoEn ? 1 : -1));
+  }
+
+  async updateComprobantePago(id: string, patch: Partial<ComprobantePagoRow>): Promise<ComprobantePago> {
+    await this.db.update(schema.billingComprobantesPago).set(patch).where(eq(schema.billingComprobantesPago.id, id));
+    const updated = await this.getComprobantePago(id);
+    if (!updated) throw new Error(`Comprobante de pago ${id} no encontrado tras actualizar.`);
+    return updated;
   }
 }

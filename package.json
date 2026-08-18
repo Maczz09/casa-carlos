@@ -7,9 +7,10 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @casacarlos/server --filter @casacarlos/web-reception run dev",
+    "dev": "pnpm --parallel --filter @casacarlos/server --filter @casacarlos/web-reception --filter @casacarlos/web-kiosk run dev",
     "dev:server": "pnpm --filter @casacarlos/server run dev",
     "dev:web": "pnpm --filter @casacarlos/web-reception run dev",
+    "dev:kiosk": "pnpm --filter @casacarlos/web-kiosk run dev",
     "db:generate": "pnpm --filter @casacarlos/db run generate",
     "db:migrate": "pnpm --filter @casacarlos/db run migrate",
     "typecheck": "pnpm -r run typecheck",

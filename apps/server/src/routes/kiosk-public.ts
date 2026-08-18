@@ -17,6 +17,14 @@ export function kioskPublicRoutes(services: Services) {
     app.get("/api/kiosk/collection-accounts", async () => services.payments.listCollectionAccounts());
     app.get("/api/kiosk/modalities", async () => services.pricing.listModalities());
 
+    // Solo lo que el huésped necesita para decidir — sin costoCentimos/stockMinimo (dato de negocio, ver KioskProductSchema).
+    app.get("/api/kiosk/products", async () => {
+      const products = await services.inventory.listProducts();
+      return products
+        .filter((p) => p.activo && p.estado !== "AGOTADO" && p.stock > 0)
+        .map((p) => ({ id: p.id, nombre: p.nombre, descripcion: p.descripcion, categoria: p.categoria, precioCentimos: p.precioCentimos }));
+    });
+
     app.post<{ Body: { pisoId: string } }>("/api/kiosk/select-floor", async (request, reply) => {
       try {
         return await services.kiosk.selectFloor(request.body.pisoId);
@@ -28,6 +36,22 @@ export function kioskPublicRoutes(services: Services) {
     app.post<{ Body: { cuartoId: string } }>("/api/kiosk/select-room", async (request, reply) => {
       try {
         return await services.kiosk.selectRoom(request.body.cuartoId);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post<{ Body: { productoId: string; cantidad?: number } }>("/api/kiosk/add-product", async (request, reply) => {
+      try {
+        return await services.kiosk.addProduct(request.body.productoId, request.body.cantidad ?? 1);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post("/api/kiosk/finish-products", async (request, reply) => {
+      try {
+        return await services.kiosk.finishProducts();
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }

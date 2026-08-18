@@ -43,6 +43,20 @@
       "when": 1787027037924,
       "tag": "0005_powerful_wolverine",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787034376245,
+      "tag": "0006_dry_pepper_potts",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787057098356,
+      "tag": "0007_sloppy_zombie",
+      "breakpoints": true
     }
   ]
 }

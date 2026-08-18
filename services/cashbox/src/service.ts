@@ -2,6 +2,7 @@ import type { Db } from "@casacarlos/db";
 import { recordAudit } from "@casacarlos/db";
 import { newId } from "@casacarlos/contracts";
 import type {
+  Arqueo,
   CashboxPort,
   CashMovement,
   CashSummary,
@@ -12,12 +13,14 @@ import type {
   OpenShiftInput,
   PaymentMethod,
   PaymentsPort,
+  RegistrarArqueoInput,
   Shift,
   ShiftTemplate,
 } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import type { EventBus } from "@casacarlos/bus";
 import { CashboxRepo } from "./repo.js";
+import { sumDenominaciones } from "./domain/denominaciones.js";
 import { DIFFERENCE_THRESHOLD_CENTIMOS, expectedCash } from "./domain/expected-cash.js";
 
 export class CashboxService implements CashboxPort {
@@ -55,6 +58,7 @@ export class CashboxService implements CashboxPort {
       aperturaCentimos: input.aperturaCentimos,
       efectivoEsperadoCentimos: null,
       efectivoDeclaradoCentimos: null,
+      denominacionesCierreJson: null,
       diferenciaCentimos: null,
       justificacion: null,
       estado: "ABIERTO",
@@ -83,9 +87,10 @@ export class CashboxService implements CashboxPort {
     const shift = await this.getShift(input.turnoId);
     if (shift.estado !== "ABIERTO") throw new Error("Ese turno ya está cerrado.");
 
+    const declarado = sumDenominaciones(input.denominaciones);
     const movements = await this.repo.listMovementsForShift(shift.id);
     const esperado = expectedCash(movements);
-    const diferencia = input.efectivoDeclaradoCentimos - esperado;
+    const diferencia = declarado - esperado;
 
     if (Math.abs(diferencia) > DIFFERENCE_THRESHOLD_CENTIMOS && !input.justificacion) {
       throw new Error(
@@ -97,7 +102,8 @@ export class CashboxService implements CashboxPort {
     const updated = await this.repo.updateShift(shift.id, {
       cerradoEn: now,
       efectivoEsperadoCentimos: esperado,
-      efectivoDeclaradoCentimos: input.efectivoDeclaradoCentimos,
+      efectivoDeclaradoCentimos: declarado,
+      denominacionesCierreJson: JSON.stringify(input.denominaciones),
       diferenciaCentimos: diferencia,
       justificacion: input.justificacion ?? null,
       estado: "CERRADO",
@@ -108,7 +114,7 @@ export class CashboxService implements CashboxPort {
       turnoId: shift.id,
       tipo: "CIERRE",
       metodo: null,
-      montoCentimos: input.efectivoDeclaradoCentimos,
+      montoCentimos: declarado,
       ventaId: null,
       pagoId: null,
       vueltoCentimos: null,
@@ -159,6 +165,33 @@ export class CashboxService implements CashboxPort {
 
   async listMovements(turnoId: string): Promise<CashMovement[]> {
     return this.repo.listMovementsForShift(turnoId);
+  }
+
+  /** Conteo de caja a mitad de turno — no cierra nada, solo deja constancia de cómo está la caja en ese momento. */
+  async registrarArqueo(input: RegistrarArqueoInput): Promise<Arqueo> {
+    const shift = await this.getShift(input.turnoId);
+    if (shift.estado !== "ABIERTO") throw new Error("No se puede registrar un arqueo de un turno cerrado.");
+
+    const movements = await this.repo.listMovementsForShift(shift.id);
+    const esperado = expectedCash(movements);
+    const total = sumDenominaciones(input.denominaciones);
+
+    const arqueo = await this.repo.insertArqueo({
+      id: newId(),
+      turnoId: input.turnoId,
+      denominacionesJson: JSON.stringify(input.denominaciones),
+      totalCentimos: total,
+      efectivoEsperadoCentimos: esperado,
+      diferenciaCentimos: total - esperado,
+      usuarioId: input.usuarioId,
+      creadoEn: new Date().toISOString(),
+    });
+    await recordAudit(this.db, { entidad: "cashbox_arqueos", entidadId: arqueo.id, accion: "ARQUEO", usuarioId: input.usuarioId, despues: arqueo });
+    return arqueo;
+  }
+
+  async listArqueos(turnoId: string): Promise<Arqueo[]> {
+    return this.repo.listArqueos(turnoId);
   }
 
   async getShiftSummary(turnoId: string): Promise<CashSummary> {

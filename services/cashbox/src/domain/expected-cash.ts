@@ -16,6 +16,11 @@ export function cashEffect(movement: Pick<CashMovement, "tipo" | "metodo" | "mon
       return -movement.montoCentimos;
     case "VENTA":
       return movement.metodo === "EFECTIVO" ? movement.montoCentimos : 0;
+    // Un ajuste corrige en cualquier dirección — el signo ya viene puesto en montoCentimos
+    // (positivo = sumar al esperado, negativo = restar), a diferencia de ingreso/egreso donde
+    // el signo lo determina el tipo, no el monto.
+    case "AJUSTE":
+      return movement.montoCentimos;
     case "CIERRE":
       return 0;
   }

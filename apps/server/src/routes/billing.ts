@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { IssueNotaInput } from "@casacarlos/contracts";
+import type { CreateComprobantePagoInput, IssueNotaInput } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
 import { requireAuth } from "../auth.js";
 
@@ -84,6 +84,24 @@ export function billingRoutes(services: Services) {
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
+    });
+
+    app.post<{ Body: { ventaId: string } & CreateComprobantePagoInput }>("/api/billing/comprobante-pago", auth, async (request, reply) => {
+      try {
+        const { ventaId, ...input } = request.body;
+        return await services.billing.createComprobantePago(ventaId, input, request.user!.id);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.get<{ Params: { ventaId: string } }>("/api/billing/comprobante-pago/for-sale/:ventaId", auth, async (request) =>
+      services.billing.getComprobantePagoForSale(request.params.ventaId),
+    );
+
+    app.get<{ Querystring: { desde?: string; hasta?: string } }>("/api/billing/comprobantes-pago", auth, async (request) => {
+      const { desde, hasta } = request.query;
+      return services.billing.listComprobantesPago(desde && hasta ? { desde, hasta } : undefined);
     });
   };
 }

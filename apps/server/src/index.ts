@@ -130,7 +130,7 @@ async function main() {
   const { emisor, sunatClient, cert } = configureSunat();
   await ensureBillingCorrelativosSeeded(db);
   const billing = createBillingService(db, sales, sunatClient, emisor, cert);
-  const kiosk = new KioskStore(rooms, pricing, stays, sales, bus);
+  const kiosk = new KioskStore(rooms, pricing, stays, sales, inventory, bus);
 
   await seedIfEmpty(rooms, pricing, identity, payments, inventory, cashbox);
 

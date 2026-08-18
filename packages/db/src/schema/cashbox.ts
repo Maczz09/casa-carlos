@@ -19,6 +19,8 @@ export const cashboxTurnos = sqliteTable("cashbox_turnos", {
   aperturaCentimos: integer("apertura_centimos").notNull().default(0),
   efectivoEsperadoCentimos: integer("efectivo_esperado_centimos"),
   efectivoDeclaradoCentimos: integer("efectivo_declarado_centimos"),
+  /** Conteo billete por billete/moneda al cierre, como JSON — el total ya vive en efectivoDeclaradoCentimos, esto es el detalle. */
+  denominacionesCierreJson: text("denominaciones_cierre_json"),
   diferenciaCentimos: integer("diferencia_centimos"),
   justificacion: text("justificacion"),
   estado: text("estado", { enum: ["ABIERTO", "CERRADO"] }).notNull().default("ABIERTO"),
@@ -29,7 +31,7 @@ export const cashboxMovimientos = sqliteTable("cashbox_movimientos", {
   turnoId: text("turno_id")
     .notNull()
     .references(() => cashboxTurnos.id),
-  tipo: text("tipo", { enum: ["APERTURA", "VENTA", "INGRESO", "EGRESO", "VUELTO", "CIERRE"] }).notNull(),
+  tipo: text("tipo", { enum: ["APERTURA", "VENTA", "INGRESO", "EGRESO", "AJUSTE", "VUELTO", "CIERRE"] }).notNull(),
   metodo: text("metodo", {
     enum: ["EFECTIVO", "YAPE", "PLIN", "LEMON", "AGORA", "TRANSFERENCIA", "POS_CREDITO", "POS_DEBITO"],
   }),
@@ -40,4 +42,18 @@ export const cashboxMovimientos = sqliteTable("cashbox_movimientos", {
   motivo: text("motivo"),
   usuarioId: text("usuario_id").notNull(),
   ocurridoEn: text("ocurrido_en").notNull(),
+});
+
+/** Conteo de caja a mitad de turno (arqueo intermedio) — solo un registro, no cambia el estado del turno ni lo cierra. */
+export const cashboxArqueos = sqliteTable("cashbox_arqueos", {
+  id: text("id").primaryKey(),
+  turnoId: text("turno_id")
+    .notNull()
+    .references(() => cashboxTurnos.id),
+  denominacionesJson: text("denominaciones_json").notNull(),
+  totalCentimos: integer("total_centimos").notNull(),
+  efectivoEsperadoCentimos: integer("efectivo_esperado_centimos").notNull(),
+  diferenciaCentimos: integer("diferencia_centimos").notNull(),
+  usuarioId: text("usuario_id").notNull(),
+  creadoEn: text("creado_en").notNull(),
 });

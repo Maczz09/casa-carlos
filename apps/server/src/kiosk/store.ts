@@ -1,5 +1,5 @@
 import { newId } from "@casacarlos/contracts";
-import type { PricingPort, RoomsPort, SalesPort, StaysPort } from "@casacarlos/contracts";
+import type { InventoryPort, PricingPort, RoomsPort, SalesPort, StaysPort } from "@casacarlos/contracts";
 import type { EventBus } from "@casacarlos/bus";
 import type { KioskCustomer, KioskSession, ProposedPaymentLine } from "./types.js";
 
@@ -14,6 +14,7 @@ export class KioskStore {
     private readonly pricing: PricingPort,
     private readonly stays: StaysPort,
     private readonly sales: SalesPort,
+    private readonly inventory: InventoryPort,
     bus: EventBus,
   ) {
     bus.subscribe("payment.accepted", (payload) => this.handlePaymentAccepted(payload.saleId, payload.paymentId));
@@ -104,7 +105,7 @@ export class KioskStore {
       const sale = await this.sales.openSaleForStay({ stayId: stay.id, usuarioId: session.usuarioId });
       return this.commit({
         ...session,
-        estado: "SELECCION_PAGO",
+        estado: "SELECCION_PRODUCTOS",
         stayId: stay.id,
         saleId: sale.id,
         totalCentimos: sale.totalCentimos,
@@ -112,6 +113,20 @@ export class KioskStore {
     } catch (err) {
       return this.commit({ ...session, estado: "SELECCION_CUARTO", cuartoId: null, error: (err as Error).message });
     }
+  }
+
+  /** Opcional — el huésped puede agregar productos antes de pagar, o saltar directo con `finishProducts`. Refresca `totalCentimos` desde la venta real tras cada línea agregada. */
+  async addProduct(productoId: string, cantidad: number): Promise<KioskSession> {
+    const session = this.mustGet();
+    if (!session.saleId) throw new Error("Todavía no hay una venta abierta.");
+    await this.sales.addProductLine({ saleId: session.saleId, productoId, cantidad, usuarioId: session.usuarioId });
+    const sale = await this.sales.getSale(session.saleId);
+    return this.commit({ ...session, totalCentimos: sale.totalCentimos, error: null });
+  }
+
+  async finishProducts(): Promise<KioskSession> {
+    const session = this.mustGet();
+    return this.commit({ ...session, estado: "SELECCION_PAGO" });
   }
 
   async proposePayment(detalles: ProposedPaymentLine[]): Promise<KioskSession> {

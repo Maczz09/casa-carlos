@@ -1,4 +1,4 @@
-import type { Attribute, Category, CollectionAccount, Floor, FloorBoard, Modality, ProposedPaymentLine } from "@casacarlos/contracts";
+import type { Attribute, Category, CollectionAccount, Floor, FloorBoard, KioskProduct, Modality, ProposedPaymentLine } from "@casacarlos/contracts";
 
 class ApiError extends Error {}
 
@@ -26,8 +26,12 @@ export const api = {
   collectionAccounts: () => get<CollectionAccount[]>("/api/kiosk/collection-accounts"),
   modalities: () => get<Modality[]>("/api/kiosk/modalities"),
 
+  products: () => get<KioskProduct[]>("/api/kiosk/products"),
+
   selectFloor: (pisoId: string) => post("/api/kiosk/select-floor", { pisoId }),
   selectRoom: (cuartoId: string) => post("/api/kiosk/select-room", { cuartoId }),
+  addProduct: (productoId: string) => post<void>("/api/kiosk/add-product", { productoId }),
+  finishProducts: () => post("/api/kiosk/finish-products"),
   proposePayment: (detalles: ProposedPaymentLine[]) => post("/api/kiosk/propose-payment", { detalles }),
   reset: () => post("/api/kiosk/reset"),
 };

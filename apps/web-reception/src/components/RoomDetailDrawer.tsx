@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Comprobante, ComunicacionBaja, IssueNotaInput, NotaTipo, PaymentDetailInput, RoomBoardEntry, SaleWithLines, StayWithCustomer } from "@casacarlos/contracts";
+import type { Comprobante, ComprobantePago, ComunicacionBaja, DocumentType, IssueNotaInput, NotaTipo, PaymentDetailInput, RoomBoardEntry, SaleWithLines, StayWithCustomer } from "@casacarlos/contracts";
 import { MOTIVOS_NOTA_CREDITO, MOTIVOS_NOTA_DEBITO } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { api, ApiError, getToken } from "../api.js";
@@ -23,7 +23,8 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
   const [payingBalance, setPayingBalance] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
   const [comprobante, setComprobante] = useState<Comprobante | null>(null);
-  const [emitiendoFactura, setEmitiendoFactura] = useState(false);
+  const [comprobantePago, setComprobantePago] = useState<ComprobantePago | null>(null);
+  const [generandoPago, setGenerandoPago] = useState<DocumentType | null>(null);
   const [facturaRuc, setFacturaRuc] = useState("");
   const [facturaRazonSocial, setFacturaRazonSocial] = useState("");
   const [baja, setBaja] = useState<ComunicacionBaja | null>(null);
@@ -45,6 +46,7 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
     setComprobante(c);
     setBaja(c ? await api.bajaForComprobante(c.id) : null);
     setNotas(c && c.estadoSunat === "ACEPTADO" ? await api.notasForComprobante(c.id) : []);
+    setComprobantePago(sl ? await api.comprobantePagoForSale(sl.id) : null);
   };
 
   useEffect(() => {
@@ -125,28 +127,41 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
     }
   };
 
-  const emitBoleta = async () => {
+  const generarComprobantePago = async (tipo: DocumentType) => {
     if (!sale) return;
+    if (tipo === "FACTURA" && (!facturaRuc || !facturaRazonSocial)) return;
     setBusy(true);
     setError(null);
     try {
-      setComprobante(await api.issueBoleta(sale.id));
+      const draft = await api.createComprobantePago(sale.id, {
+        tipo,
+        receptorRuc: tipo === "FACTURA" ? facturaRuc : null,
+        receptorRazonSocial: tipo === "FACTURA" ? facturaRazonSocial : null,
+      });
+      setComprobantePago(draft);
+      setGenerandoPago(null);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "No se pudo emitir la boleta.");
+      setError(err instanceof ApiError ? err.message : "No se pudo generar el comprobante de pago.");
     } finally {
       setBusy(false);
     }
   };
 
-  const emitFactura = async () => {
-    if (!sale || !facturaRuc || !facturaRazonSocial) return;
+  const imprimirComprobantePago = () => window.print();
+
+  const emitDesdeComprobantePago = async () => {
+    if (!sale || !comprobantePago) return;
     setBusy(true);
     setError(null);
     try {
-      setComprobante(await api.issueFactura(sale.id, facturaRuc, facturaRazonSocial));
-      setEmitiendoFactura(false);
+      const c =
+        comprobantePago.tipo === "FACTURA"
+          ? await api.issueFactura(sale.id, comprobantePago.receptorRuc!, comprobantePago.receptorRazonSocial!)
+          : await api.issueBoleta(sale.id);
+      setComprobante(c);
+      setComprobantePago((prev) => (prev ? { ...prev, estado: "EMITIDO" } : prev));
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "No se pudo emitir la factura.");
+      setError(err instanceof ApiError ? err.message : "No se pudo emitir el comprobante.");
     } finally {
       setBusy(false);
     }
@@ -470,34 +485,95 @@ export function RoomDetailDrawer({ entry, onClose }: Props) {
                   </div>
                 )}
               </div>
-            ) : emitiendoFactura ? (
+            ) : comprobantePago ? (
               <div className="flex flex-col gap-2">
-                <input placeholder="RUC" value={facturaRuc} onChange={(e) => setFacturaRuc(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-white" />
-                <input
-                  placeholder="Razón social"
-                  value={facturaRazonSocial}
-                  onChange={(e) => setFacturaRazonSocial(e.target.value)}
-                  className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-white"
-                />
+                <div className="flex items-center justify-between">
+                  <span>
+                    Comprobante de pago (borrador) — {comprobantePago.tipo === "BOLETA" ? "Boleta" : `Factura ${comprobantePago.receptorRuc}`}
+                  </span>
+                  <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">Sin emitir</span>
+                </div>
+                <p className="text-xs text-slate-400">Control interno — no es el comprobante SUNAT hasta que se emita.</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setEmitiendoFactura(false)} className="flex-1 rounded-lg bg-slate-700 py-2 text-white hover:bg-slate-600">
+                  <button onClick={imprimirComprobantePago} className="rounded-lg bg-slate-700 px-3 py-1.5 text-xs text-white hover:bg-slate-600">
+                    Imprimir
+                  </button>
+                  <button
+                    onClick={emitDesdeComprobantePago}
+                    disabled={busy}
+                    className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                  >
+                    Emitir {comprobantePago.tipo === "BOLETA" ? "boleta" : "factura"}
+                  </button>
+                </div>
+                <div className="print-only-receipt hidden">
+                  <h2>CASA CARLOS</h2>
+                  <p className="receipt-center">Comprobante de pago (BORRADOR)</p>
+                  <p className="receipt-center">Control interno — no válido como comprobante SUNAT</p>
+                  <hr />
+                  <p>{new Date(comprobantePago.creadoEn).toLocaleString("es-PE")}</p>
+                  <p>Cuarto: {entry.room.numero}</p>
+                  {stay && (
+                    <p>
+                      Cliente: {stay.cliente.nombres} {stay.cliente.apellidos}
+                    </p>
+                  )}
+                  {stay && <p>DNI: {stay.cliente.dni}</p>}
+                  {comprobantePago.tipo === "FACTURA" && (
+                    <>
+                      <p>RUC: {comprobantePago.receptorRuc}</p>
+                      <p>Razón social: {comprobantePago.receptorRazonSocial}</p>
+                    </>
+                  )}
+                  <hr />
+                  <table>
+                    <tbody>
+                      {sale?.lineas.map((l) => (
+                        <tr key={l.id}>
+                          <td>{l.descripcion}</td>
+                          <td>{format(cents(l.subtotalCentimos))}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <hr />
+                  <p className="receipt-total">TOTAL {sale && format(cents(sale.totalCentimos))}</p>
+                  <hr />
+                  <p className="receipt-center">{comprobantePago.tipo === "BOLETA" ? "BOLETA DE VENTA" : "FACTURA"}</p>
+                </div>
+              </div>
+            ) : generandoPago ? (
+              <div className="flex flex-col gap-2">
+                {generandoPago === "FACTURA" && (
+                  <>
+                    <input placeholder="RUC" value={facturaRuc} onChange={(e) => setFacturaRuc(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-white" />
+                    <input
+                      placeholder="Razón social"
+                      value={facturaRazonSocial}
+                      onChange={(e) => setFacturaRazonSocial(e.target.value)}
+                      className="rounded-lg border border-slate-600 bg-slate-800 px-3 py-2 text-white"
+                    />
+                  </>
+                )}
+                <div className="flex gap-2">
+                  <button onClick={() => setGenerandoPago(null)} className="flex-1 rounded-lg bg-slate-700 py-2 text-white hover:bg-slate-600">
                     Cancelar
                   </button>
                   <button
-                    onClick={emitFactura}
-                    disabled={busy || !facturaRuc || !facturaRazonSocial}
+                    onClick={() => generarComprobantePago(generandoPago)}
+                    disabled={busy || (generandoPago === "FACTURA" && (!facturaRuc || !facturaRazonSocial))}
                     className="flex-1 rounded-lg bg-emerald-600 py-2 text-white hover:bg-emerald-500 disabled:opacity-50"
                   >
-                    Emitir factura
+                    Generar comprobante de pago
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex gap-2">
-                <button onClick={emitBoleta} disabled={busy} className="flex-1 rounded-lg bg-emerald-600 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
-                  Emitir boleta
+                <button onClick={() => generarComprobantePago("BOLETA")} disabled={busy} className="flex-1 rounded-lg bg-emerald-600 py-2 font-medium text-white hover:bg-emerald-500 disabled:opacity-50">
+                  Boleta
                 </button>
-                <button onClick={() => setEmitiendoFactura(true)} disabled={busy} className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-600 disabled:opacity-50">
+                <button onClick={() => setGenerandoPago("FACTURA")} disabled={busy} className="rounded-lg bg-slate-700 px-4 py-2 text-sm text-white hover:bg-slate-600 disabled:opacity-50">
                   Factura (RUC)
                 </button>
               </div>

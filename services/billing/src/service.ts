@@ -1,5 +1,18 @@
 import { newId } from "@casacarlos/contracts";
-import type { BajaStatus, BillingPort, Comprobante, ComunicacionBaja, DateRange, DocumentType, IssueFacturaInput, IssueNotaInput, NotaTipo, SunatStatus } from "@casacarlos/contracts";
+import type {
+  BajaStatus,
+  BillingPort,
+  Comprobante,
+  ComprobantePago,
+  ComunicacionBaja,
+  CreateComprobantePagoInput,
+  DateRange,
+  DocumentType,
+  IssueFacturaInput,
+  IssueNotaInput,
+  NotaTipo,
+  SunatStatus,
+} from "@casacarlos/contracts";
 import type { SaleWithLines, SalesPort } from "@casacarlos/contracts";
 import { esMotivoNotaCreditoValido, esMotivoNotaDebitoValido } from "./domain/catalogos-notas.js";
 import { desglosarIgv } from "./domain/igv.js";
@@ -34,13 +47,54 @@ export class BillingService implements BillingPort {
       numeroDoc: sale.clienteDni,
       razonSocial: `${sale.clienteNombres ?? ""} ${sale.clienteApellidos ?? ""}`.trim() || "CLIENTE",
     };
-    return this.emit(sale, "BOLETA", receptor, usuarioId);
+    const comprobante = await this.emit(sale, "BOLETA", receptor, usuarioId);
+    await this.linkDraftIfExists(ventaId, comprobante);
+    return comprobante;
   }
 
   async issueFactura(input: IssueFacturaInput): Promise<Comprobante> {
     const sale = await this.sales.getSale(input.ventaId);
     const receptor: ReceptorInfo = { tipoDoc: "RUC", numeroDoc: input.ruc, razonSocial: input.razonSocial };
-    return this.emit(sale, "FACTURA", receptor, input.usuarioId);
+    const comprobante = await this.emit(sale, "FACTURA", receptor, input.usuarioId);
+    await this.linkDraftIfExists(input.ventaId, comprobante);
+    return comprobante;
+  }
+
+  /**
+   * "Comprobante de pago" interno — control previo imprimible, distinto del
+   * comprobante SUNAT real (mismo patrón que mi-narcita: nunca se auto-emite,
+   * alguien elige después). Un solo borrador vigente por venta.
+   */
+  async createComprobantePago(ventaId: string, input: CreateComprobantePagoInput, usuarioId: string): Promise<ComprobantePago> {
+    const existing = await this.repo.getComprobantePagoForSale(ventaId);
+    if (existing) return existing;
+    return this.repo.insertComprobantePago({
+      id: newId(),
+      ventaId,
+      tipo: input.tipo,
+      receptorRuc: input.receptorRuc ?? null,
+      receptorRazonSocial: input.receptorRazonSocial ?? null,
+      estado: "BORRADOR",
+      comprobanteId: null,
+      usuarioId,
+      creadoEn: new Date().toISOString(),
+      emitidoEn: null,
+    });
+  }
+
+  async getComprobantePagoForSale(ventaId: string): Promise<ComprobantePago | null> {
+    return this.repo.getComprobantePagoForSale(ventaId);
+  }
+
+  async listComprobantesPago(range?: DateRange): Promise<ComprobantePago[]> {
+    return this.repo.listComprobantesPago(range);
+  }
+
+  /** Si esta venta tenía un borrador vigente, lo marca EMITIDO y lo enlaza al comprobante SUNAT real recién creado. No hace nada si no había borrador (ej. alguien emitió directo, sin pasar por el borrador). */
+  private async linkDraftIfExists(ventaId: string, comprobante: Comprobante): Promise<void> {
+    const draft = await this.repo.getComprobantePagoForSale(ventaId);
+    if (!draft || draft.estado === "EMITIDO") return;
+    await this.repo.updateComprobantePago(draft.id, { estado: "EMITIDO", comprobanteId: comprobante.id, emitidoEn: new Date().toISOString() });
   }
 
   async getComprobante(id: string): Promise<Comprobante> {

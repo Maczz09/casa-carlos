@@ -108,3 +108,28 @@ export const IssueNotaInputSchema = z.object({
   lineas: z.array(ComprobanteLineSchema).min(1),
 });
 export type IssueNotaInput = z.infer<typeof IssueNotaInputSchema>;
+
+/** Estado del comprobante de pago interno — BORRADOR es control previo (imprimible), EMITIDO ya generó su Comprobante SUNAT real. */
+export const ComprobantePagoEstadoSchema = z.enum(["BORRADOR", "EMITIDO"]);
+export type ComprobantePagoEstado = z.infer<typeof ComprobantePagoEstadoSchema>;
+
+export const ComprobantePagoSchema = z.object({
+  id: z.string(),
+  ventaId: z.string(),
+  tipo: DocumentTypeSchema,
+  receptorRuc: z.string().nullable(),
+  receptorRazonSocial: z.string().nullable(),
+  estado: ComprobantePagoEstadoSchema,
+  comprobanteId: z.string().nullable(),
+  usuarioId: z.string(),
+  creadoEn: z.string(),
+  emitidoEn: z.string().nullable(),
+});
+export type ComprobantePago = z.infer<typeof ComprobantePagoSchema>;
+
+export const CreateComprobantePagoInputSchema = z.object({
+  tipo: DocumentTypeSchema,
+  receptorRuc: z.string().nullable().optional(),
+  receptorRazonSocial: z.string().nullable().optional(),
+});
+export type CreateComprobantePagoInput = z.infer<typeof CreateComprobantePagoInputSchema>;

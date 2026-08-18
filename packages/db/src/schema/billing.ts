@@ -50,6 +50,29 @@ export const billingCorrelativos = sqliteTable("billing_correlativos", {
   valor: integer("valor").notNull(),
 });
 
+/**
+ * "Comprobante de pago" interno — un borrador de control previo al
+ * comprobante SUNAT real. Se crea al llegar el saldo de la venta a cero,
+ * se puede imprimir de una vez (control interno, no es el documento
+ * legal), y cuando se decide emitir de verdad, `issueBoleta`/`issueFactura`
+ * (sin cambios) hacen el trabajo real — este borrador solo pasa a EMITIDO
+ * y queda enlazado al `Comprobante` resultante. Mismo patrón que el
+ * "comprobante de pago" de mi-narcita: el documento SUNAT y el control
+ * interno son cosas separadas a propósito.
+ */
+export const billingComprobantesPago = sqliteTable("billing_comprobantes_pago", {
+  id: text("id").primaryKey(),
+  ventaId: text("venta_id").notNull(),
+  tipo: text("tipo", { enum: ["BOLETA", "FACTURA"] }).notNull(),
+  receptorRuc: text("receptor_ruc"),
+  receptorRazonSocial: text("receptor_razon_social"),
+  estado: text("estado", { enum: ["BORRADOR", "EMITIDO"] }).notNull(),
+  comprobanteId: text("comprobante_id").references(() => billingComprobantes.id),
+  usuarioId: text("usuario_id").notNull(),
+  creadoEn: text("creado_en").notNull(),
+  emitidoEn: text("emitido_en"),
+});
+
 export const billingBajas = sqliteTable("billing_bajas", {
   id: text("id").primaryKey(),
   comprobanteId: text("comprobante_id")

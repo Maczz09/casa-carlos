@@ -11,6 +11,8 @@ import { CashboxPanel } from "./components/CashboxPanel.js";
 import { ProductCatalog } from "./components/ProductCatalog.js";
 import { DashboardPanel } from "./components/DashboardPanel.js";
 import { NotificationsPanel } from "./components/NotificationsPanel.js";
+import { ComprobantesPagoPanel } from "./components/ComprobantesPagoPanel.js";
+import { ReservationModal } from "./components/ReservationModal.js";
 
 export default function App() {
   const { user, loading, login, loginByPin, logout } = useAuth();
@@ -22,6 +24,8 @@ export default function App() {
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [dashboardOpen, setDashboardOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [comprobantesPagoOpen, setComprobantesPagoOpen] = useState(false);
+  const [reservationOpen, setReservationOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
 
@@ -54,6 +58,9 @@ export default function App() {
           <button onClick={() => setPanelOpen(true)} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500">
             + Nueva venta
           </button>
+          <button onClick={() => setReservationOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
+            + Reservar
+          </button>
           <button onClick={() => setCashboxOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
             Caja
           </button>
@@ -67,6 +74,9 @@ export default function App() {
               </button>
               <button onClick={() => setNotificationsOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
                 Notificaciones
+              </button>
+              <button onClick={() => setComprobantesPagoOpen(true)} className="rounded-lg bg-slate-800 px-3 py-2 text-sm text-slate-300 hover:bg-slate-700">
+                Comprobantes
               </button>
             </>
           )}
@@ -106,6 +116,8 @@ export default function App() {
       {catalogOpen && <ProductCatalog onClose={() => setCatalogOpen(false)} />}
       {dashboardOpen && <DashboardPanel onClose={() => setDashboardOpen(false)} />}
       {notificationsOpen && <NotificationsPanel onClose={() => setNotificationsOpen(false)} />}
+      {comprobantesPagoOpen && <ComprobantesPagoPanel onClose={() => setComprobantesPagoOpen(false)} />}
+      {reservationOpen && <ReservationModal floors={floors} onClose={() => setReservationOpen(false)} />}
     </div>
   );
 }

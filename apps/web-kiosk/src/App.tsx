@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import type { Attribute, Category, CollectionAccount } from "@casacarlos/contracts";
+import type { Attribute, Category, CollectionAccount, KioskProduct } from "@casacarlos/contracts";
 import { api } from "./api.js";
 import { useKioskState } from "./hooks/useKioskState.js";
 import { useInactivityReset } from "./hooks/useInactivityReset.js";
 import { IdleScreen } from "./components/IdleScreen.js";
 import { FloorScreen } from "./components/FloorScreen.js";
 import { RoomScreen } from "./components/RoomScreen.js";
+import { ProductsScreen } from "./components/ProductsScreen.js";
 import { WaitingScreen } from "./components/WaitingScreen.js";
 import { PaymentScreen } from "./components/PaymentScreen.js";
 import { ResultScreen } from "./components/ResultScreen.js";
@@ -15,12 +16,14 @@ export default function App() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
+  const [products, setProducts] = useState<KioskProduct[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api.categories().then(setCategories);
     api.attributes().then(setAttributes);
     api.collectionAccounts().then(setCollectionAccounts);
+    api.products().then(setProducts);
   }, []);
 
   useInactivityReset(session);
@@ -56,6 +59,18 @@ export default function App() {
 
   if (session.estado === "DATOS_CLIENTE") {
     return <WaitingScreen title="Un momento" subtitle="Recepción está completando tu registro." />;
+  }
+
+  if (session.estado === "SELECCION_PRODUCTOS") {
+    return (
+      <ProductsScreen
+        products={products}
+        totalCentimos={session.totalCentimos ?? 0}
+        onCancel={cancel}
+        onAdd={(productoId) => api.addProduct(productoId)}
+        onFinish={() => void api.finishProducts()}
+      />
+    );
   }
 
   if (session.estado === "SELECCION_PAGO") {

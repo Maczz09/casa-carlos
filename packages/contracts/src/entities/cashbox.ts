@@ -14,6 +14,10 @@ export type ShiftTemplate = z.infer<typeof ShiftTemplateSchema>;
 export const ShiftStateSchema = z.enum(["ABIERTO", "CERRADO"]);
 export type ShiftState = z.infer<typeof ShiftStateSchema>;
 
+/** Conteo de caja por denominación — clave es el valor de la denominación en céntimos ("20000" = S/200), valor es cuántos billetes/monedas de esa denominación hay. */
+export const DenominacionesSchema = z.record(z.string(), z.number().int().nonnegative());
+export type Denominaciones = z.infer<typeof DenominacionesSchema>;
+
 export const ShiftSchema = z.object({
   id: z.string(),
   plantillaId: z.string().nullable(),
@@ -24,13 +28,27 @@ export const ShiftSchema = z.object({
   aperturaCentimos: z.number().int().nonnegative(),
   efectivoEsperadoCentimos: z.number().int().nullable(),
   efectivoDeclaradoCentimos: z.number().int().nullable(),
+  denominacionesCierre: DenominacionesSchema.nullable(),
   diferenciaCentimos: z.number().int().nullable(),
   justificacion: z.string().nullable(),
   estado: ShiftStateSchema,
 });
 export type Shift = z.infer<typeof ShiftSchema>;
 
-export const CashMovementTypeSchema = z.enum(["APERTURA", "VENTA", "INGRESO", "EGRESO", "VUELTO", "CIERRE"]);
+/** Conteo de caja a mitad de turno, sin cerrarlo — solo un registro, no cambia el estado del turno. */
+export const ArqueoSchema = z.object({
+  id: z.string(),
+  turnoId: z.string(),
+  denominaciones: DenominacionesSchema,
+  totalCentimos: z.number().int(),
+  efectivoEsperadoCentimos: z.number().int(),
+  diferenciaCentimos: z.number().int(),
+  usuarioId: z.string(),
+  creadoEn: z.string(),
+});
+export type Arqueo = z.infer<typeof ArqueoSchema>;
+
+export const CashMovementTypeSchema = z.enum(["APERTURA", "VENTA", "INGRESO", "EGRESO", "AJUSTE", "VUELTO", "CIERRE"]);
 export type CashMovementType = z.infer<typeof CashMovementTypeSchema>;
 
 export const CashMovementSchema = z.object({

@@ -1,11 +1,12 @@
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import type { Db } from "@casacarlos/db";
 import { schema } from "@casacarlos/db";
-import type { CashMovement, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import type { Arqueo, CashMovement, Denominaciones, Shift, ShiftTemplate } from "@casacarlos/contracts";
 
 type TemplateRow = typeof schema.cashboxPlantillasTurno.$inferSelect;
 type ShiftRow = typeof schema.cashboxTurnos.$inferSelect;
 type MovementRow = typeof schema.cashboxMovimientos.$inferSelect;
+type ArqueoRow = typeof schema.cashboxArqueos.$inferSelect;
 
 const toTemplate = (r: TemplateRow): ShiftTemplate => ({
   id: r.id,
@@ -26,9 +27,21 @@ const toShift = (r: ShiftRow): Shift => ({
   aperturaCentimos: r.aperturaCentimos,
   efectivoEsperadoCentimos: r.efectivoEsperadoCentimos,
   efectivoDeclaradoCentimos: r.efectivoDeclaradoCentimos,
+  denominacionesCierre: r.denominacionesCierreJson ? (JSON.parse(r.denominacionesCierreJson) as Denominaciones) : null,
   diferenciaCentimos: r.diferenciaCentimos,
   justificacion: r.justificacion,
   estado: r.estado,
+});
+
+const toArqueo = (r: ArqueoRow): Arqueo => ({
+  id: r.id,
+  turnoId: r.turnoId,
+  denominaciones: JSON.parse(r.denominacionesJson) as Denominaciones,
+  totalCentimos: r.totalCentimos,
+  efectivoEsperadoCentimos: r.efectivoEsperadoCentimos,
+  diferenciaCentimos: r.diferenciaCentimos,
+  usuarioId: r.usuarioId,
+  creadoEn: r.creadoEn,
 });
 
 const toMovement = (r: MovementRow): CashMovement => ({
@@ -105,5 +118,15 @@ export class CashboxRepo {
     if (turnoIds.length === 0) return [];
     const rows = await this.db.select().from(schema.cashboxMovimientos).where(inArray(schema.cashboxMovimientos.turnoId, turnoIds)).all();
     return rows.map(toMovement);
+  }
+
+  async insertArqueo(row: ArqueoRow): Promise<Arqueo> {
+    await this.db.insert(schema.cashboxArqueos).values(row);
+    return toArqueo(row);
+  }
+
+  async listArqueos(turnoId: string): Promise<Arqueo[]> {
+    const rows = await this.db.select().from(schema.cashboxArqueos).where(eq(schema.cashboxArqueos.turnoId, turnoId)).all();
+    return rows.map(toArqueo).sort((a, b) => (a.creadoEn < b.creadoEn ? 1 : -1));
   }
 }

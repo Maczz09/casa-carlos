@@ -175,7 +175,7 @@ var
   EnvPath: String;
   CertDestPath: String;
 begin
-  SetArrayLength(Lines, 0);
+  SetArrayLength(Lines, 1);
 
   Lines[GetArrayLength(Lines) - 1] := 'PORT=4000';
   SetArrayLength(Lines, GetArrayLength(Lines) + 1);
