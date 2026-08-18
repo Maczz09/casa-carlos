@@ -31,7 +31,11 @@ export function ReservationModal({ floors, onClose }: Props) {
   const modalidad = modalities.find((m) => m.id === modalidadId);
   const esPorNoche = !!modalidad?.checkinFijo;
 
-  const disponibles = floors.flatMap((f) => f.rooms.filter((r) => r.estado === "DISPONIBLE").map((r) => ({ ...r, pisoNombre: f.floor.nombre })));
+  // No filtramos por "estado" actual del cuarto (DISPONIBLE/OCUPADO/etc.) — una reserva es para una
+  // fecha futura, y el backend ya valida solapamiento contra la ventana real solicitada (assertNoOverlap).
+  // Un cuarto ocupado ahora mismo puede estar perfectamente libre para la reserva. Solo se excluye
+  // FUERA_DE_SERVICIO, que no es un estado de ocupación sino de mantenimiento.
+  const disponibles = floors.flatMap((f) => f.rooms.filter((r) => r.estado !== "FUERA_DE_SERVICIO").map((r) => ({ ...r, pisoNombre: f.floor.nombre })));
 
   const submit = async () => {
     if (!cuartoId || !modalidadId || !reservadaPara || !nombres || !apellidos || !dni) return;
@@ -73,7 +77,7 @@ export function ReservationModal({ floors, onClose }: Props) {
           </select>
 
           <select value={cuartoId} onChange={(e) => setCuartoId(e.target.value)} className="rounded-lg border border-slate-600 bg-slate-900 px-3 py-2 text-white">
-            <option value="">Elegir cuarto disponible…</option>
+            <option value="">Elegir cuarto…</option>
             {disponibles.map((r) => (
               <option key={r.room.id} value={r.room.id}>
                 {r.pisoNombre} — Cuarto {r.room.numero}

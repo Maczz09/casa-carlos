@@ -100,10 +100,20 @@ export class StaysRepo {
     return rows.map(toStay);
   }
 
+  /** Usa la foto del cliente guardada en la propia estadía (columnas cliente_*), no un join en vivo a stays_clientes — ver el comentario en el schema. */
   async withCustomer(stay: Stay): Promise<StayWithCustomer> {
-    const row = await this.db.select().from(schema.staysClientes).where(eq(schema.staysClientes.id, stay.clienteId)).get();
-    if (!row) throw new Error(`Cliente ${stay.clienteId} no encontrado.`);
-    return { ...stay, cliente: toCustomer(row) };
+    const row = await this.db.select().from(schema.staysEstadias).where(eq(schema.staysEstadias.id, stay.id)).get();
+    if (!row) throw new Error(`Estadía ${stay.id} no encontrada.`);
+    return {
+      ...stay,
+      cliente: {
+        id: row.clienteId,
+        nombres: row.clienteNombres ?? "",
+        apellidos: row.clienteApellidos ?? "",
+        dni: row.clienteDni ?? "",
+        telefono: row.clienteTelefono,
+      },
+    };
   }
 }
 

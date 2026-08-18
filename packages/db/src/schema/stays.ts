@@ -15,6 +15,14 @@ export const staysEstadias = sqliteTable("stays_estadias", {
   clienteId: text("cliente_id")
     .notNull()
     .references(() => staysClientes.id),
+  // Foto del cliente al momento del check-in — igual que sales.clienteNombres/etc.
+  // NO se lee por join a stays_clientes: ese registro es un perfil compartido que
+  // se actualiza cada vez que se reusa el mismo DNI, y una estadía ya en curso no
+  // debe cambiar de nombre en pantalla porque OTRA estadía distinta reusó el DNI.
+  clienteNombres: text("cliente_nombres"),
+  clienteApellidos: text("cliente_apellidos"),
+  clienteDni: text("cliente_dni"),
+  clienteTelefono: text("cliente_telefono"),
   modalidadId: text("modalidad_id").notNull(),
   ventaId: text("venta_id"),
   tipo: text("tipo", { enum: ["RESERVA", "DIRECTA"] }).notNull(),
