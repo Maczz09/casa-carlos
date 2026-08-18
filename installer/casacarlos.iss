@@ -69,7 +69,14 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 ;     `vendor/` de la máquina de build (el Node portátil se agrega aparte,
 ;     explícito, abajo — evita arrastrar cualquier otra cosa que haya
 ;     quedado en esa carpeta, como el instalador de Inno Setup descargado).
-Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,dist,vendor,apps\server\src\daemon,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
+;   - data\*.pfx: certificado real de pruebas SUNAT de ESTA máquina de
+;     desarrollo (data\sunat-beta-test.pfx) — secreto, nunca debe viajar;
+;     el asistente pide y copia el certificado del CLIENTE aparte, en
+;     WriteEnvFile más abajo.
+;   - installer\output: es el propio .exe que este script está generando —
+;     incluirlo causa que ISCC intente leer el archivo mientras lo está
+;     escribiendo ("el proceso no tiene acceso al archivo").
+Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\*.pfx,dist,vendor,apps\server\src\daemon,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
 
 ; El Node portátil — runtime propio, sin depender de que el cliente lo tenga instalado.
 Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags: recursesubdirs ignoreversion
