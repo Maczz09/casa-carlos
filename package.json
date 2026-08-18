@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "packageManager": "pnpm@9.14.4",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   },
   "scripts": {
     "dev": "pnpm --parallel --filter @casacarlos/server --filter @casacarlos/web-reception run dev",
@@ -13,6 +13,11 @@
     "db:generate": "pnpm --filter @casacarlos/db run generate",
     "db:migrate": "pnpm --filter @casacarlos/db run migrate",
     "typecheck": "pnpm -r run typecheck",
-    "build": "pnpm -r run build"
+    "build": "pnpm -r run build",
+    "service:install": "node scripts/service/install-service.cjs",
+    "service:uninstall": "node scripts/service/uninstall-service.cjs"
+  },
+  "devDependencies": {
+    "node-windows": "1.0.0-beta.8"
   }
 }

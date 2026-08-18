@@ -3,6 +3,7 @@ import { dirname, resolve } from "node:path";
 import { existsSync, mkdirSync } from "node:fs";
 import Fastify from "fastify";
 import websocketPlugin from "@fastify/websocket";
+import fastifyStatic from "@fastify/static";
 import { openDatabase, runMigrations } from "@casacarlos/db";
 import { InProcessBus } from "@casacarlos/bus";
 import type { RoomsPort, StaysPort } from "@casacarlos/contracts";
@@ -19,6 +20,7 @@ import { ConsoleSender, WhatsAppSender, createNotificationsService, startNotific
 import type { CertificateMaterial, EmisorInfo, SunatClient } from "@casacarlos/billing";
 import { MockSunatClient, RealSunatClient, createBillingService, ensureBillingCorrelativosSeeded, loadPfxCertificate } from "@casacarlos/billing";
 import { startScheduler } from "@casacarlos/scheduler";
+import { startBackupJob } from "@casacarlos/backup";
 import { seedIfEmpty } from "./seed.js";
 import { registerAuth } from "./auth.js";
 import { registerWebSocketGateway } from "./ws.js";
@@ -134,6 +136,7 @@ async function main() {
 
   const scheduler = startScheduler(rooms, stays);
   const notificationsWorker = startNotificationsWorker(notifications);
+  const backupJob = startBackupJob(sqlite, dataDir);
 
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
   await app.register(websocketPlugin);
@@ -157,11 +160,26 @@ async function main() {
   await app.register(notificationsRoutes(services));
   await app.register(billingRoutes(services));
 
+  // Sirve las 2 SPA ya compiladas (`pnpm -r run build`) desde este mismo proceso —
+  // en producción reemplaza los 3 procesos de desarrollo (server + 2 dev server de Vite)
+  // por uno solo. Condicionado a que el `dist/` exista: en desarrollo normal (`pnpm run dev`)
+  // nadie compila los frontends, así que esto se salta sin más y el flujo de 3 procesos
+  // sigue funcionando igual que siempre.
+  const receptionDist = resolve(__dirname, "../../web-reception/dist");
+  const kioskDist = resolve(__dirname, "../../web-kiosk/dist");
+  if (existsSync(receptionDist)) {
+    await app.register(fastifyStatic, { root: receptionDist, prefix: "/" });
+  }
+  if (existsSync(kioskDist)) {
+    await app.register(fastifyStatic, { root: kioskDist, prefix: "/kiosk/", decorateReply: !existsSync(receptionDist) });
+  }
+
   app.get("/api/health", async () => ({ ok: true, time: new Date().toISOString() }));
 
   const shutdown = async () => {
     scheduler.stop();
     notificationsWorker.stop();
+    backupJob.stop();
     await app.close();
     sqlite.close();
     process.exit(0);

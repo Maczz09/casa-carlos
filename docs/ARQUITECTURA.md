@@ -60,7 +60,7 @@ Ningún archivo de dominio se toca. Candidatos naturales al primer corte:
 | S10 | `notifications` | WhatsApp, alertas en pantalla, plantillas, cola con reintento | `notification.*` | `stay.overstayed`, `inventory.low_stock`, `shift.closed` |
 | S11 | `scheduler` | Temporizadores **durables**: limpieza 5', tolerancia 15', checkout | `tick.*`, `timer.fired` | `stay.*`, `room.*` |
 | S12 | `audit` | Bitácora inmutable de cambios en ventas, reservas y tarifas | — | todos |
-| S13 | `billing` | Facturación electrónica SUNAT (boleta/factura), envío a OSE/PSE, CDR | `billing.*` | `sale.paid` |
+| S13 | `billing` | Facturación electrónica SUNAT (boleta/factura/notas), directo sin OSE/PSE, CDR | — | — |
 | GW | `gateway` | HTTP + WebSocket, BFF por rol, sesión espejo kiosco↔recepción **en tiempo real** | — | todos |
 
 ### Reglas de frontera
@@ -82,17 +82,17 @@ Ningún archivo de dominio se toca. Candidatos naturales al primer corte:
 | Runtime | Node 24 LTS + TypeScript 5.9 (strict) | Ya instalado en la máquina |
 | HTTP | Fastify 5 | Rápido, plugins = módulos, esquemas nativos |
 | Realtime | `ws` sobre el mismo servidor Fastify (`@fastify/websocket`) | **Todo el estado en vivo** — semáforo de cuartos, contadores, espejo kiosco↔recepción, cola de caja — viaja por WebSocket, no por polling |
-| BD | **SQLite (better-sqlite3) en modo WAL** | Cero instalación, un archivo, respaldo = copiar archivo |
+| BD | **SQLite (`node:sqlite` nativo de Node) en modo WAL** | Cero instalación — `better-sqlite3` no tiene binario prebuilt para Windows/Node actual, `node:sqlite` no necesita compilar nada. Respaldo vía `VACUUM INTO` (consolida el WAL en un archivo limpio, no basta con copiar `.db` a secas — ver §9) |
 | ORM/migraciones | Drizzle ORM + drizzle-kit | TS puro, migraciones versionadas, sin runtime pesado |
 | Validación | Zod (compartido cliente/servidor) | Un solo contrato de tipos |
 | Frontend | React 19 + Vite + TanStack Query + Tailwind | Tres SPAs, un build |
 | PDF | pdfmake | JS puro, sin Chromium — boletas y reportes |
 | Excel | ExcelJS | Formato, fórmulas, múltiples hojas |
-| Empaquetado | `@yao-pkg/pkg` → `CasaCarlos.exe` | Incluye binario nativo de SQLite y assets |
-| Arranque automático | `node-windows` (servicio de Windows) | Sobrevive reinicios y cortes de luz |
+| Empaquetado | Node portátil (zip oficial, sin instalar) + código TS corrido vía `tsx` | Se evaluó `@yao-pkg/pkg` (un solo `.exe`) pero tiene un bug documentado con `node:sqlite` (su analizador estático confunde el especificador con una ruta de archivo) y fricción conocida con ESM — se descartó por la misma razón que se descartó `better-sqlite3`: evitar tooling frágil. Ver F6 en §10 |
+| Arranque automático | `node-windows` (servicio de Windows), `execPath`/`nodeOptions` apuntando al Node portátil + `tsx` como loader | Sobrevive reinicios y cortes de luz — `node-windows` está diseñado para invocar `node.exe <script>`, no para envolver un `.exe` standalone, por eso no se combina con `@yao-pkg/pkg` |
 | WhatsApp | `whatsapp-web.js` (sesión propia, sin costo por mensaje) | Decisión del cliente; riesgo de baneo mitigado. Ver §7 |
 | Scanner | HID keyboard-wedge, listener con prefijo/sufijo | El scanner del all-in-one "teclea"; sin driver |
-| Facturación electrónica | Cliente SOAP/REST contra OSE/PSE (a definir proveedor) | Boleta y factura electrónica SUNAT. Ver §8 |
+| Facturación electrónica | Cliente SOAP hecho a mano, directo contra SUNAT | Boleta/factura/notas de crédito y débito — sin OSE/PSE intermediario (decisión del cliente, ver §8) |
 
 ### Por qué SQLite y no PostgreSQL
 
@@ -205,26 +205,42 @@ reintenta al reconectar.
 
 ---
 
-## 8. Facturación electrónica SUNAT — decisión: en alcance
+## 8. Facturación electrónica SUNAT — decisión: en alcance, directo, sin OSE/PSE
 
 Confirmado en alcance. `sales` sigue siendo dueño de la venta; `billing` es un
-servicio aparte que la traduce a boleta/factura electrónica y la envía a un OSE
-(Operador de Servicios Electrónicos) — la vía más simple para un negocio pequeño,
-sin tener que homologarse directo con SUNAT como PSE.
+servicio aparte (`services/billing`) que la traduce a boleta/factura/nota de
+crédito/nota de débito electrónica y la envía **directo a SUNAT** — decisión
+explícita del cliente ("usaré el certificado gratuito de 3 años de SUNAT para
+MYPEs y tú construyes toda la infraestructura"), no vía OSE/PSE. SUNAT ofrece
+un certificado digital gratuito de 3 años específicamente para MYPEs (portal
+SOL → Comprobantes de Pago → Certificado Digital Tributario).
 
-- Al `sale.paid`, `billing` genera el XML UBL 2.1, lo firma y lo envía al OSE elegido
-  (candidatos a evaluar: Nubefact, Facturador SUNAT, SUNAT Operaciones en Línea
-  directo — pendiente de decidir proveedor y costo mensual con el cliente).
-- Guarda el **CDR** (Constancia de Recepción) que devuelve el OSE; ese es el
-  comprobante de que SUNAT aceptó el documento.
-- Si el envío falla (sin internet, OSE caído), la boleta interna en PDF **igual se
-  emite y el cuarto se entrega** — la declaración electrónica queda en cola y
-  reintenta. La operación del hotel nunca se bloquea por un problema de SUNAT.
-- Requiere del cliente: certificado digital vigente, usuario SOL, y clave de OSE.
-  Esto se configura en `ADM-01` (datos del hospedaje) antes de emitir el primer
-  comprobante electrónico.
-- Serie y correlativo (`sales_ventas.serie`, `.correlativo`) ya están preparados para
-  ser también la serie SUNAT (ej. `B001`), sin cambio de esquema.
+- Emisión es **manual, no automática al `sale.paid`**: recepción elige, desde
+  `RoomDetailDrawer.tsx`, si emite boleta o factura (con RUC) una vez la venta
+  está pagada — el mismo patrón de "elegir después de cobrar" en vez de
+  auto-emitir. Envío a SUNAT es **síncrono**: la respuesta ACEPTADO/RECHAZADO
+  llega en la misma llamada, para que recepción sepa al toque si quedó bien.
+- XML UBL 2.1 armado y firmado a mano (`domain/ubl.ts`, XMLDSig con
+  `xml-crypto`, RSA-SHA1/SHA1 — SUNAT todavía lo exige pese a estar
+  deprecado en todo lo demás), enviado por un cliente SOAP hecho a mano sobre
+  `fetch` (`sunat/real-client.ts` — sin la librería `soap` de npm, la
+  superficie real son 3 métodos). Guarda el **CDR** (Constancia de Recepción)
+  que devuelve SUNAT.
+- Si el envío falla (sin internet, SUNAT caído), el comprobante queda
+  `ERROR`/`RECHAZADO` pero **el cuarto igual se entrega** — la operación del
+  hotel nunca se bloquea por un problema de SUNAT. Reintentable a mano
+  (`retrySubmission`) sin generar un correlativo nuevo.
+- Además de boleta/factura: **Comunicación de Baja** (anular un comprobante
+  ACEPTADO, solo facturas, ventana de 7 días) y **notas de crédito/débito**
+  (corregir un comprobante ACEPTADO sin límite de 7 días — el mecanismo
+  correcto pasada esa ventana). PDF de cortesía con QR también incluido — el
+  documento legal sigue siendo el XML firmado + CDR, no el PDF.
+- `SUNAT_MODE` en `.env` controla el modo: `MOCK` (sin red, default),
+  `BETA` (ambiente de pruebas real de SUNAT), `PRODUCCION` (requiere el
+  certificado MYPE real del cliente + usuario/clave SOL secundarios).
+- Serie y correlativo son propios de `billing` (`billing_correlativos`,
+  incremento atómico vía `UPDATE...RETURNING`), no comparten numeración con
+  `sales_ventas`.
 
 ---
 
@@ -233,10 +249,21 @@ sin tener que homologarse directo con SUNAT como PSE.
 - Roles: `ADMIN`, `RECEPCIONISTA`, `KIOSCO` (token de dispositivo, sin persona).
 - **El kiosco jamás recibe datos de cliente.** No es que la UI los oculte: el BFF del
   kiosco no los serializa. El cliente ve `OCUPADO`, nunca un nombre.
-- Nombres y DNI se guardan cifrados en reposo (`better-sqlite3-multiple-ciphers`).
+- **Nombres y DNI se guardan en texto plano hoy — no cifrados en reposo.**
+  `better-sqlite3-multiple-ciphers` (la extensión que este documento
+  proponía originalmente) dejó de aplicar cuando el proyecto cambió a
+  `node:sqlite` (ver §3) — esa extensión no existe para el driver nativo
+  de Node. Cifrado por columna es una decisión pendiente, no tomada: rompe
+  cualquier búsqueda por nombre/DNI en cada servicio que los toca (`stays`,
+  `sales`), así que necesita su propio diseño (hash buscable aparte, manejo
+  de la llave) — no es un ajuste chico. **Mitigación recomendada mientras
+  tanto: BitLocker** (cifrado de disco completo de Windows, ya disponible,
+  cero código) — cubre el riesgo real de este despliegue (robo físico de la
+  PC del hotel) sin la complejidad de cifrado a nivel de aplicación.
 - Auditoría inmutable: modificar una venta o reserva siempre deja rastro de quién, qué
   y cuándo. Requisito directo de "permitir siempre modificar ventas y reservas".
-- Respaldo automático diario del archivo `.db` a carpeta configurable (+ USB/nube).
+- Respaldo automático diario del archivo `.db` a carpeta configurable (+ USB/nube) —
+  ver `services/backup`, F6 en §10.
 
 ---
 
@@ -248,7 +275,7 @@ sin tener que homologarse directo con SUNAT como PSE.
 | **F2 — Kiosco** | SPA cliente, espejo en vivo, todos los métodos de pago, híbrido, QR y CCI | 2 |
 | **F3 — Bodega y caja** | `inventory` con scanner, adicionales pre/post pago, `cashbox`, cuadre y turnos | 3 |
 | **F4 — Inteligencia** | `reporting`, dashboard con comparativas, PDF/Excel, `notifications` WhatsApp (`whatsapp-web.js`) | 3 |
-| **F5 — Facturación electrónica** | Servicio `billing`, integración OSE, CDR, contingencia | 2 |
+| **F5 — Facturación electrónica** | Servicio `billing`, directo a SUNAT (sin OSE), CDR, notas de crédito/débito | 2 |
 | **F6 — Endurecimiento** | Respaldos, servicio de Windows, instalador, capacitación | 1 |
 
 F1 ya es un sistema que reemplaza el cuaderno.

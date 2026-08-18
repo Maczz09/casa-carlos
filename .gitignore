@@ -8,7 +8,9 @@ data/*.db
 data/*.db-shm
 data/*.db-wal
 data/whatsapp-session/
+data/backups/
 *.pfx
 *.p12
 .turbo/
 *.tsbuildinfo
+vendor/
