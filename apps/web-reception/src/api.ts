@@ -203,6 +203,9 @@ export const api = {
   updateNotificationTemplate: (codigo: NotificationEventCode, cuerpo: string) => patch<NotificationTemplate>(`/api/notifications/templates/${codigo}`, { cuerpo }),
   notificationQueue: (estado?: NotificationState) => get<NotificationQueueItem[]>(`/api/notifications/queue${estado ? `?estado=${estado}` : ""}`),
   retryNotification: (id: string) => post<NotificationQueueItem>(`/api/notifications/queue/${id}/retry`),
+  whatsappStatus: () => get<{ status: "DESCONECTADO" | "ESPERANDO_QR" | "CONECTADO"; qr: string | null }>("/api/notifications/whatsapp/status"),
+  whatsappConnect: () => post<{ status: "DESCONECTADO" | "ESPERANDO_QR" | "CONECTADO"; qr: string | null }>("/api/notifications/whatsapp/connect"),
+  whatsappDisconnect: () => post<{ status: "DESCONECTADO" | "ESPERANDO_QR" | "CONECTADO"; qr: string | null }>("/api/notifications/whatsapp/disconnect"),
 
   // ---- billing (SUNAT) ----
   issueBoleta: (ventaId: string) => post<Comprobante>("/api/billing/boleta", { ventaId }),

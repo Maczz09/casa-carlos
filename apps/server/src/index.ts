@@ -16,7 +16,7 @@ import { createPaymentsService } from "@casacarlos/payments";
 import { createInventoryService } from "@casacarlos/inventory";
 import { createCashboxService } from "@casacarlos/cashbox";
 import { createReportingService } from "@casacarlos/reporting";
-import { ConsoleSender, WhatsAppSender, createNotificationsService, startNotificationsWorker } from "@casacarlos/notifications";
+import { WhatsAppSender, createNotificationsService, startNotificationsWorker } from "@casacarlos/notifications";
 import type { CertificateMaterial, EmisorInfo, SunatClient } from "@casacarlos/billing";
 import { MockSunatClient, RealSunatClient, createBillingService, ensureBillingCorrelativosSeeded, loadPfxCertificate } from "@casacarlos/billing";
 import { startScheduler } from "@casacarlos/scheduler";
@@ -121,12 +121,13 @@ async function main() {
   const payments = createPaymentsService(db, bus, sales);
   const cashbox = createCashboxService(db, bus, payments);
   const reporting = createReportingService(db);
-  // whatsapp-web.js es opcional (ver services/notifications/src/senders/whatsapp-sender.ts) — por
-  // defecto se usa un adaptador de consola para que el arranque nunca dependa de un WhatsApp
-  // conectado. CASACARLOS_WHATSAPP=1 activa el envío real.
-  const notificationSender =
-    process.env.CASACARLOS_WHATSAPP === "1" ? new WhatsAppSender(resolve(dataDir, "whatsapp-session")) : new ConsoleSender();
-  const notifications = await createNotificationsService(db, bus, rooms, identity, notificationSender);
+  // Construir el sender no conecta nada todavía (ver whatsapp-sender.ts) --
+  // recién arranca puppeteer cuando el admin aprieta "Conectar" en
+  // Notificaciones → WhatsApp. Así el arranque del servidor nunca depende de
+  // un WhatsApp ya vinculado, pero tampoco hace falta variable de entorno ni
+  // reiniciar nada para activarlo.
+  const whatsapp = new WhatsAppSender(resolve(dataDir, "whatsapp-session"));
+  const notifications = await createNotificationsService(db, bus, rooms, identity, whatsapp);
   const { emisor, sunatClient, cert } = configureSunat();
   await ensureBillingCorrelativosSeeded(db);
   const billing = createBillingService(db, sales, sunatClient, emisor, cert);
@@ -141,7 +142,7 @@ async function main() {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
   await app.register(websocketPlugin);
 
-  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, cashbox, reporting, notifications, billing };
+  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, cashbox, reporting, notifications, billing, whatsapp };
   registerAuth(app);
   registerWebSocketGateway(app, bus, rooms, identity, kiosk);
 
@@ -210,4 +211,5 @@ export type Services = {
   reporting: ReturnType<typeof createReportingService>;
   notifications: Awaited<ReturnType<typeof createNotificationsService>>;
   billing: ReturnType<typeof createBillingService>;
+  whatsapp: WhatsAppSender;
 };

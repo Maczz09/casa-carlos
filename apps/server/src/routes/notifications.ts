@@ -50,5 +50,26 @@ export function notificationsRoutes(services: Services) {
         return reply.code(400).send({ error: (err as Error).message });
       }
     });
+
+    app.get("/api/notifications/whatsapp/status", admin, async () => ({
+      status: services.whatsapp.getStatus(),
+      qr: services.whatsapp.getQr(),
+    }));
+
+    // No espera a que WhatsApp quede listo (ver whatsapp-sender.ts) -- solo arranca la
+    // conexión y responde al toque. El frontend sondea /status para ver el QR y el progreso.
+    app.post("/api/notifications/whatsapp/connect", admin, async (request, reply) => {
+      try {
+        await services.whatsapp.connect();
+        return { status: services.whatsapp.getStatus(), qr: services.whatsapp.getQr() };
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post("/api/notifications/whatsapp/disconnect", admin, async () => {
+      await services.whatsapp.disconnect();
+      return { status: services.whatsapp.getStatus(), qr: services.whatsapp.getQr() };
+    });
   };
 }

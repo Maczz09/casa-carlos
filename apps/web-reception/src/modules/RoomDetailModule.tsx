@@ -19,7 +19,7 @@ import { api, ApiError, getToken } from "../api.js";
 import { formatDuration, useCountdown } from "../hooks/useCountdown.js";
 import { PaymentForm } from "../components/PaymentForm.js";
 import { ProductPicker } from "../components/ProductPicker.js";
-import { DraftReceiptMarkup, type DraftReceipt } from "../components/receipt.js";
+import { printReceiptForSale } from "../components/receipt.js";
 import { DetailHeader } from "../components/layout.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, Row, Section, Select, Skeleton, Textarea, cx } from "../components/ui.js";
 
@@ -66,7 +66,6 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
   const [emitiendoNota, setEmitiendoNota] = useState<NotaTipo | null>(null);
   const [notaMotivoCodigo, setNotaMotivoCodigo] = useState("");
   const [notaMontoSoles, setNotaMontoSoles] = useState("");
-  const [draft, setDraft] = useState<DraftReceipt | null>(null);
 
   const remaining = useCountdown(entry?.desocupaEn ?? null);
 
@@ -86,12 +85,6 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
     reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entry?.stayId]);
-
-  useEffect(() => {
-    if (!draft) return;
-    const id = setTimeout(() => window.print(), 50);
-    return () => clearTimeout(id);
-  }, [draft]);
 
   if (!entry) {
     return (
@@ -173,15 +166,8 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
   };
 
   const imprimirBorrador = () => {
-    if (!sale || !comprobantePago) return;
-    setDraft({
-      sale,
-      tipo: comprobantePago.tipo,
-      receptorRuc: comprobantePago.receptorRuc,
-      receptorRazonSocial: comprobantePago.receptorRazonSocial,
-      fecha: comprobantePago.creadoEn,
-      cuarto: entry.room.numero,
-    });
+    if (!sale) return;
+    void printReceiptForSale(sale.id, entry.room.numero);
   };
 
   return (
@@ -538,8 +524,6 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
           </Section>
         </div>
       </div>
-
-      {draft && <DraftReceiptMarkup draft={draft} />}
     </>
   );
 }

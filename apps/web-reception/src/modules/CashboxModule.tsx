@@ -4,7 +4,7 @@ import { cents, format, soles } from "@casacarlos/money";
 import { IconCash, IconPrinter, IconReceipt } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { DenominationCounter, sumDenominaciones } from "../components/DenominationCounter.js";
-import { DraftReceiptMarkup, resolvePrintable, type DraftReceipt } from "../components/receipt.js";
+import { printReceiptForSale } from "../components/receipt.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, StatCard, Tabs, Textarea, cx } from "../components/ui.js";
 
 export const METHOD_LABEL: Record<string, string> = {
@@ -59,7 +59,6 @@ export function CashboxModule() {
   const [ventasDesde, setVentasDesde] = useState(todayIso());
   const [ventasHasta, setVentasHasta] = useState(todayIso());
   const [ventas, setVentas] = useState<Sale[] | null>(null);
-  const [draft, setDraft] = useState<DraftReceipt | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
 
   const loadShift = async () => {
@@ -93,18 +92,11 @@ export function CashboxModule() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
-  // El markup del borrador tiene que estar montado antes de llamar a print().
-  useEffect(() => {
-    if (!draft) return;
-    const id = setTimeout(() => window.print(), 50);
-    return () => clearTimeout(id);
-  }, [draft]);
-
   const printSale = async (sale: Sale) => {
     setPrintingId(sale.id);
     setError(null);
     try {
-      setDraft(await resolvePrintable(sale.id, sale.cuartoId));
+      await printReceiptForSale(sale.id, sale.cuartoId);
     } catch {
       setError("No se pudo preparar la impresión de esa venta.");
     } finally {
@@ -520,8 +512,6 @@ export function CashboxModule() {
           </Card>
         </>
       )}
-
-      {draft && <DraftReceiptMarkup draft={draft} />}
     </>
   );
 }

@@ -8,14 +8,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@casacarlos/contracts": "workspace:*",
     "@casacarlos/bus": "workspace:*",
+    "@casacarlos/contracts": "workspace:*",
     "@casacarlos/db": "workspace:*",
     "@casacarlos/money": "workspace:*",
-    "drizzle-orm": "^0.45.2"
+    "drizzle-orm": "^0.45.2",
+    "qrcode": "^1.5.4",
+    "whatsapp-web.js": "^1.34.7"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.5",
     "typescript": "^5.9.0"
   }
 }

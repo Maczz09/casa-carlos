@@ -1,8 +1,152 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import QRCode from "qrcode";
 import type { NotificationEventCode, NotificationQueueItem, NotificationRecipient, NotificationState, NotificationTemplate } from "@casacarlos/contracts";
 import { IconBell } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Tabs, Textarea, cx } from "../components/ui.js";
+
+type WhatsAppStatus = "DESCONECTADO" | "ESPERANDO_QR" | "CONECTADO";
+
+const WHATSAPP_TONE: Record<WhatsAppStatus, string> = {
+  DESCONECTADO: "tone-stone",
+  ESPERANDO_QR: "tone-amber",
+  CONECTADO: "tone-teal",
+};
+
+const WHATSAPP_LABEL: Record<WhatsAppStatus, string> = {
+  DESCONECTADO: "Desconectado",
+  ESPERANDO_QR: "Esperando que escanees el código",
+  CONECTADO: "Conectado",
+};
+
+/** Pestaña para vincular el WhatsApp real del hotel — ver services/notifications/src/senders/whatsapp-sender.ts. */
+function WhatsAppTab() {
+  const [status, setStatus] = useState<WhatsAppStatus>("DESCONECTADO");
+  const [qr, setQr] = useState<string | null>(null);
+  const [qrImage, setQrImage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const applyStatus = (s: { status: WhatsAppStatus; qr: string | null }) => {
+    setStatus(s.status);
+    setQr(s.qr);
+  };
+
+  const load = async () => {
+    try {
+      applyStatus(await api.whatsappStatus());
+    } catch {
+      // silencioso -- el sondeo reintenta solo
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Mientras no esté conectado del todo, sondea cada 2s para ver si ya llegó
+  // el QR o si alguien lo escaneó -- no hay WebSocket para esto, es un flujo
+  // de una sola vez, no vale la pena.
+  useEffect(() => {
+    if (status === "CONECTADO") {
+      if (pollRef.current) clearInterval(pollRef.current);
+      return;
+    }
+    pollRef.current = setInterval(load, 2000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
+  useEffect(() => {
+    if (!qr) {
+      setQrImage(null);
+      return;
+    }
+    let cancelled = false;
+    QRCode.toDataURL(qr, { margin: 1, width: 280 }).then((url) => {
+      if (!cancelled) setQrImage(url);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [qr]);
+
+  const connect = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      applyStatus(await api.whatsappConnect());
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo conectar WhatsApp.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const disconnect = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      applyStatus(await api.whatsappDisconnect());
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo desconectar.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Section title="WhatsApp del hotel" subtitle="El teléfono que manda los avisos automáticos — cuarto excedido, stock bajo, diferencia de caja">
+      <div className="flex flex-col items-center gap-4 py-2 text-center">
+        <Badge tone={WHATSAPP_TONE[status]}>{WHATSAPP_LABEL[status]}</Badge>
+
+        {status === "DESCONECTADO" && (
+          <>
+            <p className="max-w-sm text-sm text-muted">
+              Conectá el WhatsApp del hotel una sola vez — después las notificaciones se mandan solas, sin tocar nada más.
+            </p>
+            <Button variant="primary" size="lg" onClick={connect} disabled={busy}>
+              {busy ? "Conectando…" : "Conectar WhatsApp"}
+            </Button>
+          </>
+        )}
+
+        {status === "ESPERANDO_QR" && (
+          <>
+            <p className="max-w-sm text-sm text-muted">
+              Abrí WhatsApp en el teléfono del hotel → <strong>Dispositivos vinculados</strong> → <strong>Vincular un dispositivo</strong>, y escaneá este código.
+            </p>
+            {qrImage ? (
+              <img src={qrImage} alt="Código QR para vincular WhatsApp" className="animate-pop rounded-2xl border border-line shadow-[var(--shadow-card)]" width={280} height={280} />
+            ) : (
+              <div className="grid h-[280px] w-[280px] place-items-center rounded-2xl border border-line bg-inset text-sm text-subtle">Generando código…</div>
+            )}
+            <p className="text-xs text-subtle">Se actualiza solo — no hace falta recargar la página.</p>
+          </>
+        )}
+
+        {status === "CONECTADO" && (
+          <>
+            <p className="max-w-sm text-sm text-muted">Listo — las notificaciones se mandan automáticamente desde este WhatsApp. Solo hizo falta escanear una vez.</p>
+            <Button variant="danger" onClick={disconnect} disabled={busy}>
+              {busy ? "Desconectando…" : "Desvincular"}
+            </Button>
+          </>
+        )}
+
+        {error && (
+          <div className="w-full max-w-sm">
+            <Notice>{error}</Notice>
+          </div>
+        )}
+      </div>
+    </Section>
+  );
+}
 
 const EVENT_CODES: NotificationEventCode[] = ["STAY_OVERSTAYED", "LOW_STOCK", "SHIFT_DIFFERENCE"];
 
@@ -30,7 +174,7 @@ const QUEUE_STATE_LABEL: Record<NotificationState, string> = {
   FALLIDO: "Fallido",
 };
 
-type Tab = "destinatarios" | "plantillas" | "cola";
+type Tab = "destinatarios" | "plantillas" | "cola" | "whatsapp";
 
 /** Chip que se puede prender/apagar — se usa para suscribir a cada evento. */
 function EventChip({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
@@ -139,6 +283,7 @@ export function NotificationsModule() {
         actions={
           <Tabs<Tab>
             tabs={[
+              { id: "whatsapp", label: "WhatsApp" },
               { id: "destinatarios", label: "Destinatarios" },
               { id: "plantillas", label: "Plantillas" },
               { id: "cola", label: "Cola" },
@@ -154,6 +299,8 @@ export function NotificationsModule() {
           <Notice>{error}</Notice>
         </div>
       )}
+
+      {tab === "whatsapp" && <WhatsAppTab />}
 
       {tab === "destinatarios" && (
         <div className="grid gap-5 lg:grid-cols-[1.3fr_1fr]">
