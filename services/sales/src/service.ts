@@ -165,13 +165,14 @@ export class SalesService implements SalesPort {
 
     await this.repo.updateLine(lineId, { anulada: true, motivoAnulacion: motivo });
 
+    // Se recalcula ANTES de tocar el stock: si devolver el stock falla, la
+    // plata ya quedó bien y el error se ve; al revés, la venta se quedaba
+    // cobrando una línea que ya no existe (ver recalcularTotales).
+    await this.recalcularTotales(saleId);
+
     if (line.tipo === "PRODUCTO") {
       await this.inventory.returnStock({ lineaVentaId: lineId, usuarioId, motivo });
     }
-
-    const totalCentimos = sale.totalCentimos - line.subtotalCentimos;
-    const saldoCentimos = totalCentimos - sale.pagadoCentimos;
-    await this.repo.updateSale(saleId, { totalCentimos, saldoCentimos });
 
     await recordAudit(this.db, { entidad: "sales_lineas", entidadId: lineId, accion: "ANULAR_LINEA", usuarioId, antes: line, motivo });
   }
@@ -260,14 +261,43 @@ export class SalesService implements SalesPort {
       creadoEn: now,
     });
 
-    const totalCentimos = sale.totalCentimos + input.subtotalCentimos;
-    const saldoCentimos = totalCentimos - sale.pagadoCentimos;
-    const estado = saldoCentimos > 0 && (sale.estado === "PAGADA" || sale.estado === "CERRADA") ? "CON_SALDO" : sale.estado;
-    await this.repo.updateSale(sale.id, { totalCentimos, saldoCentimos, estado });
+    await this.recalcularTotales(sale.id);
 
     await recordAudit(this.db, { entidad: "sales_lineas", entidadId: line.id, accion: input.auditAccion, usuarioId: input.usuarioId, despues: line });
     await this.bus.publish("sale.line_added", { saleId: sale.id, lineId: line.id, phase: fase });
     return line;
+  }
+
+  /**
+   * Recalcula total y saldo SUMANDO las líneas vigentes, en vez de ir sumando
+   * y restando sobre el total ya guardado.
+   *
+   * El total incremental se descuadraba de verdad, por dos caminos distintos
+   * (los dos vistos en la base real):
+   *
+   * 1. **Anulación a medias**: `cancelLine` marcaba la línea anulada y recién
+   *    después restaba del total; si algo fallaba en el medio (devolver el
+   *    stock), la línea desaparecía de la vista pero el total la seguía
+   *    cobrando. Así apareció una venta cobrando S/ 72 con una sola línea de
+   *    S/ 60 a la vista.
+   * 2. **Escrituras pisadas**: `appendLine` hacía `sale.totalCentimos + x`
+   *    sobre una copia leída antes; con el kiosco y recepción agregando a la
+   *    vez, la segunda escritura pisaba a la primera y esa línea quedaba sin
+   *    cobrar.
+   *
+   * Derivándolo de las líneas, el total no puede quedar desalineado con lo
+   * que el comprobante muestra: es la misma fuente. Y como se recalcula
+   * entero cada vez, cualquier venta que ya venga descuadrada se corrige sola
+   * la próxima vez que se le toque una línea.
+   */
+  private async recalcularTotales(saleId: string): Promise<void> {
+    const sale = await this.mustGet(saleId);
+    // listLines ya excluye las anuladas — misma fuente que usa el comprobante.
+    const lineas = await this.repo.listLines(saleId);
+    const totalCentimos = lineas.reduce((acc, l) => acc + l.subtotalCentimos, 0);
+    const saldoCentimos = totalCentimos - sale.pagadoCentimos;
+    const estado = saldoCentimos > 0 && (sale.estado === "PAGADA" || sale.estado === "CERRADA") ? "CON_SALDO" : sale.estado;
+    await this.repo.updateSale(saleId, { totalCentimos, saldoCentimos, estado });
   }
 
   private async mustGet(id: string): Promise<Sale> {
