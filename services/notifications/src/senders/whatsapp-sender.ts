@@ -16,7 +16,7 @@ interface WhatsAppClient {
 interface WhatsAppWebModule {
   Client: new (options: {
     authStrategy: unknown;
-    puppeteer: { executablePath: string; headless: boolean };
+    puppeteer: { executablePath: string; headless: boolean; args?: string[] };
   }) => WhatsAppClient;
   LocalAuth: new (options: { dataPath: string }) => unknown;
 }
@@ -104,7 +104,13 @@ export class WhatsAppSender implements NotificationSender {
     const { Client, LocalAuth } = mod;
     const client = new Client({
       authStrategy: new LocalAuth({ dataPath: this.sessionDir }),
-      puppeteer: { executablePath, headless: true },
+      // "--no-sandbox" es obligatorio acá: este proceso corre dentro del
+      // servicio de Windows (cuenta LocalSystem, sesión 0, sin escritorio
+      // interactivo), y el sandbox de Chromium/Edge necesita ese contexto
+      // para inicializarse -- sin el flag, el navegador muere al instante
+      // con "Failed to launch the browser process: Code: 1002". Confirmado
+      // en el log real del servicio en producción, no es preventivo.
+      puppeteer: { executablePath, headless: true, args: ["--no-sandbox", "--disable-gpu"] },
     });
 
     client.on("qr", (qr) => {

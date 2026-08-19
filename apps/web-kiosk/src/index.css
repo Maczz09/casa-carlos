@@ -88,15 +88,24 @@
   --shadow-card: 0 1px 2px rgb(0 0 0 / 35%), 0 16px 36px -18px rgb(0 0 0 / 65%);
   --shadow-pop: 0 22px 54px -18px rgb(0 0 0 / 75%);
 
-  --room-wall: #6b6155;
-  --room-bed: #322a20;
-  --room-bed-stroke: #7c7060;
-  --room-linen: #5c5142;
-  --room-pillow: #453a2c;
-  --room-wood: #4a3f2c;
-  --room-lamp: #6b5a35;
-  --room-fan-hub: #6b6155;
-  --room-fan-blade: #453a2c;
+  /*
+   * A propósito bastante más claros que --c-surface/--c-inset (#251f19 /
+   * #2c251d): un primer intento de estos tokens los dejó casi del mismo
+   * color que el fondo de la tarjeta -- la cama y el ventilador SE
+   * DIBUJABAN (confirmado inspeccionando el SVG en vivo) pero quedaban
+   * invisibles a simple vista por falta de contraste. Reception evita esto
+   * cambiando de tono (navy sobre teal); acá, mismo tono cálido, se resuelve
+   * subiendo bastante la luminosidad de los muebles.
+   */
+  --room-wall: #8a7c68;
+  --room-bed: #4a4030;
+  --room-bed-stroke: #b3a186;
+  --room-linen: #8a7c68;
+  --room-pillow: #6b5c48;
+  --room-wood: #8a6f45;
+  --room-lamp: #c9a668;
+  --room-fan-hub: #8a7c68;
+  --room-fan-blade: #6b5c48;
   --room-floor-teal: #251f19;
 }
 

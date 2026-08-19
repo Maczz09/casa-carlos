@@ -43,8 +43,28 @@ svc.on("install", () => {
   svc.start();
 });
 
+// Puede pasar de verdad en una actualización: `sc delete` (ver
+// installer/casacarlos.iss, PrepareToInstall) no borra el servicio al
+// instante -- Windows lo deja "marcado para eliminar" hasta que se cierra
+// el último handle abierto (p.ej. si algo tenía services.msc abierto), y
+// si este script corre mientras el nombre viejo sigue en ese limbo,
+// node-windows lo ve como ya instalado. Confirmado en una actualización
+// real, no es hipotético. En vez de dejar el servicio caído esperando que
+// alguien corra uninstall-service.cjs a mano, se reintenta solo una vez.
+let reintentado = false;
 svc.on("alreadyinstalled", () => {
-  console.log("El servicio ya estaba instalado — no se hizo nada. Usa uninstall-service.cjs primero si querés reinstalarlo.");
+  if (reintentado) {
+    console.error("El servicio sigue apareciendo como instalado después de reintentar — algo lo tiene bloqueado (¿services.msc abierto?). Cerralo y corré este script de nuevo.");
+    process.exitCode = 1;
+    return;
+  }
+  reintentado = true;
+  console.log("El servicio ya estaba registrado (probablemente quedó a medio borrar de una actualización anterior) — reinstalando...");
+  svc.uninstall();
+});
+
+svc.on("uninstall", () => {
+  if (reintentado) svc.install();
 });
 
 svc.on("start", () => {

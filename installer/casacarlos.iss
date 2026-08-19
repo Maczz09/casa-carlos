@@ -188,6 +188,7 @@ end;
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
   ResultCode: Integer;
+  Intentos: Integer;
 begin
   Result := '';
   if EsActualizacion then
@@ -195,7 +196,22 @@ begin
     Exec('sc.exe', 'stop casacarlos.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
     Sleep(3000);
     Exec('sc.exe', 'delete casacarlos.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Sleep(1000);
+    // "sc delete" no borra el servicio al instante -- Windows lo deja
+    // "marcado para eliminar" hasta que se cierra el último handle abierto
+    // (confirmado en una actualización real: el registro seguía "instalado"
+    // para el paso de más abajo que lo vuelve a crear, con un Sleep fijo de
+    // apenas 1s). Se espera activamente, con "sc query", a que el nombre
+    // quede libre de verdad antes de seguir, hasta 10s -- si no alcanza,
+    // install-service.cjs igual se autorecupera (ver ese archivo).
+    Intentos := 0;
+    while Intentos < 20 do
+    begin
+      Exec('sc.exe', 'query casacarlos.exe', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+      if ResultCode <> 0 then
+        break;
+      Sleep(500);
+      Intentos := Intentos + 1;
+    end;
   end;
 end;
 
