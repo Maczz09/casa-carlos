@@ -3,16 +3,9 @@ import type { EventBus } from "@casacarlos/bus";
 import type { IdentityPort, RoomsPort } from "@casacarlos/contracts";
 import { NotificationsRepo } from "./repo.js";
 import { NotificationsService } from "./service.js";
-import type { NotificationSender } from "./senders/types.js";
 
-export async function createNotificationsService(
-  db: Db,
-  bus: EventBus,
-  rooms: RoomsPort,
-  identity: IdentityPort,
-  sender: NotificationSender,
-): Promise<NotificationsService> {
-  const service = new NotificationsService(new NotificationsRepo(db), rooms, identity, sender);
+export async function createNotificationsService(db: Db, bus: EventBus, rooms: RoomsPort, identity: IdentityPort): Promise<NotificationsService> {
+  const service = new NotificationsService(new NotificationsRepo(db), rooms, identity);
   await service.ensureDefaultTemplates();
 
   bus.subscribe("stay.overstayed", (payload) => service.handleStayOverstayed(payload));
@@ -23,9 +16,6 @@ export async function createNotificationsService(
 }
 
 export { NotificationsService } from "./service.js";
-export { startNotificationsWorker } from "./worker.js";
-export type { NotificationsWorkerHandle } from "./worker.js";
-export { ConsoleSender } from "./senders/console-sender.js";
-export { WhatsAppSender } from "./senders/whatsapp-sender.js";
-export type { NotificationSender } from "./senders/types.js";
+export { WhatsAppBridge } from "./whatsapp-bridge.js";
+export type { WhatsAppStatus, WhatsAppAgentStatus, WhatsAppAgentOrders } from "./whatsapp-bridge.js";
 export type { NotificationsPort } from "@casacarlos/contracts";

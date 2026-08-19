@@ -35,6 +35,13 @@ prender, y volver a entrar a `http://localhost:4000/`.
 Si después de un rato la página no carga, ver la sección **7. Problemas
 comunes** más abajo.
 
+**Una sola excepción: el asistente de WhatsApp.** Los avisos por WhatsApp los
+manda un programita aparte que se abre solo al **iniciar sesión** en Windows
+(no apenas prende la PC, como el resto). O sea: si la PC arranca pero nadie
+inicia sesión, todo el sistema funciona normal salvo los avisos de WhatsApp.
+Con iniciar sesión como siempre, se abre solo y listo. Ver la sección
+**8. WhatsApp** para el detalle.
+
 ---
 
 ## 3. Respaldos — dónde están y cómo restaurar uno
@@ -137,6 +144,57 @@ sistema** para hacer este cambio, no editarlo sin ayuda.
 los 20 segundos de terminar una operación, o a los 2 minutos de no tocarse
 — no hace falta apagar nada, solo esperar.
 
+**No llegan los avisos por WhatsApp:** ver la sección **8. WhatsApp** acá
+abajo.
+
 **Nada de esto funcionó:** contactar a quien dio soporte técnico del
 sistema, indicando qué se ve en pantalla (o una foto) y qué se estaba
 haciendo justo antes.
+
+---
+
+## 8. WhatsApp — vincular el teléfono del hotel
+
+El sistema avisa por WhatsApp cuando un cuarto se pasa del tiempo, cuando un
+producto queda con poco stock y cuando una caja cierra con diferencia. Para
+que eso funcione hay que vincular **una sola vez** el WhatsApp del hotel.
+
+### Vincular por primera vez
+
+1. Entrar al sistema como **administrador**.
+2. Ir a **Notificaciones** → pestaña **WhatsApp**.
+3. Apretar **Conectar WhatsApp** y esperar unos segundos (la primera vez
+   puede tardar hasta medio minuto).
+4. Cuando aparezca el código QR en pantalla: en el **teléfono del hotel**,
+   abrir WhatsApp → **Dispositivos vinculados** → **Vincular un dispositivo**,
+   y escanear el código.
+5. Listo. Queda vinculado para siempre — no hay que repetirlo cada día ni
+   después de reiniciar la PC.
+
+En **Notificaciones → Destinatarios** se elige a qué números avisar y de qué
+cosas. En **Cola** se ve qué se mandó y qué falló.
+
+### El asistente de WhatsApp
+
+WhatsApp funciona automatizando la versión web de WhatsApp, y eso necesita
+correr dentro de la sesión de Windows — no puede ir junto con el resto del
+sistema, que arranca antes de que nadie inicie sesión. Por eso va aparte, en
+una ventanita llamada **«Hospedaje Carlos — WhatsApp»**.
+
+- **Se abre sola** al iniciar sesión en Windows. Se puede minimizar.
+- Se puede **cerrar sin miedo**: no afecta recepción, caja, kiosco ni
+  facturación. Lo único que pasa es que dejan de salir los avisos.
+- Si en **Notificaciones → WhatsApp** dice **«Agente apagado»**, es
+  justamente eso: abrir el acceso directo **«Hospedaje Carlos — WhatsApp»**
+  (está en el Escritorio y en el Menú Inicio) y esperar unos segundos.
+
+### Si dejó de andar
+
+1. Ver si la ventana **«Hospedaje Carlos — WhatsApp»** está abierta. Si no,
+   abrirla desde el acceso directo del Escritorio.
+2. Si dice **«Desconectado»**, apretar **Conectar WhatsApp** de nuevo. Si
+   pide QR otra vez, es que alguien desvinculó el dispositivo desde el
+   teléfono — volver a escanear.
+3. Revisar que el teléfono del hotel tenga internet y que WhatsApp funcione
+   normal en él. Si el teléfono está sin señal o sin batería, el sistema no
+   puede mandar nada.

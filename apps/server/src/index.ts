@@ -1,6 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import Fastify from "fastify";
 import websocketPlugin from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
@@ -16,7 +17,7 @@ import { createPaymentsService } from "@casacarlos/payments";
 import { createInventoryService } from "@casacarlos/inventory";
 import { createCashboxService } from "@casacarlos/cashbox";
 import { createReportingService } from "@casacarlos/reporting";
-import { WhatsAppSender, createNotificationsService, startNotificationsWorker } from "@casacarlos/notifications";
+import { WhatsAppBridge, createNotificationsService } from "@casacarlos/notifications";
 import type { CertificateMaterial, EmisorInfo, SunatClient } from "@casacarlos/billing";
 import { MockSunatClient, RealSunatClient, createBillingService, ensureBillingCorrelativosSeeded, loadPfxCertificate } from "@casacarlos/billing";
 import { startScheduler } from "@casacarlos/scheduler";
@@ -98,6 +99,25 @@ function configureSunat(): { emisor: EmisorInfo; sunatClient: SunatClient; cert:
   return { emisor, sunatClient, cert };
 }
 
+/**
+ * Token compartido con el agente de WhatsApp (apps/whatsapp-agent), que corre
+ * como proceso aparte en la sesión del usuario. Se genera solo la primera vez
+ * y queda en `data/` — así no hace falta configurar nada a mano ni tocar el
+ * .env en las instalaciones que ya existen, y sobrevive a las actualizaciones
+ * igual que la base de datos. Es un secreto local (ambos procesos viven en la
+ * misma PC), solo evita que algo más en la máquina hable con estos endpoints.
+ */
+function ensureAgentToken(dataDir: string): string {
+  const tokenPath = resolve(dataDir, "whatsapp-agent.token");
+  if (existsSync(tokenPath)) {
+    const existing = readFileSync(tokenPath, "utf8").trim();
+    if (existing.length > 0) return existing;
+  }
+  const token = randomBytes(32).toString("hex");
+  writeFileSync(tokenPath, token, "utf8");
+  return token;
+}
+
 async function main() {
   const dataDir = resolve(__dirname, "../../../data");
   mkdirSync(dataDir, { recursive: true });
@@ -121,13 +141,14 @@ async function main() {
   const payments = createPaymentsService(db, bus, sales);
   const cashbox = createCashboxService(db, bus, payments);
   const reporting = createReportingService(db);
-  // Construir el sender no conecta nada todavía (ver whatsapp-sender.ts) --
-  // recién arranca puppeteer cuando el admin aprieta "Conectar" en
-  // Notificaciones → WhatsApp. Así el arranque del servidor nunca depende de
-  // un WhatsApp ya vinculado, pero tampoco hace falta variable de entorno ni
-  // reiniciar nada para activarlo.
-  const whatsapp = new WhatsAppSender(resolve(dataDir, "whatsapp-session"));
-  const notifications = await createNotificationsService(db, bus, rooms, identity, whatsapp);
+  // El servidor NO abre WhatsApp: como corre dentro de un servicio de Windows
+  // (Sesión 0, sin escritorio) Chromium no puede arrancar acá. De eso se
+  // encarga apps/whatsapp-agent, un proceso aparte que arranca con la sesión
+  // del usuario; este objeto es solo el punto de encuentro entre los dos.
+  // Ver services/notifications/src/whatsapp-bridge.ts.
+  const whatsapp = new WhatsAppBridge();
+  const agentToken = ensureAgentToken(dataDir);
+  const notifications = await createNotificationsService(db, bus, rooms, identity);
   const { emisor, sunatClient, cert } = configureSunat();
   await ensureBillingCorrelativosSeeded(db);
   const billing = createBillingService(db, sales, sunatClient, emisor, cert);
@@ -136,13 +157,12 @@ async function main() {
   await seedIfEmpty(rooms, pricing, identity, payments, inventory, cashbox);
 
   const scheduler = startScheduler(rooms, stays);
-  const notificationsWorker = startNotificationsWorker(notifications);
   const backupJob = startBackupJob(sqlite, dataDir);
 
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
   await app.register(websocketPlugin);
 
-  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, cashbox, reporting, notifications, billing, whatsapp };
+  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, cashbox, reporting, notifications, billing, whatsapp, agentToken };
   registerAuth(app);
   registerWebSocketGateway(app, bus, rooms, identity, kiosk);
 
@@ -179,7 +199,6 @@ async function main() {
 
   const shutdown = async () => {
     scheduler.stop();
-    notificationsWorker.stop();
     backupJob.stop();
     await app.close();
     sqlite.close();
@@ -211,5 +230,7 @@ export type Services = {
   reporting: ReturnType<typeof createReportingService>;
   notifications: Awaited<ReturnType<typeof createNotificationsService>>;
   billing: ReturnType<typeof createBillingService>;
-  whatsapp: WhatsAppSender;
+  whatsapp: WhatsAppBridge;
+  /** Secreto compartido con apps/whatsapp-agent — ver ensureAgentToken. */
+  agentToken: string;
 };

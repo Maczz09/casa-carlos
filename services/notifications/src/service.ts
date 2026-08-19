@@ -15,7 +15,6 @@ import type {
 } from "@casacarlos/contracts";
 import { renderTemplate } from "./domain/template.js";
 import { NotificationsRepo } from "./repo.js";
-import type { NotificationSender } from "./senders/types.js";
 
 /** Por encima de esto (en céntimos) una diferencia de cierre de caja amerita avisar — espeja CASHBOX_DIFFERENCE_THRESHOLD_CENTIMOS de @casacarlos/cashbox (no se importa esa dependencia solo por esta constante). */
 const SHIFT_DIFFERENCE_THRESHOLD_CENTIMOS = 500;
@@ -25,7 +24,6 @@ export class NotificationsService implements NotificationsPort {
     private readonly repo: NotificationsRepo,
     private readonly rooms: RoomsPort,
     private readonly identity: IdentityPort,
-    private readonly sender: NotificationSender,
   ) {}
 
   /** Garantiza que cada código de evento tenga su plantilla — se llama una vez al construir el servicio, nunca pisa una plantilla ya personalizada por el admin. */
@@ -77,11 +75,44 @@ export class NotificationsService implements NotificationsPort {
     return this.repo.listQueue(estado);
   }
 
-  /** Reintento manual desde la pantalla de notificaciones — envía de inmediato, no espera al siguiente ciclo del worker. */
+  /**
+   * Reintento manual desde la pantalla de notificaciones. Vuelve a dejar el
+   * mensaje PENDIENTE: quien envía de verdad es el agente de WhatsApp
+   * (`apps/whatsapp-agent`), que lo va a tomar en su próxima pasada — el
+   * servidor no puede enviar por su cuenta, ver `whatsapp-bridge.ts`.
+   */
   async retry(id: string): Promise<NotificationQueueItem> {
     const item = await this.repo.getQueueItem(id);
     if (!item) throw new Error(`Notificación ${id} no encontrada.`);
-    return this.attemptSend(item);
+    return this.repo.updateQueueItem(id, { estado: "PENDIENTE", ultimoError: null });
+  }
+
+  /** Cola que le toca enviar al agente de WhatsApp. */
+  async listPending(): Promise<NotificationQueueItem[]> {
+    return this.repo.listPending();
+  }
+
+  /** El agente confirma que un mensaje salió. */
+  async markSent(id: string): Promise<void> {
+    const item = await this.repo.getQueueItem(id);
+    if (!item) return;
+    await this.repo.updateQueueItem(id, {
+      estado: "ENVIADO",
+      enviadoEn: new Date().toISOString(),
+      intentos: item.intentos + 1,
+    });
+  }
+
+  /** El agente reporta que un mensaje falló — queda visible en la Cola con su motivo. */
+  async markFailed(id: string, error: string): Promise<void> {
+    const item = await this.repo.getQueueItem(id);
+    if (!item) return;
+    console.error(`[notifications] envío ${id} falló:`, error);
+    await this.repo.updateQueueItem(id, {
+      estado: "FALLIDO",
+      ultimoError: error,
+      intentos: item.intentos + 1,
+    });
   }
 
   async handleStayOverstayed(payload: DomainEvents["stay.overstayed"]): Promise<void> {
@@ -107,33 +138,6 @@ export class NotificationsService implements NotificationsPort {
       cajero: `${user.nombres} ${user.apellidos}`,
       diferencia: format(cents(payload.diferenciaCentimos)),
     });
-  }
-
-  /** Ciclo del worker (`worker.ts`): intenta enviar cada notificación pendiente. */
-  async processPending(): Promise<void> {
-    const pending = await this.repo.listPending();
-    for (const item of pending) {
-      await this.attemptSend(item);
-    }
-  }
-
-  private async attemptSend(item: NotificationQueueItem): Promise<NotificationQueueItem> {
-    try {
-      await this.sender.send(item.destinatario, item.mensaje);
-      return this.repo.updateQueueItem(item.id, {
-        estado: "ENVIADO",
-        enviadoEn: new Date().toISOString(),
-        intentos: item.intentos + 1,
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[notifications] envío ${item.id} falló:`, message);
-      return this.repo.updateQueueItem(item.id, {
-        estado: "FALLIDO",
-        ultimoError: message,
-        intentos: item.intentos + 1,
-      });
-    }
   }
 
   private async enqueueForEvent(codigo: NotificationEventCode, vars: Record<string, string>): Promise<void> {

@@ -99,6 +99,21 @@ Name: "{group}\{#AppName} — Recepción"; Filename: "http://localhost:4000/"
 Name: "{group}\{#AppName} — Kiosco"; Filename: "http://localhost:4000/kiosk/"
 Name: "{group}\Manual de uso"; Filename: "{app}\docs\MANUAL-DE-USO.md"
 
+; Asistente de WhatsApp: va en la carpeta Inicio (arranca solo al iniciar
+; sesión) porque NO puede vivir dentro del servicio de Windows -- automatiza un
+; navegador, y los servicios corren en la "Sesión 0" sin escritorio, donde
+; Chromium/Edge no arranca (comprobado en la instalación real con dos cuentas
+; distintas y varios flags). Ver services/notifications/src/whatsapp-bridge.ts.
+; Minimizado para que no moleste en el mostrador, pero visible en la barra de
+; tareas por si hay que mirar qué dice.
+Name: "{commonstartup}\{#AppName} — WhatsApp"; Filename: "{app}\scripts\whatsapp-agent.cmd"; \
+  WorkingDir: "{app}"; Comment: "Mantiene vinculado el WhatsApp del hotel para los avisos automáticos"; \
+  Flags: runminimized
+Name: "{commondesktop}\{#AppName} — WhatsApp"; Filename: "{app}\scripts\whatsapp-agent.cmd"; \
+  WorkingDir: "{app}"; Comment: "Abrí esto si los avisos por WhatsApp dejaron de salir"; Flags: runminimized
+Name: "{group}\{#AppName} — WhatsApp"; Filename: "{app}\scripts\whatsapp-agent.cmd"; \
+  WorkingDir: "{app}"; Flags: runminimized
+
 [Run]
 ; 1) Dependencias + build de las 2 SPA. `corepack` (incluido en el Node
 ;    portátil) resuelve pnpm en la versión fijada por "packageManager" en
@@ -122,6 +137,14 @@ Filename: "{app}\vendor\node-win-x64\node.exe"; \
   WorkingDir: "{app}"; \
   StatusMsg: "Registrando el servicio de Windows..."; \
   Flags: runhidden waituntilterminated
+
+; 3) Arranca el asistente de WhatsApp ya mismo -- si no, recién saldría al
+;    próximo inicio de sesión (ver el acceso directo en {commonstartup}), y la
+;    persona que acaba de instalar vería "Agente apagado" sin entender por qué.
+Filename: "{app}\scripts\whatsapp-agent.cmd"; \
+  WorkingDir: "{app}"; \
+  Description: "Iniciar el asistente de WhatsApp"; \
+  Flags: nowait postinstall skipifsilent runminimized
 
 [UninstallRun]
 ; Antes de borrar archivos, apaga y desregistra el servicio.

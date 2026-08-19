@@ -5,21 +5,23 @@ import { IconBell } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Tabs, Textarea, cx } from "../components/ui.js";
 
-type WhatsAppStatus = "DESCONECTADO" | "ESPERANDO_QR" | "CONECTADO";
+type WhatsAppStatus = "AGENTE_OFFLINE" | "DESCONECTADO" | "ESPERANDO_QR" | "CONECTADO";
 
 const WHATSAPP_TONE: Record<WhatsAppStatus, string> = {
+  AGENTE_OFFLINE: "tone-rose",
   DESCONECTADO: "tone-stone",
   ESPERANDO_QR: "tone-amber",
   CONECTADO: "tone-teal",
 };
 
 const WHATSAPP_LABEL: Record<WhatsAppStatus, string> = {
+  AGENTE_OFFLINE: "Agente apagado",
   DESCONECTADO: "Desconectado",
   ESPERANDO_QR: "Esperando que escanees el código",
   CONECTADO: "Conectado",
 };
 
-/** Pestaña para vincular el WhatsApp real del hotel — ver services/notifications/src/senders/whatsapp-sender.ts. */
+/** Pestaña para vincular el WhatsApp real del hotel — ver services/notifications/src/whatsapp-bridge.ts. */
 function WhatsAppTab() {
   const [status, setStatus] = useState<WhatsAppStatus>("DESCONECTADO");
   const [qr, setQr] = useState<string | null>(null);
@@ -103,6 +105,19 @@ function WhatsAppTab() {
     <Section title="WhatsApp del hotel" subtitle="El teléfono que manda los avisos automáticos — cuarto excedido, stock bajo, diferencia de caja">
       <div className="flex flex-col items-center gap-4 py-2 text-center">
         <Badge tone={WHATSAPP_TONE[status]}>{WHATSAPP_LABEL[status]}</Badge>
+
+        {status === "AGENTE_OFFLINE" && (
+          <>
+            <p className="max-w-sm text-sm text-muted">
+              El asistente de WhatsApp no está abierto. WhatsApp necesita correr en la sesión de Windows, no dentro del servicio, así que va por
+              separado.
+            </p>
+            <p className="max-w-sm text-sm text-muted">
+              Abrí el acceso directo <strong>«Hospedaje Carlos — WhatsApp»</strong> (Escritorio o Menú Inicio). Se abre solo al encender la PC; si lo
+              cerraste, con abrirlo alcanza.
+            </p>
+          </>
+        )}
 
         {status === "DESCONECTADO" && (
           <>
