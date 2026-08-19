@@ -181,12 +181,15 @@ correr dentro de la sesión de Windows — no puede ir junto con el resto del
 sistema, que arranca antes de que nadie inicie sesión. Por eso va aparte, en
 una ventanita llamada **«Hospedaje Carlos — WhatsApp»**.
 
-- **Se abre sola** al iniciar sesión en Windows. Se puede minimizar.
-- Se puede **cerrar sin miedo**: no afecta recepción, caja, kiosco ni
-  facturación. Lo único que pasa es que dejan de salir los avisos.
-- Si en **Notificaciones → WhatsApp** dice **«Agente apagado»**, es
-  justamente eso: abrir el acceso directo **«Hospedaje Carlos — WhatsApp»**
-  (está en el Escritorio y en el Menú Inicio) y esperar unos segundos.
+- **Arranca sola y en segundo plano** al iniciar sesión en Windows. No se ve
+  ninguna ventana: es normal, está trabajando igual.
+- **Se reconecta sola.** Después de apagar y prender la PC no hay que hacer
+  nada ni volver a escanear el QR: la vinculación se conserva y el asistente
+  se reconecta a los pocos segundos.
+- Si en **Notificaciones → WhatsApp** dice **«Agente apagado»**, esperar unos
+  segundos (al prender la PC tarda un poco). Si persiste, abrir el acceso
+  directo **«Hospedaje Carlos — WhatsApp»** del Escritorio — no pide QR de
+  nuevo.
 
 ### Si dejó de andar
 
@@ -194,7 +197,9 @@ una ventanita llamada **«Hospedaje Carlos — WhatsApp»**.
    abrirla desde el acceso directo del Escritorio.
 2. Si dice **«Desconectado»**, apretar **Conectar WhatsApp** de nuevo. Si
    pide QR otra vez, es que alguien desvinculó el dispositivo desde el
-   teléfono — volver a escanear.
+   teléfono — volver a escanear. **Ojo:** el botón **Desvincular** borra la
+   vinculación a propósito y obliga a escanear de nuevo; usarlo solo para
+   cambiar de teléfono.
 3. Revisar que el teléfono del hotel tenga internet y que WhatsApp funcione
    normal en él. Si el teléfono está sin señal o sin batería, el sistema no
    puede mandar nada.

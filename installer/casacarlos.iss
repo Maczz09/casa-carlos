@@ -110,6 +110,12 @@ Name: "{group}\Manual de uso"; Filename: "{app}\docs\MANUAL-DE-USO.md"
 Name: "{commonstartup}\{#AppName} — WhatsApp"; Filename: "wscript.exe"; \
   Parameters: """{app}\scripts\whatsapp-agent-oculto.vbs"""; WorkingDir: "{app}"; \
   Comment: "Mantiene vinculado el WhatsApp del hotel para los avisos automáticos"
+; En el Escritorio queda uno igual, solo por si alguien lo cierra sin querer y
+; hay que reabrirlo sin reiniciar la PC. Que se lancen dos a la vez no rompe
+; nada: el agente tiene candado de instancia única (ver apps/whatsapp-agent).
+Name: "{commondesktop}\{#AppName} — WhatsApp"; Filename: "wscript.exe"; \
+  Parameters: """{app}\scripts\whatsapp-agent-oculto.vbs"""; WorkingDir: "{app}"; \
+  Comment: "Abrilo si los avisos por WhatsApp dejaron de salir"
 
 [Run]
 ; 1) Dependencias + build de las 2 SPA. `corepack` (incluido en el Node

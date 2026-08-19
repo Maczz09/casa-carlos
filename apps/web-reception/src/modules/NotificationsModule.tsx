@@ -109,12 +109,12 @@ function WhatsAppTab() {
         {status === "AGENTE_OFFLINE" && (
           <>
             <p className="max-w-sm text-sm text-muted">
-              El asistente de WhatsApp no está abierto. WhatsApp necesita correr en la sesión de Windows, no dentro del servicio, así que va por
-              separado.
+              El asistente de WhatsApp todavía no respondió. Arranca solo con Windows y se reconecta solo — normalmente esto se resuelve en unos
+              segundos después de prender la PC.
             </p>
-            <p className="max-w-sm text-sm text-muted">
-              Abrí el acceso directo <strong>«Hospedaje Carlos — WhatsApp»</strong> (Escritorio o Menú Inicio). Se abre solo al encender la PC; si lo
-              cerraste, con abrirlo alcanza.
+            <p className="max-w-sm text-sm text-subtle">
+              Si sigue así, abrí el acceso directo <strong>«Hospedaje Carlos — WhatsApp»</strong> del Escritorio. No hace falta volver a escanear el
+              código: la vinculación se conserva.
             </p>
           </>
         )}

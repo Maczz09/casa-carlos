@@ -1,4 +1,4 @@
-import { appendFileSync, existsSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -25,10 +25,30 @@ const DATA_DIR = resolve(ROOT, "data");
 const SESSION_DIR = resolve(DATA_DIR, "whatsapp-session");
 const TOKEN_FILE = resolve(DATA_DIR, "whatsapp-agent.token");
 
+/**
+ * Se escribe apenas WhatsApp queda vinculado y solo se borra al desvincular a
+ * propósito. Mientras exista, el agente se reconecta solo al arrancar la PC —
+ * el recepcionista no tiene que apretar nada nunca más — y NUNCA se borra la
+ * sesión automáticamente por un error: una sesión vinculada es cara (hay que
+ * ir con el teléfono a escanear) y un fallo pasajero al bootear no puede
+ * costarla.
+ */
+const MARCA_VINCULADO = resolve(DATA_DIR, "whatsapp-vinculado.flag");
+
+/**
+ * Candado de instancia única. Dos agentes a la vez abren el MISMO perfil de
+ * Chromium (`whatsapp-session`), y eso corrompe la sesión — fue lo que dejó
+ * la vinculación inservible con "TargetCloseError" la primera vez. Pasó de
+ * verdad: al reiniciar la PC quedaron dos instancias arrancando juntas.
+ */
+const LOCK_FILE = resolve(DATA_DIR, "whatsapp-agent.lock");
+
 const SERVER_URL = process.env.CASACARLOS_URL ?? "http://localhost:4000";
 const SYNC_MS = 2000;
 /** Cuando el servidor todavía no levantó, no tiene sentido machacarlo cada 2s. */
 const RETRY_SERVIDOR_MS = 10_000;
+/** Cada cuánto reintentar la reconexión automática cuando hay sesión guardada pero WhatsApp está caído. */
+const RECONECTAR_MS = 60_000;
 
 type AgentStatus = "DESCONECTADO" | "ESPERANDO_QR" | "CONECTADO";
 
@@ -126,6 +146,8 @@ class Agente {
   private enviando = false;
   /** Si llegó a "ready" al menos una vez en este intento, la sesión guardada sirve y no hay que borrarla. */
   private llegoAReady = false;
+  private fallosConsecutivos = 0;
+  private ultimoIntento = 0;
 
   async conectar(): Promise<void> {
     if (this.client) return;
@@ -156,6 +178,14 @@ class Agente {
     // CONECTADO todavía: recién en "ready" se pueden mandar mensajes.
     client.on("authenticated", () => {
       this.qr = null;
+      // Deja constancia de que este teléfono ya se vinculó: a partir de acá el
+      // agente se reconecta solo al arrancar la PC y la sesión pasa a ser
+      // intocable para el borrado automático.
+      try {
+        writeFileSync(MARCA_VINCULADO, new Date().toISOString(), "utf8");
+      } catch {
+        // no es crítico: solo perdería la reconexión automática
+      }
       log("INFO", "Teléfono vinculado. Sincronizando con WhatsApp...");
     });
     client.on("loading_screen", (percent, message) => {
@@ -164,6 +194,7 @@ class Agente {
     client.on("ready", () => {
       this.qr = null;
       this.llegoAReady = true;
+      this.fallosConsecutivos = 0;
       this.status = "CONECTADO";
       log("INFO", "WhatsApp conectado y listo para enviar.");
     });
@@ -184,13 +215,15 @@ class Agente {
     // lo que tarde alguien en escanear), así que no se espera acá: el estado
     // viaja por los eventos de arriba.
     client.initialize().catch((err: unknown) => {
-      log("ERROR", "Error inicializando WhatsApp:", err);
-      // Si nunca llegó a estar listo, la sesión guardada no sirve: pasó de
-      // verdad acá -- un escaneo que quedó a medio guardar dejó la carpeta en
-      // un estado que hacía reventar TODOS los intentos siguientes con
-      // "TargetCloseError: Target closed", sin forma de salir salvo borrarla a
-      // mano. Se borra sola y el próximo intento pide un QR nuevo.
-      if (!this.llegoAReady) this.borrarSesionIlegible();
+      this.fallosConsecutivos += 1;
+      log("ERROR", `Error inicializando WhatsApp (fallo ${this.fallosConsecutivos}):`, err);
+      // Regla conservadora a propósito: una sesión YA VINCULADA nunca se borra
+      // sola. Un fallo al arrancar la PC (el navegador tarda, la red todavía no
+      // levantó) no puede costar la vinculación, que obliga a ir con el
+      // teléfono a escanear de nuevo. Solo se descarta una sesión que jamás
+      // llegó a vincularse y que ya falló varias veces seguidas -- ese sí es el
+      // caso del escaneo a medio guardar que reventaba con TargetCloseError.
+      if (!existsSync(MARCA_VINCULADO) && this.fallosConsecutivos >= 3) this.borrarSesionIlegible();
       void this.desconectar();
     });
   }
@@ -206,12 +239,43 @@ class Agente {
     }
   }
 
-  async desconectar(): Promise<void> {
+  /**
+   * `olvidar` = el admin apretó "Desvincular" en la pantalla: ahí sí se borra
+   * la sesión y la marca, porque la intención es cambiar de teléfono. Sin eso
+   * es solo un corte (se cayó el navegador, se reinicia la PC) y la sesión se
+   * conserva para reconectar sola.
+   */
+  async desconectar(olvidar = false): Promise<void> {
     const client = this.client;
     this.client = null;
     this.status = "DESCONECTADO";
     this.qr = null;
     if (client) await client.destroy().catch(() => {});
+    if (olvidar) {
+      this.fallosConsecutivos = 0;
+      try {
+        if (existsSync(MARCA_VINCULADO)) unlinkSync(MARCA_VINCULADO);
+      } catch {
+        // idem
+      }
+      this.borrarSesionIlegible();
+      log("INFO", "WhatsApp desvinculado a pedido — la próxima conexión pedirá un QR nuevo.");
+    }
+  }
+
+  /**
+   * Reconexión automática: si el teléfono ya se vinculó alguna vez, el agente
+   * vuelve solo sin que nadie apriete nada — al prender la PC, o si WhatsApp
+   * se cayó. Antes quedaba esperando una orden de la pantalla, así que después
+   * de cada reinicio alguien tenía que entrar a apretar "Conectar".
+   */
+  async asegurarConexion(): Promise<void> {
+    if (this.client || this.status !== "DESCONECTADO") return;
+    if (!existsSync(MARCA_VINCULADO)) return;
+    if (Date.now() - this.ultimoIntento < RECONECTAR_MS) return;
+    this.ultimoIntento = Date.now();
+    log("INFO", "Hay una sesión vinculada — reconectando solo.");
+    await this.conectar();
   }
 
   /** Manda lo que haya en cola. Secuencial y con candado: WhatsApp no quiere ráfagas en paralelo. */
@@ -260,14 +324,59 @@ class Agente {
       return false;
     }
 
-    if (data.desconectar) await this.desconectar();
+    if (data.desconectar) await this.desconectar(true);
     if (data.conectar) await this.conectar();
     if (data.pendientes.length > 0) void this.enviarPendientes(data.pendientes);
     return true;
   }
 }
 
+/**
+ * Evita que corran dos agentes a la vez. Importa de verdad: dos instancias
+ * abren el MISMO perfil de Chromium y se corrompen la sesión entre ellas
+ * (fue lo que dejó la vinculación inservible). Al reiniciar la PC llegaron a
+ * arrancar dos juntas -- se vio duplicado en el log.
+ */
+function tomarCandado(): boolean {
+  try {
+    if (existsSync(LOCK_FILE)) {
+      const pid = Number(readFileSync(LOCK_FILE, "utf8").trim());
+      if (Number.isInteger(pid) && pid > 0) {
+        try {
+          // Señal 0: no mata nada, solo pregunta si ese proceso sigue vivo.
+          process.kill(pid, 0);
+          return false;
+        } catch {
+          // El PID del candado ya no existe: quedó de un apagón o un cierre brusco.
+        }
+      }
+    }
+    writeFileSync(LOCK_FILE, String(process.pid), "utf8");
+    return true;
+  } catch {
+    // Si no se puede manejar el candado, es preferible correr igual que dejar
+    // al hotel sin notificaciones.
+    return true;
+  }
+}
+
+function soltarCandado(): void {
+  try {
+    if (existsSync(LOCK_FILE) && readFileSync(LOCK_FILE, "utf8").trim() === String(process.pid)) unlinkSync(LOCK_FILE);
+  } catch {
+    // nada que hacer
+  }
+}
+
 async function main(): Promise<void> {
+  if (!tomarCandado()) {
+    log("INFO", "Ya hay otro asistente de WhatsApp corriendo — este se cierra para no pisarle la sesión.");
+    return;
+  }
+  process.on("exit", soltarCandado);
+  process.on("SIGINT", () => { soltarCandado(); process.exit(0); });
+  process.on("SIGTERM", () => { soltarCandado(); process.exit(0); });
+
   log("INFO", "Agente de WhatsApp — Hospedaje Carlos");
   log("INFO", `Servidor: ${SERVER_URL}`);
 
@@ -290,6 +399,11 @@ async function main(): Promise<void> {
         await new Promise((r) => setTimeout(r, RETRY_SERVIDOR_MS));
         continue;
       }
+
+      // Reconexión automática antes de sincronizar: si ya hay un teléfono
+      // vinculado, el agente vuelve solo tras un reinicio o una caída, sin que
+      // nadie tenga que entrar a la pantalla a apretar "Conectar".
+      await agente.asegurarConexion();
 
       const ok = await agente.sincronizar(token);
       if (!ok && !avisoSinServidor) {
