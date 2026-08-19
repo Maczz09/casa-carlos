@@ -165,6 +165,26 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
     );
   };
 
+  /**
+   * Cuánto de los cargos actuales YA está respaldado por documentos emitidos a
+   * SUNAT: la boleta/factura, más lo que sumaron las notas de débito, menos lo
+   * que restaron las de crédito. Solo cuentan las aceptadas — una rechazada no
+   * respalda nada.
+   */
+  const cubiertoCentimos = comprobante
+    ? comprobante.totalCentimos +
+      notas.filter((n) => n.tipo === "NOTA_DEBITO" && n.estadoSunat === "ACEPTADO").reduce((acc, n) => acc + n.totalCentimos, 0) -
+      notas.filter((n) => n.tipo === "NOTA_CREDITO" && n.estadoSunat === "ACEPTADO").reduce((acc, n) => acc + n.totalCentimos, 0)
+    : 0;
+
+  /**
+   * Cargos agregados DESPUÉS de emitir — el caso típico: el huésped pide algo
+   * del frigobar cuando la boleta ya se fue a SUNAT. Un comprobante emitido no
+   * se puede modificar, así que esto es lo que habría que respaldar con una
+   * nota de débito (o dejar solo en el comprobante interno).
+   */
+  const noFacturadoCentimos = sale && comprobante?.estadoSunat === "ACEPTADO" ? sale.totalCentimos - cubiertoCentimos : 0;
+
   const imprimirBorrador = () => {
     if (!sale) return;
     void printReceiptForSale(sale.id, entry.room.numero);
@@ -254,9 +274,59 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
             </Section>
           )}
 
-          {/* Comprobante — justo debajo de los cargos, que es donde se lo busca al cobrar. */}
-          {sale && sale.saldoCentimos === 0 && (
+          {/* Comprobante — justo debajo de los cargos, que es donde se lo busca al cobrar.
+              Se muestra SIEMPRE que haya venta: antes solo aparecía con el saldo en cero,
+              y bastaba agregar un producto para que se escondiera el comprobante ya emitido
+              junto con el botón de imprimir. Lo que cambia según el estado es el contenido,
+              no si la sección existe. */}
+          {sale && (
             <Section title="Comprobante">
+              {/* Imprimir está disponible en todo momento: imprime lo mejor que haya
+                  — el PDF real si SUNAT ya aceptó, o el borrador con los cargos al día. */}
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-inset p-3">
+                <p className="text-xs text-muted">
+                  {comprobante?.estadoSunat === "ACEPTADO"
+                    ? "Imprime el comprobante electrónico aceptado por SUNAT."
+                    : "Todavía no hay comprobante emitido — imprime el detalle de cargos como control interno."}
+                </p>
+                <Button size="sm" icon={<IconPrinter className="h-3.5 w-3.5" />} onClick={imprimirBorrador}>
+                  Imprimir comprobante
+                </Button>
+              </div>
+
+              {/* Cargos posteriores a la emisión: un comprobante ya enviado a SUNAT no se
+                  puede modificar, así que se ofrece respaldarlos con una nota de débito o
+                  dejarlos solo en el comprobante interno. Ver docs/CASOS-DE-USO.md. */}
+              {noFacturadoCentimos > 0 && !emitiendoNota && (
+                <div className="mb-3">
+                <Notice kind="warn">
+                  <p className="text-sm font-medium text-ink">
+                    Se agregaron cargos por {format(cents(noFacturadoCentimos))} después de emitir el comprobante.
+                  </p>
+                  <p className="mt-1 text-xs text-muted">
+                    El comprobante ya emitido no se puede modificar. Podés respaldar lo nuevo con una nota de débito, o dejarlo solo en el
+                    comprobante interno y cobrarlo igual.
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      onClick={() => {
+                        setEmitiendoNota("NOTA_DEBITO");
+                        setNotaMotivoCodigo("02");
+                        setNotaMontoSoles((noFacturadoCentimos / 100).toFixed(2));
+                      }}
+                    >
+                      Emitir nota de débito por {format(cents(noFacturadoCentimos))}
+                    </Button>
+                    <Button size="sm" icon={<IconPrinter className="h-3.5 w-3.5" />} onClick={imprimirBorrador}>
+                      Continuar sin nota — imprimir detalle
+                    </Button>
+                  </div>
+                </Notice>
+                </div>
+              )}
+
               {comprobante ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">

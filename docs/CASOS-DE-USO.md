@@ -144,6 +144,44 @@ Actores: **ADM** administrador · **REC** recepcionista · **CLI** cliente (kios
 | PAG-13 | Consultar los comprobantes de una venta | ADM, REC | Códigos, montos y método de cada detalle |
 | PAG-14 | Corregir un detalle de pago mal registrado | REC, ADM | Auditado |
 
+## FAC — Facturación electrónica · `billing`
+
+| ID | Caso de uso | Actor | Regla clave |
+|---|---|---|---|
+| FAC-01 | Generar comprobante de pago (borrador) | REC | Control interno, **no** se envía a SUNAT; es lo que se imprime en la térmica de 80mm |
+| FAC-02 | Emitir boleta electrónica | REC, ADM | Correlativo atómico por serie; se envía a SUNAT |
+| FAC-03 | Emitir factura electrónica | REC, ADM | Exige RUC y razón social del receptor |
+| FAC-04 | Reintentar un envío rechazado o con error | ADM | Solo si el estado **no** es ACEPTADO ni ANULADO |
+| FAC-05 | Descargar PDF / XML del comprobante | REC, ADM | El PDF lleva el QR con los datos exigidos por SUNAT |
+| FAC-06 | Anular una factura (comunicación de baja) | ADM | Solo facturas aceptadas; envío asíncrono con ticket |
+| FAC-07 | Imprimir el comprobante en cualquier momento | REC | Imprime el **PDF real** si SUNAT ya aceptó; si no, el borrador con los cargos al día |
+| FAC-08 | **Cobrar cargos agregados después de emitir** | REC | Ver el detalle abajo — el comprobante emitido **nunca** se modifica |
+| FAC-09 | Emitir nota de débito | REC, ADM | **Aumenta** lo cobrado sobre un comprobante ya aceptado (catálogo 10 de SUNAT) |
+| FAC-10 | Emitir nota de crédito | ADM | **Disminuye** o anula lo cobrado (catálogo 9 de SUNAT) |
+
+### FAC-08 — Cargos agregados después de emitir el comprobante
+
+El caso real: la boleta del cuarto ya se emitió y se envió a SUNAT, y recién
+ahí el huésped pide algo del frigobar. **Un comprobante aceptado por SUNAT no
+se puede modificar** — no se le pueden agregar líneas. El sistema detecta la
+diferencia solo (cargos actuales menos lo que respaldan los documentos ya
+emitidos, contando notas de débito y de crédito aceptadas) y ofrece dos
+caminos, sin bloquear el cobro en ninguno:
+
+1. **Emitir una nota de débito** por la diferencia (FAC-09). Es el camino
+   formalmente correcto cuando el huésped necesita el respaldo tributario del
+   consumo extra. El monto y el motivo ("Aumento en el valor", código 02)
+   vienen precargados, pero se pueden cambiar.
+2. **Continuar sin nota de débito**: la boleta ya emitida queda como está y el
+   consumo extra se cobra respaldado por el comprobante interno de 80mm, que
+   siempre refleja **todos** los cargos vigentes. Es lo habitual en consumos
+   chicos donde el huésped no pide comprobante por el extra.
+
+Agregar productos **nunca** se bloquea: mientras el comprobante siga en
+borrador (FAC-01) se agrega y listo, porque el borrador se reimprime con el
+total nuevo; y si ya se emitió, se agrega igual y recién ahí aparece la
+elección de arriba.
+
 ## CAJ — Caja y turnos · `cashbox`
 
 | ID | Caso de uso | Actor | Regla clave |
