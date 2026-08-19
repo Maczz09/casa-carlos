@@ -77,10 +77,16 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 ;     desarrollo (data\sunat-beta-test.pfx) — secreto, nunca debe viajar;
 ;     el asistente pide y copia el certificado del CLIENTE aparte, en
 ;     WriteEnvFile más abajo.
+;   - data\whatsapp-*: la sesión de WhatsApp vinculada de ESTA máquina —
+;     es la credencial que deja mandar mensajes como el teléfono vinculado,
+;     y sin excluirla viajaba dentro del .exe (se notó porque el instalador
+;     pesaba 66MB en vez de 26MB: el perfil de Chromium entero adentro).
+;     Junto con ella, el token del agente y sus archivos de estado, que son
+;     por instalación y se regeneran solos en destino.
 ;   - installer\output: es el propio .exe que este script está generando —
 ;     incluirlo causa que ISCC intente leer el archivo mientras lo está
 ;     escribiendo ("el proceso no tiene acceso al archivo").
-Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\*.pfx,dist,vendor,apps\server\src\daemon,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
+Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
 
 ; El Node portátil — runtime propio, sin depender de que el cliente lo tenga instalado.
 Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags: recursesubdirs ignoreversion
