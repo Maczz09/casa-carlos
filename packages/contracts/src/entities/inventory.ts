@@ -13,6 +13,19 @@ export const ProductCategorySchema = z.object({
 });
 export type ProductCategory = z.infer<typeof ProductCategorySchema>;
 
+export const ProductImageSchema = z.object({
+  id: z.string(),
+  productoId: z.string(),
+  /** Nombre opaco del archivo dentro de data/product-images. */
+  archivo: z.string(),
+  url: z.string(),
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  tamanoBytes: z.number().int().positive(),
+  orden: z.number().int().nonnegative(),
+  creadoEn: z.string(),
+});
+export type ProductImage = z.infer<typeof ProductImageSchema>;
+
 export const ProductSchema = z.object({
   id: z.string(),
   codigoBarras: z.string().nullable(),
@@ -28,6 +41,8 @@ export const ProductSchema = z.object({
   estado: ProductStateSchema,
   activo: z.boolean(),
   creadoEn: z.string(),
+  /** Orden 0 = imagen principal. Máximo cuatro imágenes. */
+  imagenes: z.array(ProductImageSchema).max(4),
 });
 export type Product = z.infer<typeof ProductSchema>;
 
@@ -39,6 +54,7 @@ export const KioskProductSchema = z.object({
   categoria: z.string().nullable(),
   precioCentimos: z.number().int().nonnegative(),
   enStock: z.boolean(),
+  imagenes: z.array(z.string()).max(4),
 });
 export type KioskProduct = z.infer<typeof KioskProductSchema>;
 

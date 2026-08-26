@@ -85,6 +85,13 @@
       "when": 1787086468130,
       "tag": "0011_repair_sale_totals",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1787725346837,
+      "tag": "0012_rich_true_believers",
+      "breakpoints": true
     }
   ]
 }

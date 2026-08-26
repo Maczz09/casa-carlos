@@ -2,6 +2,7 @@ import type { Db } from "@casacarlos/db";
 import { recordAudit } from "@casacarlos/db";
 import { newId } from "@casacarlos/contracts";
 import type {
+  AddProductImageInput,
   CreateProductCategoryInput,
   CreateProductInput,
   DispatchInput,
@@ -9,6 +10,7 @@ import type {
   MovementType,
   Product,
   ProductCategory,
+  ProductImage,
   ProductMovement,
   StockAdjustmentInput,
   UpdateProductCategoryInput,
@@ -37,13 +39,15 @@ export class InventoryService implements InventoryPort {
     const nombre = input.nombre.trim();
     if (!nombre) throw new Error("El nombre de la categoría no puede estar vacío.");
     if (await this.repo.findCategoryByName(nombre)) throw new Error(`Ya existe una categoría llamada "${nombre}".`);
-    return this.repo.insertCategory({
+    const category = await this.repo.insertCategory({
       id: newId(),
       nombre,
       descripcion: input.descripcion?.trim() || null,
       activo: true,
       creadoEn: new Date().toISOString(),
     });
+    await this.bus.publish("inventory.catalog_changed", { productoId: null });
+    return category;
   }
 
   async updateCategory(id: string, patch: UpdateProductCategoryInput): Promise<ProductCategory> {
@@ -57,11 +61,13 @@ export class InventoryService implements InventoryPort {
       if (clash && clash.id !== id) throw new Error(`Ya existe una categoría llamada "${nombre}".`);
     }
 
-    return this.repo.updateCategory(id, {
+    const category = await this.repo.updateCategory(id, {
       ...(nombre !== undefined ? { nombre } : {}),
       ...(patch.descripcion !== undefined ? { descripcion: patch.descripcion?.trim() || null } : {}),
       ...(patch.activo !== undefined ? { activo: patch.activo } : {}),
     });
+    await this.bus.publish("inventory.catalog_changed", { productoId: null });
+    return category;
   }
 
   async deleteCategory(id: string): Promise<void> {
@@ -72,6 +78,7 @@ export class InventoryService implements InventoryPort {
     const enUso = await this.repo.countProductsInCategory(id);
     if (enUso > 0) throw new Error(`No se puede borrar: ${enUso} producto${enUso === 1 ? "" : "s"} usa${enUso === 1 ? "" : "n"} esta categoría.`);
     await this.repo.deleteCategory(id);
+    await this.bus.publish("inventory.catalog_changed", { productoId: null });
   }
 
   /* ---------------- Productos ---------------- */
@@ -114,11 +121,36 @@ export class InventoryService implements InventoryPort {
     }
 
     await recordAudit(this.db, { entidad: "inventory_productos", entidadId: product.id, accion: "CREAR", usuarioId: input.usuarioId, despues: product });
+    await this.bus.publish("inventory.catalog_changed", { productoId: product.id });
     return product;
   }
 
-  async updateProduct(id: string, patch: UpdateProductInput): Promise<Product> {
-    return this.repo.updateProduct(id, patch);
+  async updateProduct(id: string, patch: UpdateProductInput, usuarioId: string): Promise<Product> {
+    const before = await this.getProduct(id);
+    if (patch.categoriaId && !(await this.repo.getCategory(patch.categoriaId))) {
+      throw new Error("La categoría elegida no existe.");
+    }
+    if (patch.precioCentimos !== undefined && patch.precioCentimos < 0) throw new Error("El precio no puede ser negativo.");
+    const product = await this.repo.updateProduct(id, patch);
+    await recordAudit(this.db, { entidad: "inventory_productos", entidadId: id, accion: "ACTUALIZAR", usuarioId, antes: before, despues: product });
+    await this.bus.publish("inventory.catalog_changed", { productoId: id });
+    return product;
+  }
+
+  async updateProductPrice(id: string, precioCentimos: number, usuarioId: string): Promise<Product> {
+    if (!Number.isInteger(precioCentimos) || precioCentimos < 0) throw new Error("El precio debe ser un monto válido.");
+    const before = await this.getProduct(id);
+    const product = await this.repo.updateProduct(id, { precioCentimos });
+    await recordAudit(this.db, {
+      entidad: "inventory_productos",
+      entidadId: id,
+      accion: "CAMBIAR_PRECIO",
+      usuarioId,
+      antes: { precioCentimos: before.precioCentimos },
+      despues: { precioCentimos },
+    });
+    await this.bus.publish("inventory.catalog_changed", { productoId: id });
+    return product;
   }
 
   async getProduct(id: string): Promise<Product> {
@@ -137,6 +169,49 @@ export class InventoryService implements InventoryPort {
 
   async listLowStock(): Promise<Product[]> {
     return this.repo.listLowStock();
+  }
+
+  async addProductImage(input: AddProductImageInput): Promise<ProductImage> {
+    await this.getProduct(input.productoId);
+    const current = await this.repo.listImages(input.productoId);
+    if (current.length >= 4) throw new Error("Cada producto admite como máximo 4 imágenes.");
+    const image = await this.repo.insertImage({
+      id: newId(),
+      productoId: input.productoId,
+      archivo: input.archivo,
+      mimeType: input.mimeType,
+      tamanoBytes: input.tamanoBytes,
+      orden: current.length,
+      creadoEn: new Date().toISOString(),
+      creadoPor: input.usuarioId,
+    });
+    await recordAudit(this.db, { entidad: "inventory_producto_imagenes", entidadId: image.id, accion: "CREAR", usuarioId: input.usuarioId, despues: image });
+    await this.bus.publish("inventory.catalog_changed", { productoId: input.productoId });
+    return image;
+  }
+
+  async reorderProductImages(productoId: string, imageIds: string[], usuarioId: string): Promise<ProductImage[]> {
+    const current = await this.repo.listImages(productoId);
+    const expected = new Set(current.map((image) => image.id));
+    if (imageIds.length !== current.length || new Set(imageIds).size !== imageIds.length || imageIds.some((id) => !expected.has(id))) {
+      throw new Error("El orden enviado no coincide con las imágenes del producto.");
+    }
+    for (const [orden, id] of imageIds.entries()) await this.repo.updateImageOrder(id, orden);
+    const images = await this.repo.listImages(productoId);
+    await recordAudit(this.db, { entidad: "inventory_productos", entidadId: productoId, accion: "REORDENAR_IMAGENES", usuarioId, despues: imageIds });
+    await this.bus.publish("inventory.catalog_changed", { productoId });
+    return images;
+  }
+
+  async deleteProductImage(productoId: string, imageId: string, usuarioId: string): Promise<ProductImage> {
+    const image = await this.repo.getImage(imageId);
+    if (!image || image.productoId !== productoId) throw new Error("Imagen no encontrada para ese producto.");
+    await this.repo.deleteImage(imageId);
+    const remaining = await this.repo.listImages(productoId);
+    for (const [orden, item] of remaining.entries()) await this.repo.updateImageOrder(item.id, orden);
+    await recordAudit(this.db, { entidad: "inventory_producto_imagenes", entidadId: imageId, accion: "ELIMINAR", usuarioId, antes: image });
+    await this.bus.publish("inventory.catalog_changed", { productoId });
+    return image;
   }
 
   async registerStockIn(input: StockAdjustmentInput): Promise<ProductMovement> {
@@ -214,6 +289,8 @@ export class InventoryService implements InventoryPort {
     if (stockResultante <= product.stockMinimo) {
       await this.bus.publish("inventory.low_stock", { productoId, nombre: product.nombre, stock: stockResultante, stockMinimo: product.stockMinimo });
     }
+
+    await this.bus.publish("inventory.catalog_changed", { productoId });
 
     return movement;
   }

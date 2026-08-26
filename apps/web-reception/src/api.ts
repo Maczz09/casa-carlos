@@ -30,6 +30,7 @@ import type {
   PaymentWithDetails,
   Product,
   ProductCategory,
+  ProductImage,
   ProductMovement,
   ProductState,
   ResolvedRate,
@@ -60,10 +61,11 @@ class ApiError extends Error {}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
   const res = await fetch(path, {
     ...init,
     headers: {
-      ...(init?.body !== undefined ? { "Content-Type": "application/json" } : {}),
+      ...(init?.body !== undefined && !isFormData ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
@@ -165,6 +167,14 @@ export const api = {
     id: string,
     patchBody: { nombre?: string; descripcion?: string | null; categoriaId?: string | null; precioCentimos?: number; costoCentimos?: number; stockMinimo?: number; estado?: ProductState },
   ) => patch<Product>(`/api/inventory/products/${id}`, patchBody),
+  updateProductPrice: (id: string, precioCentimos: number) => patch<Product>(`/api/inventory/products/${id}/price`, { precioCentimos }),
+  uploadProductImage: (id: string, file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    return request<ProductImage>(`/api/inventory/products/${id}/images`, { method: "POST", body: form });
+  },
+  reorderProductImages: (id: string, imageIds: string[]) => patch<ProductImage[]>(`/api/inventory/products/${id}/images/order`, { imageIds }),
+  deleteProductImage: (id: string, imageId: string) => del<void>(`/api/inventory/products/${id}/images/${imageId}`),
 
   productCategories: () => get<ProductCategory[]>("/api/inventory/categories"),
   createProductCategory: (input: { nombre: string; descripcion?: string | null }) => post<ProductCategory>("/api/inventory/categories", input),

@@ -1,4 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
+import { join } from "node:path";
 import { loadBackupConfig } from "./config.js";
 import { runDueBackup } from "./run-backup.js";
 
@@ -22,7 +23,7 @@ export function startBackupJob(sqlite: DatabaseSync, dataDir: string): BackupHan
 
   const tick = async () => {
     try {
-      await runDueBackup(sqlite, config);
+      await runDueBackup(sqlite, config, new Date(), join(dataDir, "product-images"));
     } catch (err) {
       console.error("[backup] tick falló:", err);
     }

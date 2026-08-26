@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Category, CollectionAccount, KioskProduct } from "@casacarlos/contracts";
+import type { Category, CollectionAccount } from "@casacarlos/contracts";
 import { api } from "./api.js";
 import { useKioskState } from "./hooks/useKioskState.js";
 import { useInactivityReset } from "./hooks/useInactivityReset.js";
@@ -14,17 +14,15 @@ import { PaymentScreen } from "./components/PaymentScreen.js";
 import { ResultScreen } from "./components/ResultScreen.js";
 
 export default function App() {
-  const { floors, session, connected } = useKioskState();
+  const { floors, products, session, connected } = useKioskState();
   const { theme, toggle } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
-  const [products, setProducts] = useState<KioskProduct[]>([]);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api.categories().then(setCategories);
     api.collectionAccounts().then(setCollectionAccounts);
-    api.products().then(setProducts);
   }, []);
 
   useInactivityReset(session);

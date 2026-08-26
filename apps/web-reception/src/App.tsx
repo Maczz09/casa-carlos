@@ -80,9 +80,9 @@ export default function App() {
       case "caja":
         return <CashboxModule />;
       case "bodega":
-        return <InventoryModule onManageCategories={() => navigate("/categorias")} />;
+        return <InventoryModule role={user.rol} onManageCategories={() => navigate("/categorias")} />;
       case "categorias":
-        return <CategoriesModule />;
+        return user.rol === "ADMIN" ? <CategoriesModule /> : <InventoryModule role={user.rol} onManageCategories={() => navigate("/categorias")} />;
       case "cuartos-admin":
         return <RoomsModule floors={floors} onCatalogChanged={reloadCategories} />;
       case "comprobantes":

@@ -1,14 +1,26 @@
-import { and, eq, lte } from "drizzle-orm";
+import { and, asc, eq, lte } from "drizzle-orm";
 import type { Db } from "@casacarlos/db";
 import { schema } from "@casacarlos/db";
-import type { Product, ProductCategory, ProductMovement } from "@casacarlos/contracts";
+import type { Product, ProductCategory, ProductImage, ProductMovement } from "@casacarlos/contracts";
 
 type ProductRow = typeof schema.inventoryProductos.$inferSelect;
 type CategoryRow = typeof schema.inventoryCategorias.$inferSelect;
 type MovementRow = typeof schema.inventoryMovimientos.$inferSelect;
+type ImageRow = typeof schema.inventoryProductoImagenes.$inferSelect;
+
+const toImage = (r: ImageRow): ProductImage => ({
+  id: r.id,
+  productoId: r.productoId,
+  archivo: r.archivo,
+  url: `/product-images/${encodeURIComponent(r.archivo)}`,
+  mimeType: r.mimeType,
+  tamanoBytes: r.tamanoBytes,
+  orden: r.orden,
+  creadoEn: r.creadoEn,
+});
 
 /** `categoriaNombre` viene del join — el producto solo guarda el id. */
-const toProduct = (r: ProductRow, categoriaNombre: string | null = null): Product => ({
+const toProduct = (r: ProductRow, categoriaNombre: string | null = null, imagenes: ProductImage[] = []): Product => ({
   id: r.id,
   codigoBarras: r.codigoBarras,
   nombre: r.nombre,
@@ -22,6 +34,7 @@ const toProduct = (r: ProductRow, categoriaNombre: string | null = null): Produc
   estado: r.estado,
   activo: r.activo,
   creadoEn: r.creadoEn,
+  imagenes,
 });
 
 const toCategory = (r: CategoryRow): ProductCategory => ({
@@ -102,7 +115,8 @@ export class InventoryRepo {
       .leftJoin(schema.inventoryCategorias, eq(schema.inventoryProductos.categoriaId, schema.inventoryCategorias.id))
       .where(eq(schema.inventoryProductos.id, id))
       .get();
-    return row ? toProduct(row.inventory_productos, row.inventory_categorias?.nombre ?? null) : null;
+    if (!row) return null;
+    return toProduct(row.inventory_productos, row.inventory_categorias?.nombre ?? null, await this.listImages(id));
   }
 
   async findByBarcode(codigoBarras: string): Promise<Product | null> {
@@ -112,7 +126,8 @@ export class InventoryRepo {
       .leftJoin(schema.inventoryCategorias, eq(schema.inventoryProductos.categoriaId, schema.inventoryCategorias.id))
       .where(eq(schema.inventoryProductos.codigoBarras, codigoBarras))
       .get();
-    return row ? toProduct(row.inventory_productos, row.inventory_categorias?.nombre ?? null) : null;
+    if (!row) return null;
+    return toProduct(row.inventory_productos, row.inventory_categorias?.nombre ?? null, await this.listImages(row.inventory_productos.id));
   }
 
   async updateProduct(id: string, patch: Partial<ProductRow>): Promise<Product> {
@@ -129,7 +144,14 @@ export class InventoryRepo {
       .leftJoin(schema.inventoryCategorias, eq(schema.inventoryProductos.categoriaId, schema.inventoryCategorias.id))
       .where(eq(schema.inventoryProductos.activo, true))
       .all();
-    return rows.map((r) => toProduct(r.inventory_productos, r.inventory_categorias?.nombre ?? null));
+    const images = await this.listAllImages();
+    return rows.map((r) =>
+      toProduct(
+        r.inventory_productos,
+        r.inventory_categorias?.nombre ?? null,
+        images.filter((image) => image.productoId === r.inventory_productos.id),
+      ),
+    );
   }
 
   async listLowStock(): Promise<Product[]> {
@@ -139,7 +161,47 @@ export class InventoryRepo {
       .leftJoin(schema.inventoryCategorias, eq(schema.inventoryProductos.categoriaId, schema.inventoryCategorias.id))
       .where(and(eq(schema.inventoryProductos.activo, true), lte(schema.inventoryProductos.stock, schema.inventoryProductos.stockMinimo)))
       .all();
-    return rows.map((r) => toProduct(r.inventory_productos, r.inventory_categorias?.nombre ?? null));
+    const images = await this.listAllImages();
+    return rows.map((r) =>
+      toProduct(
+        r.inventory_productos,
+        r.inventory_categorias?.nombre ?? null,
+        images.filter((image) => image.productoId === r.inventory_productos.id),
+      ),
+    );
+  }
+
+  async listImages(productoId: string): Promise<ProductImage[]> {
+    const rows = await this.db
+      .select()
+      .from(schema.inventoryProductoImagenes)
+      .where(eq(schema.inventoryProductoImagenes.productoId, productoId))
+      .orderBy(asc(schema.inventoryProductoImagenes.orden))
+      .all();
+    return rows.map(toImage);
+  }
+
+  async listAllImages(): Promise<ProductImage[]> {
+    const rows = await this.db.select().from(schema.inventoryProductoImagenes).orderBy(asc(schema.inventoryProductoImagenes.orden)).all();
+    return rows.map(toImage);
+  }
+
+  async insertImage(row: ImageRow): Promise<ProductImage> {
+    await this.db.insert(schema.inventoryProductoImagenes).values(row);
+    return toImage(row);
+  }
+
+  async getImage(id: string): Promise<ProductImage | null> {
+    const row = await this.db.select().from(schema.inventoryProductoImagenes).where(eq(schema.inventoryProductoImagenes.id, id)).get();
+    return row ? toImage(row) : null;
+  }
+
+  async updateImageOrder(id: string, orden: number): Promise<void> {
+    await this.db.update(schema.inventoryProductoImagenes).set({ orden }).where(eq(schema.inventoryProductoImagenes.id, id));
+  }
+
+  async deleteImage(id: string): Promise<void> {
+    await this.db.delete(schema.inventoryProductoImagenes).where(eq(schema.inventoryProductoImagenes.id, id));
   }
 
   async insertMovement(row: MovementRow): Promise<ProductMovement> {

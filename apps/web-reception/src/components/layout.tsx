@@ -49,7 +49,7 @@ export const NAV: NavGroup[] = [
     items: [
       { id: "caja", label: "Caja", icon: <IconCash className={ICON} /> },
       { id: "bodega", label: "Bodega", icon: <IconBox className={ICON} /> },
-      { id: "categorias", label: "Categorías", icon: <IconTag className={ICON} /> },
+      { id: "categorias", label: "Categorías", icon: <IconTag className={ICON} />, adminOnly: true },
       { id: "cuartos-admin", label: "Cuartos", icon: <IconBed className={ICON} />, adminOnly: true },
       { id: "comprobantes", label: "Comprobantes", icon: <IconReceipt className={ICON} />, adminOnly: true },
     ],

@@ -98,8 +98,9 @@ más.
 
 **Qué se conserva siempre, así se actualice mil veces:** la base de datos
 completa (todos los cuartos, ventas, clientes, historial), los respaldos
-diarios, y el archivo `.env` con el RUC/certificado/credenciales de SUNAT ya
-cargados. Nada de eso se toca ni se pisa.
+diarios, las imágenes cargadas de los productos, y el archivo `.env` con el
+RUC/certificado/credenciales de SUNAT ya cargados. Nada de eso se toca ni se
+pisa.
 
 **Lo que NO hay que hacer:** correr un desinstalador aparte antes. Con este
 instalador ya no hace falta — un solo archivo alcanza tanto para instalar
@@ -203,3 +204,32 @@ una ventanita llamada **«Hospedaje Carlos — WhatsApp»**.
 3. Revisar que el teléfono del hotel tenga internet y que WhatsApp funcione
    normal en él. Si el teléfono está sin señal o sin batería, el sistema no
    puede mandar nada.
+
+---
+
+## 9. Productos, imágenes y precios
+
+### Administrador
+
+1. Ir a **Bodega** y abrir un producto.
+2. En **Ficha del producto** se pueden cambiar nombre, categoría, descripción,
+   costo, precio, stock mínimo y estado.
+3. En **Galería** se pueden agregar hasta cuatro imágenes JPG, PNG o WebP de
+   hasta 3 MB. La primera es la portada que aparece en el kiosco.
+4. Las flechas cambian el orden. Para eliminar, pulsar **Eliminar** y luego
+   **Confirmar**.
+
+Las imágenes quedan en `C:\CasaCarlos\data\product-images\`, sobreviven a las
+actualizaciones y se copian junto con el respaldo diario.
+
+### Recepción
+
+En **Bodega**, recepción ve una pantalla simplificada. Puede consultar imagen,
+nombre, categoría y disponibilidad, pero solamente puede modificar el precio
+de venta. No puede alterar stock, costo, ficha, categoría ni imágenes.
+
+### Pantalla del cliente
+
+El kiosco muestra la portada, nombre, descripción, categoría, precio y si el
+producto está disponible o agotado. Precio, imagen y disponibilidad se
+actualizan en vivo sin recargar la pantalla.

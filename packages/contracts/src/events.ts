@@ -30,6 +30,8 @@ export type DomainEvents = {
 
   "inventory.low_stock": { productoId: string; nombre: string; stock: number; stockMinimo: number };
   "inventory.dispatched": { productoId: string; cantidad: number; lineaVentaId: string | null };
+  /** Producto, precio, imagen, categoría o stock cambió; refrescar catálogos conectados. */
+  "inventory.catalog_changed": { productoId: string | null };
 
   "shift.opened": { turnoId: string; usuarioId: string };
   "shift.closed": { turnoId: string; usuarioId: string; diferenciaCentimos: number };

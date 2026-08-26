@@ -62,13 +62,27 @@ export function ProductsScreen({ products, totalCentimos, onAdd, onFinish, onCan
               style={{ ["--i" as string]: i }}
               onClick={() => add(p.id)}
               disabled={busyId === p.id || !p.enStock}
-              className="flex flex-col gap-1 rounded-2xl bg-surface p-4 text-left shadow-[var(--shadow-card)] ring-1 ring-line transition-all duration-200 active:scale-[0.98] disabled:opacity-50 enabled:hover:-translate-y-0.5 enabled:hover:shadow-[var(--shadow-pop)]"
+              className="group overflow-hidden rounded-2xl bg-surface text-left shadow-[var(--shadow-card)] ring-1 ring-line transition-all duration-200 active:scale-[0.98] disabled:opacity-60 enabled:hover:-translate-y-0.5 enabled:hover:shadow-[var(--shadow-pop)]"
             >
-              <span className="font-serif text-lg text-ink">{p.nombre}</span>
-              {p.categoria && <span className="text-xs text-subtle">{p.categoria}</span>}
-              {p.descripcion && <span className="text-xs text-muted">{p.descripcion}</span>}
-              <span className="text-lg font-semibold text-brand">{format(cents(p.precioCentimos))}</span>
-              {!p.enStock && <span className="text-xs font-medium text-danger">Agotado</span>}
+              <div className="relative aspect-[16/10] overflow-hidden bg-inset">
+                {p.imagenes[0] ? (
+                  <img src={p.imagenes[0]} alt={p.nombre} className="h-full w-full object-cover transition-transform duration-300 group-enabled:group-hover:scale-105" />
+                ) : (
+                  <div className="grid h-full place-items-center text-center text-sm text-subtle">
+                    <svg viewBox="0 0 48 48" className="h-12 w-12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m24 6 17 9v18l-17 9-17-9V15Z"/><path d="m7 15 17 9 17-9M24 24v18"/></svg>
+                  </div>
+                )}
+                <span className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${p.enStock ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`}>
+                  {p.enStock ? "Disponible" : "Agotado"}
+                </span>
+                {p.imagenes.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">+{p.imagenes.length - 1}</span>}
+              </div>
+              <div className="flex flex-col gap-1 p-4">
+                <span className="font-serif text-xl text-ink">{p.nombre}</span>
+                {p.categoria && <span className="text-xs font-medium uppercase tracking-wide text-subtle">{p.categoria}</span>}
+                {p.descripcion && <span className="line-clamp-2 min-h-8 text-sm text-muted">{p.descripcion}</span>}
+                <span className="mt-1 text-xl font-semibold text-brand">{format(cents(p.precioCentimos))}</span>
+              </div>
             </button>
           ))}
         </div>

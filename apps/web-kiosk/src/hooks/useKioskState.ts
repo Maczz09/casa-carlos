@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import type { FloorBoard, KioskSession } from "@casacarlos/contracts";
+import type { FloorBoard, KioskProduct, KioskSession } from "@casacarlos/contracts";
 
 /** Same one-socket-two-message-types pattern as the reception app's `useBoard`, but with no auth token — the kiosk has no login. */
-export function useKioskState(): { floors: FloorBoard[]; session: KioskSession | null; connected: boolean } {
+export function useKioskState(): { floors: FloorBoard[]; products: KioskProduct[]; session: KioskSession | null; connected: boolean } {
   const [floors, setFloors] = useState<FloorBoard[]>([]);
+  const [products, setProducts] = useState<KioskProduct[]>([]);
   const [session, setSession] = useState<KioskSession | null>(null);
   const [connected, setConnected] = useState(false);
   const retryRef = useRef(0);
@@ -26,6 +27,7 @@ export function useKioskState(): { floors: FloorBoard[]; session: KioskSession |
           const msg = JSON.parse(event.data as string);
           if (msg.type === "board") setFloors(msg.floors);
           if (msg.type === "kiosk") setSession(msg.session);
+          if (msg.type === "products") setProducts(msg.products);
         } catch {
           // ignore malformed frames
         }
@@ -48,5 +50,5 @@ export function useKioskState(): { floors: FloorBoard[]; session: KioskSession |
     };
   }, []);
 
-  return { floors, session, connected };
+  return { floors, products, session, connected };
 }

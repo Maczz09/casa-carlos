@@ -12,6 +12,7 @@ data/whatsapp-session/
 # el servidor solo, es distinto en cada instalación, nunca se versiona.
 data/whatsapp-agent.token
 data/backups/
+data/product-images/
 *.pfx
 *.p12
 .turbo/

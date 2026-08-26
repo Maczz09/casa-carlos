@@ -1,10 +1,11 @@
-import { existsSync, mkdirSync, readdirSync, unlinkSync } from "node:fs";
-import { join } from "node:path";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, unlinkSync } from "node:fs";
+import { join, relative, resolve } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import type { BackupConfig } from "./config.js";
 
 const FILE_PREFIX = "casacarlos-";
 const FILE_SUFFIX = ".db";
+const IMAGES_SUFFIX = "-product-images";
 
 function pad2(n: number): string {
   return String(n).padStart(2, "0");
@@ -44,20 +45,37 @@ function pruneOld(destDir: string, retentionDays: number, now: Date): void {
   if (!existsSync(destDir)) return;
   const cutoff = now.getTime() - retentionDays * 24 * 60 * 60 * 1000;
   for (const entry of readdirSync(destDir)) {
-    if (!entry.startsWith(FILE_PREFIX) || !entry.endsWith(FILE_SUFFIX)) continue;
-    const dateStr = entry.slice(FILE_PREFIX.length, -FILE_SUFFIX.length);
+    if (!entry.startsWith(FILE_PREFIX) || (!entry.endsWith(FILE_SUFFIX) && !entry.endsWith(IMAGES_SUFFIX))) continue;
+    const suffix = entry.endsWith(FILE_SUFFIX) ? FILE_SUFFIX : IMAGES_SUFFIX;
+    const dateStr = entry.slice(FILE_PREFIX.length, -suffix.length);
     const fileDate = new Date(`${dateStr}T00:00:00`);
     if (Number.isNaN(fileDate.getTime())) continue; // no sigue nuestra convención de nombre — no tocarlo
-    if (fileDate.getTime() < cutoff) unlinkSync(join(destDir, entry));
+    if (fileDate.getTime() < cutoff) {
+      const target = resolve(destDir, entry);
+      const rel = relative(resolve(destDir), target);
+      if (rel.startsWith("..") || rel === "") continue;
+      if (suffix === FILE_SUFFIX) unlinkSync(target);
+      else rmSync(target, { recursive: true, force: true });
+    }
   }
 }
 
+function backupProductImages(sourceDir: string | null, destDir: string, fileName: string): void {
+  if (!sourceDir || !existsSync(sourceDir)) return;
+  const datePart = fileName.slice(FILE_PREFIX.length, -FILE_SUFFIX.length);
+  const destination = join(destDir, `${FILE_PREFIX}${datePart}${IMAGES_SUFFIX}`);
+  if (existsSync(destination)) return;
+  mkdirSync(destDir, { recursive: true });
+  cpSync(sourceDir, destination, { recursive: true, errorOnExist: true });
+}
+
 /** Corre el respaldo del día si ya tocaba y no se hizo todavía — ver `isDue`. No hace nada si no tocaba. */
-export async function runDueBackup(sqlite: DatabaseSync, config: BackupConfig, now: Date = new Date()): Promise<void> {
+export async function runDueBackup(sqlite: DatabaseSync, config: BackupConfig, now: Date = new Date(), productImagesDir: string | null = null): Promise<void> {
   const fileName = fileNameFor(now);
   if (!isDue(config, now, fileName)) return;
 
   vacuumInto(sqlite, config.dir, fileName);
+  backupProductImages(productImagesDir, config.dir, fileName);
   pruneOld(config.dir, config.retentionDays, now);
 
   if (config.secondaryDir) {
@@ -70,6 +88,7 @@ export async function runDueBackup(sqlite: DatabaseSync, config: BackupConfig, n
     if (!existsSync(join(config.secondaryDir, fileName))) {
       vacuumInto(sqlite, config.secondaryDir, fileName);
     }
+    backupProductImages(productImagesDir, config.secondaryDir, fileName);
     pruneOld(config.secondaryDir, config.retentionDays, now);
   }
 

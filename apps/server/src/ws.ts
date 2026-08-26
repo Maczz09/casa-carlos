@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { WebSocket } from "ws";
 import type { EventBus } from "@casacarlos/bus";
-import type { IdentityPort, RoomsPort } from "@casacarlos/contracts";
+import type { IdentityPort, InventoryPort, KioskProduct, RoomsPort } from "@casacarlos/contracts";
 import type { KioskStore } from "./kiosk/store.js";
 import { userFromToken } from "./auth.js";
 
@@ -12,7 +12,14 @@ import { userFromToken } from "./auth.js";
  * and the kiosk terminal are two views of the same truth, see
  * REGLAS-DE-NEGOCIO.md §10.
  */
-export function registerWebSocketGateway(app: FastifyInstance, bus: EventBus, rooms: RoomsPort, identity: IdentityPort, kiosk: KioskStore): void {
+export function registerWebSocketGateway(
+  app: FastifyInstance,
+  bus: EventBus,
+  rooms: RoomsPort,
+  identity: IdentityPort,
+  kiosk: KioskStore,
+  inventory: InventoryPort,
+): void {
   const receptionSockets = new Set<WebSocket>();
   const kioskSockets = new Set<WebSocket>();
 
@@ -36,7 +43,29 @@ export function registerWebSocketGateway(app: FastifyInstance, bus: EventBus, ro
     send(kioskSockets, payload);
   };
 
-  bus.subscribeAll(() => void broadcastBoard());
+  const publicProducts = async (): Promise<KioskProduct[]> => {
+    const products = await inventory.listProducts();
+    return products
+      .filter((product) => product.activo && product.estado !== "DESCONTINUADO")
+      .map((product) => ({
+        id: product.id,
+        nombre: product.nombre,
+        descripcion: product.descripcion,
+        categoria: product.categoria,
+        precioCentimos: product.precioCentimos,
+        enStock: product.estado !== "AGOTADO" && product.stock > 0,
+        imagenes: product.imagenes.map((image) => image.url),
+      }));
+  };
+
+  const broadcastProducts = async () => {
+    send(kioskSockets, { type: "products", products: await publicProducts() });
+  };
+
+  bus.subscribeAll((event) => {
+    void broadcastBoard();
+    if (event === "inventory.catalog_changed") void broadcastProducts();
+  });
   kiosk.onChange(() => broadcastKioskSession());
 
   app.get("/ws", { websocket: true }, async (socket: WebSocket, request) => {
@@ -50,6 +79,7 @@ export function registerWebSocketGateway(app: FastifyInstance, bus: EventBus, ro
     receptionSockets.add(socket);
     socket.send(JSON.stringify({ type: "board", floors: await rooms.getBoard(false) }));
     socket.send(JSON.stringify({ type: "kiosk", session: kiosk.getCurrent() }));
+    socket.send(JSON.stringify({ type: "products", products: await publicProducts() }));
 
     socket.on("close", () => receptionSockets.delete(socket));
     socket.on("error", () => receptionSockets.delete(socket));
@@ -59,6 +89,7 @@ export function registerWebSocketGateway(app: FastifyInstance, bus: EventBus, ro
     kioskSockets.add(socket);
     socket.send(JSON.stringify({ type: "board", floors: await rooms.getBoard(true) }));
     socket.send(JSON.stringify({ type: "kiosk", session: kiosk.getCurrent() }));
+    socket.send(JSON.stringify({ type: "products", products: await publicProducts() }));
 
     socket.on("close", () => kioskSockets.delete(socket));
     socket.on("error", () => kioskSockets.delete(socket));

@@ -1,4 +1,4 @@
-import type { Product, ProductCategory, ProductMovement, ProductState } from "../entities/inventory.js";
+import type { Product, ProductCategory, ProductImage, ProductMovement, ProductState } from "../entities/inventory.js";
 
 export interface CreateProductInput {
   codigoBarras?: string | null;
@@ -50,6 +50,14 @@ export interface StockAdjustmentInput {
   usuarioId: string;
 }
 
+export interface AddProductImageInput {
+  productoId: string;
+  archivo: string;
+  mimeType: ProductImage["mimeType"];
+  tamanoBytes: number;
+  usuarioId: string;
+}
+
 /**
  * Public surface of `inventory`. Dueño de `inventory_productos` e
  * `inventory_movimientos` (el kardex, solo-append). `sales` llama a
@@ -64,11 +72,17 @@ export interface InventoryPort {
   deleteCategory(id: string): Promise<void>;
 
   createProduct(input: CreateProductInput): Promise<Product>;
-  updateProduct(id: string, patch: UpdateProductInput): Promise<Product>;
+  updateProduct(id: string, patch: UpdateProductInput, usuarioId: string): Promise<Product>;
+  updateProductPrice(id: string, precioCentimos: number, usuarioId: string): Promise<Product>;
   getProduct(id: string): Promise<Product>;
   findByBarcode(codigoBarras: string): Promise<Product | null>;
   listProducts(): Promise<Product[]>;
   listLowStock(): Promise<Product[]>;
+
+  addProductImage(input: AddProductImageInput): Promise<ProductImage>;
+  reorderProductImages(productoId: string, imageIds: string[], usuarioId: string): Promise<ProductImage[]>;
+  /** Devuelve la metadata eliminada para que la capa HTTP borre el archivo físico. */
+  deleteProductImage(productoId: string, imageId: string, usuarioId: string): Promise<ProductImage>;
 
   registerStockIn(input: StockAdjustmentInput): Promise<ProductMovement>;
   adjustStock(input: StockAdjustmentInput): Promise<ProductMovement>;

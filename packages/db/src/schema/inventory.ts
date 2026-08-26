@@ -29,6 +29,19 @@ export const inventoryProductos = sqliteTable("inventory_productos", {
   creadoEn: text("creado_en").notNull(),
 });
 
+export const inventoryProductoImagenes = sqliteTable("inventory_producto_imagenes", {
+  id: text("id").primaryKey(),
+  productoId: text("producto_id")
+    .notNull()
+    .references(() => inventoryProductos.id, { onDelete: "cascade" }),
+  archivo: text("archivo").notNull().unique(),
+  mimeType: text("mime_type", { enum: ["image/jpeg", "image/png", "image/webp"] }).notNull(),
+  tamanoBytes: integer("tamano_bytes").notNull(),
+  orden: integer("orden").notNull(),
+  creadoEn: text("creado_en").notNull(),
+  creadoPor: text("creado_por").notNull(),
+});
+
 export const inventoryMovimientos = sqliteTable("inventory_movimientos", {
   id: text("id").primaryKey(),
   productoId: text("producto_id")

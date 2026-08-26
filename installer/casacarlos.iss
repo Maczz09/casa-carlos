@@ -86,7 +86,7 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 ;   - installer\output: es el propio .exe que este script está generando —
 ;     incluirlo causa que ISCC intente leer el archivo mientras lo está
 ;     escribiendo ("el proceso no tiene acceso al archivo").
-Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
+Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\product-images,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
 
 ; El Node portátil — runtime propio, sin depender de que el cliente lo tenga instalado.
 Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags: recursesubdirs ignoreversion

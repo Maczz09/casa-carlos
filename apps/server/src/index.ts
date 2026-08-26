@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import Fastify from "fastify";
 import websocketPlugin from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
+import fastifyMultipart from "@fastify/multipart";
 import { openDatabase, runMigrations } from "@casacarlos/db";
 import { InProcessBus } from "@casacarlos/bus";
 import type { RoomsPort, StaysPort } from "@casacarlos/contracts";
@@ -40,6 +41,7 @@ import { cashboxRoutes } from "./routes/cashbox.js";
 import { reportingRoutes } from "./routes/reporting.js";
 import { notificationsRoutes } from "./routes/notifications.js";
 import { billingRoutes } from "./routes/billing.js";
+import { ProductImageStorage, MAX_PRODUCT_IMAGE_BYTES } from "./product-image-storage.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -137,6 +139,7 @@ async function main() {
   const stays = createStaysService(db, bus, rooms, pricing);
   staysPortRef = stays;
   const inventory = createInventoryService(db, bus);
+  const productImages = new ProductImageStorage(dataDir);
   const sales = createSalesService(db, bus, rooms, pricing, stays, inventory);
   const payments = createPaymentsService(db, bus, sales);
   const cashbox = createCashboxService(db, bus, payments);
@@ -162,9 +165,12 @@ async function main() {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
   await app.register(websocketPlugin);
 
-  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, cashbox, reporting, notifications, billing, whatsapp, agentToken };
+  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, productImages, cashbox, reporting, notifications, billing, whatsapp, agentToken };
   registerAuth(app);
-  registerWebSocketGateway(app, bus, rooms, identity, kiosk);
+  await app.register(fastifyMultipart, {
+    limits: { files: 1, fileSize: MAX_PRODUCT_IMAGE_BYTES, fields: 0 },
+  });
+  registerWebSocketGateway(app, bus, rooms, identity, kiosk, inventory);
 
   await app.register(authRoutes(services));
   await app.register(roomsRoutes(services));
@@ -188,11 +194,16 @@ async function main() {
   // sigue funcionando igual que siempre.
   const receptionDist = resolve(__dirname, "../../web-reception/dist");
   const kioskDist = resolve(__dirname, "../../web-kiosk/dist");
+  await app.register(fastifyStatic, {
+    root: productImages.root,
+    prefix: "/product-images/",
+    maxAge: "7d",
+  });
   if (existsSync(receptionDist)) {
-    await app.register(fastifyStatic, { root: receptionDist, prefix: "/" });
+    await app.register(fastifyStatic, { root: receptionDist, prefix: "/", decorateReply: false });
   }
   if (existsSync(kioskDist)) {
-    await app.register(fastifyStatic, { root: kioskDist, prefix: "/kiosk/", decorateReply: !existsSync(receptionDist) });
+    await app.register(fastifyStatic, { root: kioskDist, prefix: "/kiosk/", decorateReply: false });
   }
 
   app.get("/api/health", async () => ({ ok: true, time: new Date().toISOString() }));
@@ -226,6 +237,7 @@ export type Services = {
   payments: ReturnType<typeof createPaymentsService>;
   kiosk: KioskStore;
   inventory: ReturnType<typeof createInventoryService>;
+  productImages: ProductImageStorage;
   cashbox: ReturnType<typeof createCashboxService>;
   reporting: ReturnType<typeof createReportingService>;
   notifications: Awaited<ReturnType<typeof createNotificationsService>>;

@@ -30,6 +30,7 @@ export function kioskPublicRoutes(services: Services) {
           categoria: p.categoria,
           precioCentimos: p.precioCentimos,
           enStock: p.estado !== "AGOTADO" && p.stock > 0,
+          imagenes: p.imagenes.map((image) => image.url),
         }));
     });
 
