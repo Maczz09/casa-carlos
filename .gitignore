@@ -23,8 +23,10 @@ vendor/
 apps/server/src/daemon/
 # El .exe compilado del instalador — se regenera con ISCC, no hace falta versionarlo.
 installer/output/
-# Salidas de compilación de la aplicación de escritorio (se regeneran con
-# `pnpm run desktop:publish` antes de compilar el instalador).
+# Salidas de compilación de Tauri (se regeneran con `pnpm run
+# desktop:publish` antes de compilar el instalador).
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
 apps/desktop/bin/
 apps/desktop/obj/
 apps/desktop/generated/

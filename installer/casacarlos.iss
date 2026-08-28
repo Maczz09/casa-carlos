@@ -88,14 +88,13 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 ;   - installer\output: es el propio .exe que este script está generando —
 ;     incluirlo causa que ISCC intente leer el archivo mientras lo está
 ;     escribiendo ("el proceso no tiene acceso al archivo").
-Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\product-images,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,apps\desktop\bin,apps\desktop\obj,apps\desktop\generated,apps\desktop\publish,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
+Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\product-images,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,apps\desktop\bin,apps\desktop\obj,apps\desktop\loading,apps\desktop\src-tauri,apps\desktop\generated,apps\desktop\publish,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
 
 ; El Node portátil — runtime propio, sin depender de que el cliente lo tenga instalado.
 Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags: recursesubdirs ignoreversion
 
-; Aplicación de escritorio ya publicada y autocontenida. El cliente no
-; necesita instalar .NET ni compilarla: el instalador copia el runtime junto
-; al ejecutable y crea los accesos directos nativos más abajo.
+; Aplicación de escritorio Tauri ya compilada. Usa WebView2 del sistema y no
+; necesita .NET, Rust, Node global ni herramientas de desarrollo en el cliente.
 Source: "..\apps\desktop\publish\*"; DestDir: "{app}\desktop"; Flags: recursesubdirs ignoreversion
 
 ; Bootstrapper oficial de WebView2. En Windows 10/11 normalmente ya está

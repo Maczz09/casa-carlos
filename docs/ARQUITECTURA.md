@@ -87,7 +87,7 @@ Ningún archivo de dominio se toca. Candidatos naturales al primer corte:
 | ORM/migraciones | Drizzle ORM + drizzle-kit | TS puro, migraciones versionadas, sin runtime pesado |
 | Validación | Zod (compartido cliente/servidor) | Un solo contrato de tipos |
 | Frontend | React 19 + Vite + TanStack Query + Tailwind | SPAs de recepción y kiosco, compartidas entre escritorio y acceso por red |
-| Escritorio | .NET 8 WinForms + WebView2, publicado autocontenido x64 | Ventana nativa, kiosco fullscreen, instancia única, arranque/recuperación del servicio y ventanas de impresión; el cliente no instala .NET |
+| Escritorio | Tauri 2 + Rust + WebView2 | Ejecutable pequeño, ventana nativa, kiosco fullscreen, instancia única, arranque/recuperación del servicio y ventanas de impresión; Rust/MinGW solo existen en la máquina de build |
 | PDF | pdfmake | JS puro, sin Chromium — boletas y reportes |
 | Excel | ExcelJS | Formato, fórmulas, múltiples hojas |
 | Empaquetado | Instalador Inno Setup: shell de escritorio autocontenido + Node portátil + código TS vía `tsx` | La interfaz sí se entrega como `.exe`; el servidor conserva Node oficial para mantener `node:sqlite`, ESM y actualizaciones seguras. Ver F6 en §10 |
@@ -115,7 +115,7 @@ por eso las consultas van por el repositorio, nunca SQL crudo esparcido.
 casa-carlos/
 ├─ apps/
 │  ├─ server/                 # ensambla servicios + gateway → CasaCarlos.exe
-│  ├─ desktop/                # HospedajeCarlos.exe (recepción / --kiosk)
+│  ├─ desktop/                # Tauri → HospedajeCarlos.exe (recepción / --kiosk)
 │  ├─ web-reception/          # SPA recepción
 │  └─ web-kiosk/              # SPA cliente (kiosco / tablet)
 ├─ packages/
