@@ -7,18 +7,19 @@ para seguir esto — son pasos concretos, uno por uno.
 
 ## 1. Entrar al sistema
 
-- **Recepción**: en el navegador de la PC, entrar a `http://localhost:4000/`.
-  Si ya está abierto, seguramente hay un acceso directo en el escritorio que
-  dice **"Hospedaje Carlos — Recepción"**.
-- **Kiosco** (la pantalla que ve el cliente): acceso directo **"Hospedaje
-  Carlos — Kiosco"**, o `http://localhost:4000/kiosk/`.
+- **Recepción**: doble clic en **"Hospedaje Carlos — Recepción"**. Se abre
+  como una aplicación de Windows, sin barra ni pestañas del navegador.
+- **Kiosco** (la pantalla que ve el cliente): doble clic en **"Hospedaje
+  Carlos — Kiosco"**. Se abre directamente a pantalla completa.
 - Usuario y contraseña los da el administrador. También se puede entrar con
   PIN rápido para cambiar de recepcionista sin cerrar sesión del todo.
 - **¿No aparece el acceso directo en el escritorio?** También están en el
   menú Inicio de Windows, dentro de la carpeta **"Hospedaje Carlos"** — sirven
-  exactamente igual. No hace falta reinstalar nada para recuperarlos: basta
-  con abrirlos desde ahí, o crear uno nuevo apuntando a las mismas
-  direcciones de arriba.
+  exactamente igual. No hace falta reinstalar nada para recuperarlos.
+
+Al abrir cualquiera de los dos accesos, la aplicación comprueba que el
+servidor esté encendido. Si Windows todavía lo está iniciando, muestra
+**"Esperando al servicio del hotel"** y entra sola apenas esté listo.
 
 El tablero de cuartos se actualiza solo, en vivo — no hace falta recargar
 la página para ver un check-in o un pago que se hizo desde otra pantalla.
@@ -30,7 +31,7 @@ la página para ver un check-in o un pago que se hizo desde otra pantalla.
 **Tranquilo — no hay que hacer nada.** El sistema corre como un servicio de
 Windows: arranca solo apenas la PC prende, sin que nadie tenga que abrir
 nada a mano. Esperar uno o dos minutos después de que la PC termine de
-prender, y volver a entrar a `http://localhost:4000/`.
+prender, y abrir **Hospedaje Carlos — Recepción**.
 
 Si después de un rato la página no carga, ver la sección **7. Problemas
 comunes** más abajo.
@@ -91,7 +92,7 @@ más.
    avisa en pantalla "esto es una ACTUALIZACIÓN" antes de instalar — no hay
    que tocar nada más, no vuelve a pedir los datos de SUNAT ni el
    certificado.
-4. Tarda unos minutos (recompila las pantallas). Mientras tanto, recepción
+4. Tarda unos minutos (actualiza y recompila las pantallas). Mientras tanto, recepción
    y kiosco van a estar apagados — mejor hacerlo fuera de horario, o cuando
    no haya un huésped a mitad de un check-in en el kiosco.
 5. Al terminar, el sistema vuelve a prender solo con el código nuevo.
@@ -135,11 +136,11 @@ sistema** para hacer este cambio, no editarlo sin ayuda.
 
 ## 7. Problemas comunes
 
-**La página no carga / pantalla en blanco:**
+**La aplicación no carga / pantalla en blanco:**
 1. Abrir **Servicios** de Windows (`services.msc`).
 2. Buscar **CasaCarlos** en la lista.
 3. Si dice "Detenido", click derecho → **Iniciar**.
-4. Esperar medio minuto y volver a entrar a `http://localhost:4000/`.
+4. Esperar medio minuto y volver a abrir **Hospedaje Carlos — Recepción**.
 
 **El kiosco quedó trabado en una pantalla:** el kiosco se reinicia solo a
 los 20 segundos de terminar una operación, o a los 2 minutos de no tocarse

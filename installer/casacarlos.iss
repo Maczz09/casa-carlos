@@ -31,7 +31,7 @@
 ; que poder actualizarla en el mismo lugar sin dejar una segunda instalación
 ; huérfana. Ver PrepareToInstall más abajo.
 #define AppName "Hospedaje Carlos"
-#define AppVersion "1.0"
+#define AppVersion "1.1"
 #define AppPublisher "Hospedaje Carlos"
 #define ServiceName "CasaCarlos"
 
@@ -53,6 +53,8 @@ PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern
+CloseApplications=yes
+RestartApplications=no
 
 [Languages]
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
@@ -86,10 +88,20 @@ Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 ;   - installer\output: es el propio .exe que este script está generando —
 ;     incluirlo causa que ISCC intente leer el archivo mientras lo está
 ;     escribiendo ("el proceso no tiene acceso al archivo").
-Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\product-images,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
+Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\product-images,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,apps\desktop\bin,apps\desktop\obj,apps\desktop\generated,apps\desktop\publish,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
 
 ; El Node portátil — runtime propio, sin depender de que el cliente lo tenga instalado.
 Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags: recursesubdirs ignoreversion
+
+; Aplicación de escritorio ya publicada y autocontenida. El cliente no
+; necesita instalar .NET ni compilarla: el instalador copia el runtime junto
+; al ejecutable y crea los accesos directos nativos más abajo.
+Source: "..\apps\desktop\publish\*"; DestDir: "{app}\desktop"; Flags: recursesubdirs ignoreversion
+
+; Bootstrapper oficial de WebView2. En Windows 10/11 normalmente ya está
+; instalado; si no, lo agrega silenciosamente durante la instalación. El
+; archivo es opcional para que una compilación sin red siga siendo posible.
+Source: "..\vendor\webview2\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall skipifsourcedoesntexist
 
 [Dirs]
 Name: "{app}\data"
@@ -99,10 +111,10 @@ Name: "{app}\data"
 ; directo del escritorio desaparece (perfil de usuario, limpieza de terceros,
 ; lo que sea), queda el del Menú Inicio como camino alternativo para prender
 ; las pantallas sin tener que volver a instalar nada.
-Name: "{commondesktop}\{#AppName} — Recepción"; Filename: "http://localhost:4000/"
-Name: "{commondesktop}\{#AppName} — Kiosco"; Filename: "http://localhost:4000/kiosk/"
-Name: "{group}\{#AppName} — Recepción"; Filename: "http://localhost:4000/"
-Name: "{group}\{#AppName} — Kiosco"; Filename: "http://localhost:4000/kiosk/"
+Name: "{commondesktop}\{#AppName} — Recepción"; Filename: "{app}\desktop\HospedajeCarlos.exe"; WorkingDir: "{app}"; Comment: "Abrir el sistema de recepción"
+Name: "{commondesktop}\{#AppName} — Kiosco"; Filename: "{app}\desktop\HospedajeCarlos.exe"; Parameters: "--kiosk"; WorkingDir: "{app}"; Comment: "Abrir la pantalla para el cliente"
+Name: "{group}\{#AppName} — Recepción"; Filename: "{app}\desktop\HospedajeCarlos.exe"; WorkingDir: "{app}"
+Name: "{group}\{#AppName} — Kiosco"; Filename: "{app}\desktop\HospedajeCarlos.exe"; Parameters: "--kiosk"; WorkingDir: "{app}"
 Name: "{group}\Manual de uso"; Filename: "{app}\docs\MANUAL-DE-USO.md"
 
 ; Asistente de WhatsApp: arranca solo al iniciar sesión y corre OCULTO, sin
@@ -124,7 +136,14 @@ Name: "{commondesktop}\{#AppName} — WhatsApp"; Filename: "wscript.exe"; \
   Comment: "Abrilo si los avisos por WhatsApp dejaron de salir"
 
 [Run]
-; 1) Dependencias + build de las 2 SPA. `corepack` (incluido en el Node
+; 1) Asegura WebView2, motor visual de la aplicación de escritorio. Si ya
+;    existe, el instalador oficial termina inmediatamente sin cambiar nada.
+Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; \
+  Parameters: "/silent /install"; \
+  StatusMsg: "Preparando la aplicación de escritorio..."; \
+  Flags: runhidden waituntilterminated skipifdoesntexist
+
+; 2) Dependencias + build de las 2 SPA. `corepack` (incluido en el Node
 ;    portátil) resuelve pnpm en la versión fijada por "packageManager" en
 ;    package.json — no hace falta instalar pnpm aparte ni que el cliente
 ;    tenga Node propio.
@@ -140,14 +159,14 @@ Filename: "{app}\vendor\node-win-x64\corepack.cmd"; \
   StatusMsg: "Compilando recepción y kiosco..."; \
   Flags: runhidden waituntilterminated
 
-; 2) Registra y arranca el servicio de Windows.
+; 3) Registra y arranca el servicio de Windows.
 Filename: "{app}\vendor\node-win-x64\node.exe"; \
   Parameters: "scripts\service\install-service.cjs"; \
   WorkingDir: "{app}"; \
   StatusMsg: "Registrando el servicio de Windows..."; \
   Flags: runhidden waituntilterminated
 
-; 3) Arranca el asistente de WhatsApp ya mismo y oculto -- si no, recién
+; 4) Arranca el asistente de WhatsApp ya mismo y oculto -- si no, recién
 ;    saldría al próximo inicio de sesión (ver el acceso directo en
 ;    {commonstartup}) y quien acaba de instalar vería "Agente apagado" sin
 ;    entender por qué. Sin "postinstall": eso lo dejaba como casilla opcional
@@ -174,6 +193,7 @@ Filename: "{app}\vendor\node-win-x64\node.exe"; \
 Type: filesandordirs; Name: "{app}\node_modules"
 Type: filesandordirs; Name: "{app}\apps\web-reception\dist"
 Type: filesandordirs; Name: "{app}\apps\web-kiosk\dist"
+Type: filesandordirs; Name: "{app}\desktop"
 ; `data\` queda fuera de esta lista a propósito.
 
 [Code]

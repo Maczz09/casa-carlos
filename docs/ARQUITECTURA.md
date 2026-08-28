@@ -1,8 +1,9 @@
 # Hospedaje Carlos — Arquitectura orientada a servicios
 
-Sistema de gestión de hospedaje. Ejecutable local (`CasaCarlos.exe`) que levanta un
-servidor en la PC de recepción; el resto de pantallas (kiosco del cliente, tablet del
-admin) se conectan por la red local con un navegador.
+Sistema de gestión de hospedaje. Un servicio local de Windows (`CasaCarlos`) mantiene
+el servidor y la base de datos activos; `HospedajeCarlos.exe` ofrece la interfaz nativa
+de recepción y, con `--kiosk`, la pantalla completa del cliente. Tablets y equipos
+secundarios todavía pueden conectarse por la red local con un navegador.
 
 ---
 
@@ -85,10 +86,11 @@ Ningún archivo de dominio se toca. Candidatos naturales al primer corte:
 | BD | **SQLite (`node:sqlite` nativo de Node) en modo WAL** | Cero instalación — `better-sqlite3` no tiene binario prebuilt para Windows/Node actual, `node:sqlite` no necesita compilar nada. Respaldo vía `VACUUM INTO` (consolida el WAL en un archivo limpio, no basta con copiar `.db` a secas — ver §9) |
 | ORM/migraciones | Drizzle ORM + drizzle-kit | TS puro, migraciones versionadas, sin runtime pesado |
 | Validación | Zod (compartido cliente/servidor) | Un solo contrato de tipos |
-| Frontend | React 19 + Vite + TanStack Query + Tailwind | Tres SPAs, un build |
+| Frontend | React 19 + Vite + TanStack Query + Tailwind | SPAs de recepción y kiosco, compartidas entre escritorio y acceso por red |
+| Escritorio | .NET 8 WinForms + WebView2, publicado autocontenido x64 | Ventana nativa, kiosco fullscreen, instancia única, arranque/recuperación del servicio y ventanas de impresión; el cliente no instala .NET |
 | PDF | pdfmake | JS puro, sin Chromium — boletas y reportes |
 | Excel | ExcelJS | Formato, fórmulas, múltiples hojas |
-| Empaquetado | Node portátil (zip oficial, sin instalar) + código TS corrido vía `tsx` | Se evaluó `@yao-pkg/pkg` (un solo `.exe`) pero tiene un bug documentado con `node:sqlite` (su analizador estático confunde el especificador con una ruta de archivo) y fricción conocida con ESM — se descartó por la misma razón que se descartó `better-sqlite3`: evitar tooling frágil. Ver F6 en §10 |
+| Empaquetado | Instalador Inno Setup: shell de escritorio autocontenido + Node portátil + código TS vía `tsx` | La interfaz sí se entrega como `.exe`; el servidor conserva Node oficial para mantener `node:sqlite`, ESM y actualizaciones seguras. Ver F6 en §10 |
 | Arranque automático | `node-windows` (servicio de Windows), `execPath`/`nodeOptions` apuntando al Node portátil + `tsx` como loader | Sobrevive reinicios y cortes de luz — `node-windows` está diseñado para invocar `node.exe <script>`, no para envolver un `.exe` standalone, por eso no se combina con `@yao-pkg/pkg` |
 | WhatsApp | `whatsapp-web.js` (sesión propia, sin costo por mensaje) | Decisión del cliente; riesgo de baneo mitigado. Ver §7 |
 | Scanner | HID keyboard-wedge, listener con prefijo/sufijo | El scanner del all-in-one "teclea"; sin driver |
@@ -113,7 +115,7 @@ por eso las consultas van por el repositorio, nunca SQL crudo esparcido.
 casa-carlos/
 ├─ apps/
 │  ├─ server/                 # ensambla servicios + gateway → CasaCarlos.exe
-│  ├─ web-admin/              # SPA administrador
+│  ├─ desktop/                # HospedajeCarlos.exe (recepción / --kiosk)
 │  ├─ web-reception/          # SPA recepción
 │  └─ web-kiosk/              # SPA cliente (kiosco / tablet)
 ├─ packages/
