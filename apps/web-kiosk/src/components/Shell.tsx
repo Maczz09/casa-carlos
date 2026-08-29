@@ -29,7 +29,7 @@ export function Shell({ title, step, onBack, children }: Props) {
         </div>
         <div className="h-14 w-14" />
       </header>
-      <main className="flex flex-1 flex-col overflow-y-auto px-10 pb-10">{children}</main>
+      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-10 pb-10">{children}</main>
     </div>
   );
 }

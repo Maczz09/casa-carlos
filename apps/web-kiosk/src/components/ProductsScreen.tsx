@@ -70,34 +70,36 @@ export function ProductsScreen({ products, totalCentimos, onAdd, onFinish, onCan
       {products.length === 0 ? (
         <div className="flex flex-1 items-center justify-center text-lg text-muted">No hay productos disponibles ahora.</div>
       ) : (
-        <div className="stagger grid flex-1 grid-cols-3 gap-4 content-start overflow-y-auto">
-          {products.map((p, i) => (
-            <button
-              key={p.id}
-              style={{ ["--i" as string]: i }}
-              onClick={() => add(p.id)}
-              disabled={busyId === p.id || !p.enStock}
-              className="group overflow-hidden rounded-2xl bg-surface text-left shadow-[var(--shadow-card)] ring-1 ring-line transition-all duration-200 active:scale-[0.98] disabled:opacity-60 enabled:hover:-translate-y-0.5 enabled:hover:shadow-[var(--shadow-pop)]"
-            >
-              <div className="relative aspect-video overflow-hidden bg-inset">
-                <ProductCover src={p.imagenes[0]} name={p.nombre} />
-                <span className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${p.enStock ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`}>
-                  {p.enStock ? "Disponible" : "Agotado"}
-                </span>
-                {p.imagenes.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">+{p.imagenes.length - 1}</span>}
-              </div>
-              <div className="flex flex-col gap-1 p-4">
-                <span className="font-serif text-xl text-ink">{p.nombre}</span>
-                {p.categoria && <span className="text-xs font-medium uppercase tracking-wide text-subtle">{p.categoria}</span>}
-                {p.descripcion && <span className="line-clamp-2 min-h-8 text-sm text-muted">{p.descripcion}</span>}
-                <span className="mt-1 text-xl font-semibold text-brand">{format(cents(p.precioCentimos))}</span>
-              </div>
-            </button>
-          ))}
+        <div className="min-h-0 flex-1 overflow-y-auto pr-2">
+          <div className="stagger grid grid-cols-3 items-start gap-4 pb-2">
+            {products.map((p, i) => (
+              <button
+                key={p.id}
+                style={{ ["--i" as string]: i }}
+                onClick={() => add(p.id)}
+                disabled={busyId === p.id || !p.enStock}
+                className="group h-fit min-w-0 self-start overflow-hidden rounded-2xl bg-surface text-left shadow-[var(--shadow-card)] ring-1 ring-line transition-all duration-200 active:scale-[0.98] disabled:opacity-60 enabled:hover:-translate-y-0.5 enabled:hover:shadow-[var(--shadow-pop)]"
+              >
+                <div className="relative aspect-[2/1] overflow-hidden bg-inset">
+                  <ProductCover src={p.imagenes[0]} name={p.nombre} />
+                  <span className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${p.enStock ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`}>
+                    {p.enStock ? "Disponible" : "Agotado"}
+                  </span>
+                  {p.imagenes.length > 1 && <span className="absolute bottom-3 right-3 rounded-full bg-black/60 px-2 py-0.5 text-xs text-white">+{p.imagenes.length - 1}</span>}
+                </div>
+                <div className="flex min-h-36 flex-col gap-1 p-4">
+                  <span className="line-clamp-2 font-serif text-xl font-semibold leading-tight text-ink">{p.nombre}</span>
+                  {p.categoria && <span className="text-xs font-medium uppercase tracking-wide text-subtle">{p.categoria}</span>}
+                  {p.descripcion && <span className="line-clamp-2 text-sm text-muted">{p.descripcion}</span>}
+                  <span className="mt-auto pt-2 text-2xl font-bold text-brand">{format(cents(p.precioCentimos))}</span>
+                </div>
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="animate-fade-up mt-6 flex items-center justify-between rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] ring-1 ring-line">
+      <div className="animate-fade-up mt-6 flex shrink-0 items-center justify-between rounded-2xl bg-surface p-5 shadow-[var(--shadow-card)] ring-1 ring-line">
         <div>
           <p className="text-sm text-muted">Total hasta ahora</p>
           <p className="font-serif text-2xl text-ink">{format(cents(totalCentimos))}</p>
