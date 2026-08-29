@@ -60,35 +60,27 @@ RestartApplications=no
 Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
 
 [Files]
-; Todo el monorepo fuente, menos lo que no hace falta, se regenera solo, o
-; NUNCA debería viajar en un instalador:
-;   - .env: son los secretos reales de ESTA máquina de desarrollo (RUC,
-;     credenciales SOL, etc.) — el asistente arma uno nuevo para el cliente,
-;     jamás el nuestro. Excluirlo acá no es opcional.
-;   - apps\server\src\daemon: lo genera node-windows/winsw al instalar el
-;     servicio EN ESTA máquina — config con rutas absolutas de acá, y
-;     mientras el servicio está corriendo sus logs quedan abiertos
-;     (bloquea la compilación si no se excluye).
-;   - node_modules (se reinstala en destino), .git (no aplica a una
-;     instalación), datos de desarrollo (nunca deberían viajar al cliente),
-;     dist/ de los frontends (se reconstruye en destino), y el propio
-;     `vendor/` de la máquina de build (el Node portátil se agrega aparte,
-;     explícito, abajo — evita arrastrar cualquier otra cosa que haya
-;     quedado en esa carpeta, como el instalador de Inno Setup descargado).
-;   - data\*.pfx: certificado real de pruebas SUNAT de ESTA máquina de
-;     desarrollo (data\sunat-beta-test.pfx) — secreto, nunca debe viajar;
-;     el asistente pide y copia el certificado del CLIENTE aparte, en
-;     WriteEnvFile más abajo.
-;   - data\whatsapp-*: la sesión de WhatsApp vinculada de ESTA máquina —
-;     es la credencial que deja mandar mensajes como el teléfono vinculado,
-;     y sin excluirla viajaba dentro del .exe (se notó porque el instalador
-;     pesaba 66MB en vez de 26MB: el perfil de Chromium entero adentro).
-;     Junto con ella, el token del agente y sus archivos de estado, que son
-;     por instalación y se regeneran solos en destino.
-;   - installer\output: es el propio .exe que este script está generando —
-;     incluirlo causa que ISCC intente leer el archivo mientras lo está
-;     escribiendo ("el proceso no tiene acceso al archivo").
-Source: "..\*"; DestDir: "{app}"; Excludes: ".env,.env.local,node_modules,.git,.turbo,data\*.db,data\*.db-shm,data\*.db-wal,data\backups,data\product-images,data\*.pfx,data\whatsapp-session,data\whatsapp-agent.token,data\whatsapp-agent.log,data\whatsapp-vinculado.flag,data\whatsapp-agent.lock,dist,vendor,apps\server\src\daemon,apps\desktop\bin,apps\desktop\obj,apps\desktop\loading,apps\desktop\src-tauri,apps\desktop\generated,apps\desktop\publish,installer\output,*.tsbuildinfo"; Flags: recursesubdirs ignoreversion
+; Lista blanca: nunca usar "..\*" acá. El repositorio puede convivir con
+; documentos o carpetas personales y no deben terminar dentro del instalador.
+; Al copiar únicamente los componentes conocidos también quedan fuera, por
+; diseño, .env, bases de datos, certificados, imágenes del hotel, sesiones de
+; WhatsApp, node_modules, cachés y artefactos de desarrollo.
+Source: "..\package.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\pnpm-lock.yaml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\pnpm-workspace.yaml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\tsconfig.base.json"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\.puppeteerrc.cjs"; DestDir: "{app}"; Flags: ignoreversion
+
+Source: "..\apps\server\*"; DestDir: "{app}\apps\server"; Excludes: "node_modules,dist,src\daemon,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\apps\web-reception\*"; DestDir: "{app}\apps\web-reception"; Excludes: "node_modules,dist,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\apps\web-kiosk\*"; DestDir: "{app}\apps\web-kiosk"; Excludes: "node_modules,dist,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\apps\whatsapp-agent\*"; DestDir: "{app}\apps\whatsapp-agent"; Excludes: "node_modules,dist,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\packages\*"; DestDir: "{app}\packages"; Excludes: "node_modules,dist,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\services\*"; DestDir: "{app}\services"; Excludes: "node_modules,dist,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\scripts\service\*"; DestDir: "{app}\scripts\service"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\scripts\whatsapp-agent.cmd"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "..\scripts\whatsapp-agent-oculto.vbs"; DestDir: "{app}\scripts"; Flags: ignoreversion
+Source: "..\docs\*"; DestDir: "{app}\docs"; Flags: recursesubdirs createallsubdirs ignoreversion
 
 ; El Node portátil — runtime propio, sin depender de que el cliente lo tenga instalado.
 Source: "..\vendor\node-win-x64\*"; DestDir: "{app}\vendor\node-win-x64"; Flags: recursesubdirs ignoreversion

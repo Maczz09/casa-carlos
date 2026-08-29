@@ -318,8 +318,11 @@ fn build_main_window(
 
     if matches!(mode, Mode::Kiosk) {
         builder = builder
-            .fullscreen(true)
-            .decorations(false)
+            // El kiosco necesita una barra nativa para poder arrastrarse a la
+            // segunda pantalla. Arranca maximizado, pero no en fullscreen
+            // exclusivo: Windows permite restaurarlo/moverlo desde el título.
+            .decorations(true)
+            .maximized(true)
             .min_inner_size(800.0, 600.0);
     }
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { KioskProduct } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { Shell } from "./Shell.js";
@@ -9,6 +9,21 @@ interface Props {
   onAdd: (productoId: string) => Promise<void>;
   onFinish: () => void;
   onCancel: () => void;
+}
+
+function ProductCover({ src, name }: { src?: string; name: string }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+
+  if (!src || failed) {
+    return (
+      <div className="grid h-full place-items-center text-center text-sm text-subtle">
+        <div><svg viewBox="0 0 48 48" className="mx-auto h-12 w-12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m24 6 17 9v18l-17 9-17-9V15Z"/><path d="m7 15 17 9 17-9M24 24v18"/></svg><span className="mt-2 block">Imagen no disponible</span></div>
+      </div>
+    );
+  }
+
+  return <img src={src} alt={name} onError={() => setFailed(true)} className="h-full w-full bg-white object-contain p-3 transition-transform duration-300 group-enabled:group-hover:scale-[1.02]" />;
 }
 
 /** Paso opcional entre elegir cuarto y pagar — el huésped puede agregar productos de una vez, o seguir directo a pagar. */
@@ -64,14 +79,8 @@ export function ProductsScreen({ products, totalCentimos, onAdd, onFinish, onCan
               disabled={busyId === p.id || !p.enStock}
               className="group overflow-hidden rounded-2xl bg-surface text-left shadow-[var(--shadow-card)] ring-1 ring-line transition-all duration-200 active:scale-[0.98] disabled:opacity-60 enabled:hover:-translate-y-0.5 enabled:hover:shadow-[var(--shadow-pop)]"
             >
-              <div className="relative aspect-[16/10] overflow-hidden bg-inset">
-                {p.imagenes[0] ? (
-                  <img src={p.imagenes[0]} alt={p.nombre} className="h-full w-full object-cover transition-transform duration-300 group-enabled:group-hover:scale-105" />
-                ) : (
-                  <div className="grid h-full place-items-center text-center text-sm text-subtle">
-                    <svg viewBox="0 0 48 48" className="h-12 w-12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m24 6 17 9v18l-17 9-17-9V15Z"/><path d="m7 15 17 9 17-9M24 24v18"/></svg>
-                  </div>
-                )}
+              <div className="relative aspect-video overflow-hidden bg-inset">
+                <ProductCover src={p.imagenes[0]} name={p.nombre} />
                 <span className={`absolute right-3 top-3 rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${p.enStock ? "bg-emerald-600 text-white" : "bg-rose-600 text-white"}`}>
                   {p.enStock ? "Disponible" : "Agotado"}
                 </span>
