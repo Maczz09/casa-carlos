@@ -13,6 +13,11 @@ data/whatsapp-session/
 data/whatsapp-agent.token
 data/backups/
 data/product-images/
+# Marca del hotel (logo + nombre) y fotos de los QR de las billeteras: son
+# contenido del cliente, cargado desde el instalador o desde Ajustes.
+data/brand/
+data/brand-images/
+data/qr-images/
 *.pfx
 *.p12
 .turbo/

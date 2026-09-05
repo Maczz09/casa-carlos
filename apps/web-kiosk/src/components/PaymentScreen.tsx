@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-import QRCode from "qrcode";
-import type { CollectionAccount } from "@casacarlos/contracts";
+import { useState } from "react";
+import type { CollectionAccount, PaymentMethod } from "@casacarlos/contracts";
 import { cents, format, sum } from "@casacarlos/money";
 import { IconBank, IconCash, IconCombine, IconWallet } from "@casacarlos/ui";
 import { Shell } from "./Shell.js";
@@ -13,45 +12,40 @@ interface Props {
   busy: boolean;
 }
 
-type Method = "EFECTIVO" | "YAPE" | "PLIN" | "TRANSFERENCIA" | "HIBRIDO";
+type Method = PaymentMethod | "HIBRIDO";
 
-const METHOD_LABEL: Record<Exclude<Method, "HIBRIDO">, string> = {
+const METHOD_LABEL: Record<string, string> = {
   EFECTIVO: "Efectivo",
   YAPE: "Yape",
   PLIN: "Plin",
+  LEMON: "Lemon",
+  AGORA: "Agora",
   TRANSFERENCIA: "Transferencia",
 };
 
-function useQr(text: string | null): string | null {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    if (!text) {
-      setUrl(null);
-      return;
-    }
-    let cancelled = false;
-    QRCode.toDataURL(text, { margin: 1, width: 260, color: { dark: "#292524", light: "#FFFFFF" } }).then((u) => {
-      if (!cancelled) setUrl(u);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [text]);
-  return url;
+/**
+ * Qué se le ofrece al huésped sale de los canales de cobro que el hotel tiene
+ * cargados y activos (Ajustes → Cobros), no de una lista fija en el código: si
+ * el hotel no usa Plin, Plin no aparece. El efectivo siempre está — se recibe
+ * en el mostrador y no necesita cuenta de nadie.
+ */
+function availableMethods(accounts: CollectionAccount[]): PaymentMethod[] {
+  const metodos: PaymentMethod[] = ["EFECTIVO"];
+  for (const cuenta of accounts) {
+    if (!metodos.includes(cuenta.metodo)) metodos.push(cuenta.metodo);
+  }
+  return metodos;
 }
 
 export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, onCancel, busy }: Props) {
   const [method, setMethod] = useState<Method | null>(null);
+  const metodos = availableMethods(collectionAccounts);
   const [hybridRows, setHybridRows] = useState([
     { metodo: "EFECTIVO", monto: "" },
-    { metodo: "YAPE", monto: "" },
+    { metodo: metodos.find((m) => m !== "EFECTIVO") ?? "EFECTIVO", monto: "" },
   ]);
 
-  const bank = collectionAccounts.find((a) => a.tipo === "BANCO");
-  const wallet = collectionAccounts.find((a) => a.tipo === "BILLETERA" && (method === "YAPE" ? a.proveedor === "YAPE" : a.proveedor === "PLIN"));
-  const qrText = wallet ? `${wallet.proveedor} · ${wallet.titular} · ${format(cents(totalCentimos))}` : null;
-  const qrUrl = useQr(method === "YAPE" || method === "PLIN" ? qrText : null);
-
+  const cuentasDelMetodo = collectionAccounts.filter((a) => a.metodo === method);
   const hybridTotal = sum(hybridRows.map((r) => cents(Math.round((Number(r.monto) || 0) * 100))));
   const hybridOk = hybridTotal === totalCentimos;
 
@@ -63,18 +57,25 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
           <p className="font-serif text-5xl text-ink">{format(cents(totalCentimos))}</p>
         </div>
         <div className="stagger grid flex-1 grid-cols-2 gap-5 content-start">
-          <MethodButton i={0} icon={IconCash} label="Efectivo" onClick={() => setMethod("EFECTIVO")} />
-          <MethodButton i={1} icon={IconWallet} label="Yape" onClick={() => setMethod("YAPE")} />
-          <MethodButton i={2} icon={IconWallet} label="Plin" onClick={() => setMethod("PLIN")} />
-          <MethodButton i={3} icon={IconBank} label="Transferencia" onClick={() => setMethod("TRANSFERENCIA")} />
-          <MethodButton i={4} icon={IconCombine} label="Combinar métodos" onClick={() => setMethod("HIBRIDO")} wide />
+          {metodos.map((m, i) => (
+            <MethodButton
+              key={m}
+              i={i}
+              icon={m === "EFECTIVO" ? IconCash : m === "TRANSFERENCIA" ? IconBank : IconWallet}
+              label={METHOD_LABEL[m] ?? m}
+              onClick={() => setMethod(m)}
+            />
+          ))}
+          {metodos.length > 1 && (
+            <MethodButton i={metodos.length} icon={IconCombine} label="Combinar métodos" onClick={() => setMethod("HIBRIDO")} wide />
+          )}
         </div>
       </Shell>
     );
   }
 
   return (
-    <Shell title={method === "HIBRIDO" ? "Combinar métodos" : METHOD_LABEL[method]} onBack={() => setMethod(null)}>
+    <Shell title={method === "HIBRIDO" ? "Combinar métodos" : (METHOD_LABEL[method] ?? method)} onBack={() => setMethod(null)}>
       <div className="animate-fade-up flex flex-1 flex-col items-center justify-center gap-6 text-center">
         {method === "EFECTIVO" && (
           <>
@@ -83,41 +84,27 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
           </>
         )}
 
-        {(method === "YAPE" || method === "PLIN") &&
-          (wallet ? (
-            <>
-              <p className="text-lg text-muted">Escanea el código y muéstrale la confirmación al recepcionista</p>
-              {qrUrl && <img src={qrUrl} alt={`Código QR de ${METHOD_LABEL[method]}`} className="animate-pop rounded-2xl shadow-[var(--shadow-pop)]" width={260} height={260} />}
-              <p className="font-serif text-3xl text-ink">{format(cents(totalCentimos))}</p>
-            </>
-          ) : (
-            <p className="text-lg text-muted">Este método no está disponible por ahora — elige otro.</p>
-          ))}
-
-        {method === "TRANSFERENCIA" &&
-          (bank ? (
-            <div className="w-full max-w-md rounded-2xl bg-surface p-8 text-left shadow-[var(--shadow-card)] ring-1 ring-line">
-              <p className="text-sm uppercase tracking-wide text-subtle">Transfiere a</p>
-              <p className="mt-1 font-serif text-2xl text-ink">{bank.titular}</p>
-              <dl className="mt-4 space-y-2 text-sm text-ink">
-                <div className="flex justify-between">
-                  <dt className="text-subtle">Banco</dt>
-                  <dd className="font-medium">{bank.proveedor}</dd>
+        {method !== "EFECTIVO" && method !== "HIBRIDO" && (
+          <>
+            {cuentasDelMetodo.length === 0 ? (
+              <p className="text-lg text-muted">Este método no está disponible por ahora — elige otro.</p>
+            ) : (
+              <>
+                <p className="text-lg text-muted">
+                  {method === "TRANSFERENCIA"
+                    ? "Transfiere el monto y muéstrale la constancia al recepcionista"
+                    : "Escanea el código y muéstrale la confirmación al recepcionista"}
+                </p>
+                <div className="flex w-full flex-wrap items-stretch justify-center gap-5">
+                  {cuentasDelMetodo.map((cuenta) => (
+                    <AccountCard key={cuenta.id} cuenta={cuenta} />
+                  ))}
                 </div>
-                <div className="flex justify-between">
-                  <dt className="text-subtle">Cuenta</dt>
-                  <dd className="font-mono font-medium">{bank.numeroCuenta}</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-subtle">CCI</dt>
-                  <dd className="font-mono font-medium">{bank.cci}</dd>
-                </div>
-              </dl>
-              <p className="mt-5 text-center font-serif text-3xl text-ink">{format(cents(totalCentimos))}</p>
-            </div>
-          ) : (
-            <p className="text-lg text-muted">Este método no está disponible por ahora — elige otro.</p>
-          ))}
+                <p className="font-serif text-3xl text-ink">{format(cents(totalCentimos))}</p>
+              </>
+            )}
+          </>
+        )}
 
         {method === "HIBRIDO" && (
           <div className="w-full max-w-md space-y-4 text-left">
@@ -128,9 +115,9 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
                   onChange={(e) => setHybridRows((rs) => rs.map((r, i) => (i === idx ? { ...r, metodo: e.target.value } : r)))}
                   className="flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-ink"
                 >
-                  {Object.entries(METHOD_LABEL).map(([v, l]) => (
-                    <option key={v} value={v}>
-                      {l}
+                  {metodos.map((m) => (
+                    <option key={m} value={m}>
+                      {METHOD_LABEL[m] ?? m}
                     </option>
                   ))}
                 </select>
@@ -150,7 +137,7 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
         )}
 
         <button
-          disabled={busy || (method === "TRANSFERENCIA" && !bank) || ((method === "YAPE" || method === "PLIN") && !wallet) || (method === "HIBRIDO" && !hybridOk)}
+          disabled={busy || (method !== "EFECTIVO" && method !== "HIBRIDO" && cuentasDelMetodo.length === 0) || (method === "HIBRIDO" && !hybridOk)}
           onClick={() =>
             onPropose(
               method === "HIBRIDO"
@@ -164,6 +151,62 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
         </button>
       </div>
     </Shell>
+  );
+}
+
+/**
+ * Los datos de un canal de cobro tal como el huésped los necesita. El QR es la
+ * foto que el hotel exportó de su billetera: no se dibuja ninguno acá, porque
+ * un QR generado por el sistema no cobraría nada. Sin foto cargada se muestra
+ * el número, que sirve igual para yapear a mano.
+ */
+function AccountCard({ cuenta }: { cuenta: CollectionAccount }) {
+  const esBanco = cuenta.tipo === "BANCO";
+  return (
+    <div className="w-full max-w-sm rounded-2xl bg-surface p-6 text-left shadow-[var(--shadow-card)] ring-1 ring-line">
+      <p className="text-sm uppercase tracking-wide text-subtle">{esBanco ? "Transfiere a" : (METHOD_LABEL[cuenta.metodo] ?? cuenta.proveedor)}</p>
+      <p className="mt-1 font-serif text-2xl text-ink">{cuenta.titular}</p>
+
+      {!esBanco &&
+        (cuenta.qrUrl ? (
+          <img
+            src={cuenta.qrUrl}
+            alt={`Código QR de ${cuenta.proveedor}`}
+            className="animate-pop mx-auto mt-4 h-64 w-64 rounded-2xl bg-white object-contain p-2 shadow-[var(--shadow-pop)]"
+          />
+        ) : (
+          <p className="mt-4 text-center text-sm text-muted">Muéstrale el número al recepcionista para que te confirme el pago.</p>
+        ))}
+
+      <dl className="mt-4 space-y-2 text-sm text-ink">
+        {esBanco && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-subtle">Banco</dt>
+            <dd className="font-medium">{cuenta.proveedor}</dd>
+          </div>
+        )}
+        {cuenta.telefono && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-subtle">Número</dt>
+            <dd className="font-mono font-medium">{cuenta.telefono}</dd>
+          </div>
+        )}
+        {cuenta.numeroCuenta && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-subtle">Cuenta</dt>
+            <dd className="font-mono font-medium">{cuenta.numeroCuenta}</dd>
+          </div>
+        )}
+        {cuenta.cci && (
+          <div className="flex justify-between gap-4">
+            <dt className="text-subtle">CCI</dt>
+            <dd className="font-mono font-medium">{cuenta.cci}</dd>
+          </div>
+        )}
+      </dl>
+
+      {cuenta.notas && <p className="mt-3 text-xs text-muted">{cuenta.notas}</p>}
+    </div>
   );
 }
 

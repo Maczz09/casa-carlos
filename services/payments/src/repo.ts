@@ -10,11 +10,15 @@ type CollectionAccountRow = typeof schema.paymentsCuentasCobro.$inferSelect;
 const toCollectionAccount = (r: CollectionAccountRow): CollectionAccount => ({
   id: r.id,
   tipo: r.tipo,
+  metodo: r.metodo,
   proveedor: r.proveedor,
   titular: r.titular,
+  telefono: r.telefono,
   numeroCuenta: r.numeroCuenta,
   cci: r.cci,
-  qrImagenUrl: r.qrImagenUrl,
+  notas: r.notas,
+  qrArchivo: r.qrArchivo,
+  qrUrl: r.qrArchivo ? `/qr-images/${encodeURIComponent(r.qrArchivo)}` : null,
   orden: r.orden,
   activa: r.activa,
 });
@@ -84,13 +88,31 @@ export class PaymentsRepo {
     return toCollectionAccount(row);
   }
 
-  async listCollectionAccounts(): Promise<CollectionAccount[]> {
-    const rows = await this.db
-      .select()
-      .from(schema.paymentsCuentasCobro)
-      .where(eq(schema.paymentsCuentasCobro.activa, true))
-      .orderBy(asc(schema.paymentsCuentasCobro.orden))
-      .all();
+  async listCollectionAccounts(soloActivas: boolean): Promise<CollectionAccount[]> {
+    const rows = soloActivas
+      ? await this.db
+          .select()
+          .from(schema.paymentsCuentasCobro)
+          .where(eq(schema.paymentsCuentasCobro.activa, true))
+          .orderBy(asc(schema.paymentsCuentasCobro.orden))
+          .all()
+      : await this.db.select().from(schema.paymentsCuentasCobro).orderBy(asc(schema.paymentsCuentasCobro.orden)).all();
     return rows.map(toCollectionAccount);
+  }
+
+  async getCollectionAccount(id: string): Promise<CollectionAccount | null> {
+    const row = await this.db.select().from(schema.paymentsCuentasCobro).where(eq(schema.paymentsCuentasCobro.id, id)).get();
+    return row ? toCollectionAccount(row) : null;
+  }
+
+  async updateCollectionAccount(id: string, patch: Partial<CollectionAccountRow>): Promise<CollectionAccount> {
+    await this.db.update(schema.paymentsCuentasCobro).set(patch).where(eq(schema.paymentsCuentasCobro.id, id));
+    const updated = await this.getCollectionAccount(id);
+    if (!updated) throw new Error(`Canal de cobro ${id} no encontrado.`);
+    return updated;
+  }
+
+  async deleteCollectionAccount(id: string): Promise<void> {
+    await this.db.delete(schema.paymentsCuentasCobro).where(eq(schema.paymentsCuentasCobro.id, id));
   }
 }

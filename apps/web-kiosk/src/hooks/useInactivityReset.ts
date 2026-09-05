@@ -10,7 +10,11 @@ export function useInactivityReset(session: KioskSession | null): void {
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
-    const clear = () => timerRef.current && clearTimeout(timerRef.current);
+    // Con cuerpo de bloque a propósito: como expresión devolvía `number | 0`,
+    // y React exige que la función de limpieza de un efecto no devuelva nada.
+    const clear = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
     clear();
 
     if (!session || session.estado === "ESPERA") return;

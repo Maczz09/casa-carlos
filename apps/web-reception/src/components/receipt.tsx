@@ -1,6 +1,7 @@
 import type { ComprobantePago, SaleWithLines } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { api, getToken } from "../api.js";
+import { getBrand } from "../hooks/useBrand.js";
 
 /** Abre el PDF real que ya emitió SUNAT, en una pestaña nueva. */
 export async function openComprobantePdf(comprobanteId: string): Promise<void> {
@@ -32,6 +33,10 @@ function escapeHtml(value: string): string {
  */
 function buildDraftReceiptHtml(draft: DraftReceipt): string {
   const { sale, tipo, receptorRuc, receptorRazonSocial, fecha, cuarto } = draft;
+  const brand = getBrand();
+  // La ventana de impresión se escribe sobre about:blank, así que una ruta
+  // relativa al logo no resolvería: se arma absoluta contra este mismo servidor.
+  const logo = brand.logoUrl ? `<img class="logo" src="${escapeHtml(window.location.origin + brand.logoUrl)}" alt="">` : "";
 
   const lineas = sale.lineas
     .map(
@@ -57,6 +62,7 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
     background: #fff;
   }
   h2 { font-size: 12px; font-weight: 700; text-align: center; margin: 0 0 2mm; }
+  .logo { display: block; margin: 0 auto 1.5mm; max-width: 40mm; max-height: 18mm; }
   p { margin: 0 0 1mm; }
   hr { border: none; border-top: 1px dashed #000; margin: 2mm 0; }
   table { width: 100%; border-collapse: collapse; }
@@ -67,7 +73,8 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
 </style>
 </head>
 <body>
-  <h2>HOSPEDAJE CARLOS</h2>
+  ${logo}
+  <h2>${escapeHtml(brand.nombre.toUpperCase())}</h2>
   <p class="center">Comprobante de pago (BORRADOR)</p>
   <p class="center">Control interno — no válido como comprobante SUNAT</p>
   <hr>

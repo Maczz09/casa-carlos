@@ -1,3 +1,5 @@
+import type { Brand } from "@casacarlos/contracts";
+
 function greeting(): string {
   const h = new Date().getHours();
   if (h < 12) return "Buenos días";
@@ -6,12 +8,15 @@ function greeting(): string {
 }
 
 /** What's on screen until a receptionist starts a session — no call to action, since the guest never initiates. */
-export function IdleScreen() {
+export function IdleScreen({ brand }: { brand: Brand }) {
   return (
     <div className="animate-fade flex h-screen flex-col items-center justify-center bg-bg px-10 text-center">
+      {brand.logoUrl && (
+        <img src={brand.logoUrl} alt="" className="animate-pop mb-6 h-28 max-w-[16rem] object-contain" />
+      )}
       <p className="animate-fade-up font-serif text-xl italic text-brand/70">{greeting()}</p>
       <h1 className="animate-fade-up mt-3 font-serif text-6xl text-ink" style={{ animationDelay: "80ms" }}>
-        Hospedaje Carlos
+        {brand.nombre}
       </h1>
       <div className="animate-fade-up mt-8 h-px w-24 bg-subtle/50" style={{ animationDelay: "160ms" }} />
       <p className="animate-fade-up mt-8 max-w-md text-lg text-muted" style={{ animationDelay: "220ms" }}>

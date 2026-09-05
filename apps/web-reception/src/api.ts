@@ -2,12 +2,14 @@ import type {
   Arqueo,
   AuthResult,
   Attribute,
+  Brand,
   CashMovement,
   CashSummary,
   Denominaciones,
   Category,
   ChargeCode,
   CollectionAccount,
+  CreateCollectionAccountInput,
   Comprobante,
   ComunicacionBaja,
   CreateRecipientInput,
@@ -42,6 +44,7 @@ import type {
   ShiftTemplate,
   Stay,
   StayWithCustomer,
+  UpdateCollectionAccountInput,
   UpdateRecipientInput,
   User,
 } from "@casacarlos/contracts";
@@ -145,7 +148,27 @@ export const api = {
   createPayment: (saleId: string, detalles: PaymentDetailInput[]) => post<PaymentWithDetails>("/api/payments", { saleId, detalles }),
   acceptPayment: (id: string) => post<PaymentWithDetails>(`/api/payments/${id}/accept`),
   rejectPayment: (id: string, motivo: string) => post<PaymentWithDetails>(`/api/payments/${id}/reject`, { motivo }),
-  collectionAccounts: () => get<CollectionAccount[]>("/api/kiosk/collection-accounts"),
+  collectionAccounts: () => get<CollectionAccount[]>("/api/payments/collection-accounts"),
+  createCollectionAccount: (input: CreateCollectionAccountInput) => post<CollectionAccount>("/api/payments/collection-accounts", input),
+  updateCollectionAccount: (id: string, patchBody: UpdateCollectionAccountInput) =>
+    patch<CollectionAccount>(`/api/payments/collection-accounts/${id}`, patchBody),
+  deleteCollectionAccount: (id: string) => del<void>(`/api/payments/collection-accounts/${id}`),
+  uploadCollectionAccountQr: (id: string, file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    return request<CollectionAccount>(`/api/payments/collection-accounts/${id}/qr`, { method: "POST", body: form });
+  },
+  deleteCollectionAccountQr: (id: string) => del<CollectionAccount>(`/api/payments/collection-accounts/${id}/qr`),
+
+  // ---- marca (nombre y logo del hotel) ----
+  brand: () => get<Brand>("/api/brand"),
+  updateBrand: (input: { nombre: string; lema?: string | null }) => patch<Brand>("/api/brand", input),
+  uploadBrandLogo: (file: File) => {
+    const form = new FormData();
+    form.append("image", file);
+    return request<Brand>("/api/brand/logo", { method: "POST", body: form });
+  },
+  deleteBrandLogo: () => del<Brand>("/api/brand/logo"),
 
   // ---- inventory ----
   products: () => get<Product[]>("/api/inventory/products"),

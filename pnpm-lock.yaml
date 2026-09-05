@@ -105,9 +105,6 @@ importers:
       '@casacarlos/ui':
         specifier: workspace:*
         version: link:../../packages/ui
-      qrcode:
-        specifier: ^1.5.4
-        version: 1.5.4
       react:
         specifier: ^19.0.0
         version: 19.2.8
@@ -118,9 +115,6 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.0.0
         version: 4.3.3(vite@6.4.3(@types/node@24.13.3)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.23.12))
-      '@types/qrcode':
-        specifier: ^1.5.5
-        version: 1.5.6
       '@types/react':
         specifier: ^19.0.2
         version: 19.2.18

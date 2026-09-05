@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { Category, CollectionAccount } from "@casacarlos/contracts";
+import type { Brand, Category, CollectionAccount } from "@casacarlos/contracts";
 import { api } from "./api.js";
 import { useKioskState } from "./hooks/useKioskState.js";
 import { useInactivityReset } from "./hooks/useInactivityReset.js";
@@ -18,11 +18,15 @@ export default function App() {
   const { theme, toggle } = useTheme();
   const [categories, setCategories] = useState<Category[]>([]);
   const [collectionAccounts, setCollectionAccounts] = useState<CollectionAccount[]>([]);
+  // Nombre y logo que cargó el hotel. Hasta que llegue se usa el de fábrica:
+  // que el servidor tarde no puede dejar la pantalla del huésped en blanco.
+  const [brand, setBrandState] = useState<Brand>({ nombre: "Hospedaje Carlos", lema: "", logoUrl: null });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     api.categories().then(setCategories);
     api.collectionAccounts().then(setCollectionAccounts);
+    api.brand().then(setBrandState).catch(() => {});
   }, []);
 
   useInactivityReset(session);
@@ -30,8 +34,8 @@ export default function App() {
   const cancel = () => void api.reset();
 
   const renderScreen = () => {
-    if (!connected && !session) return <IdleScreen />;
-    if (!session || session.estado === "ESPERA") return <IdleScreen />;
+    if (!connected && !session) return <IdleScreen brand={brand} />;
+    if (!session || session.estado === "ESPERA") return <IdleScreen brand={brand} />;
 
     if (session.estado === "SELECCION_PISO") {
       return <FloorScreen floors={floors} onCancel={cancel} onSelect={(pisoId) => void api.selectFloor(pisoId)} />;
@@ -92,10 +96,10 @@ export default function App() {
 
     const roomNumber = floors.flatMap((f) => f.rooms).find((r) => r.room.id === session.cuartoId)?.room.numero;
 
-    if (session.estado === "ACEPTADO") return <ResultScreen accepted roomNumber={roomNumber} />;
-    if (session.estado === "RECHAZADO") return <ResultScreen accepted={false} />;
+    if (session.estado === "ACEPTADO") return <ResultScreen accepted roomNumber={roomNumber} hotel={brand.nombre} />;
+    if (session.estado === "RECHAZADO") return <ResultScreen accepted={false} hotel={brand.nombre} />;
 
-    return <IdleScreen />;
+    return <IdleScreen brand={brand} />;
   };
 
   return (

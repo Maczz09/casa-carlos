@@ -14,11 +14,13 @@ import {
   IconMoon,
   IconPlus,
   IconReceipt,
+  IconSliders,
   IconSun,
   IconTag,
   IconX,
 } from "@casacarlos/ui";
 import { cx } from "./ui.js";
+import { useBrand } from "../hooks/useBrand.js";
 import type { Theme } from "../hooks/useTheme.js";
 
 export interface NavEntry {
@@ -59,6 +61,7 @@ export const NAV: NavGroup[] = [
     items: [
       { id: "dashboard", label: "Dashboard", icon: <IconChart className={ICON} />, adminOnly: true },
       { id: "notificaciones", label: "Notificaciones", icon: <IconBell className={ICON} />, adminOnly: true },
+      { id: "ajustes", label: "Ajustes", icon: <IconSliders className={ICON} />, adminOnly: true },
     ],
   },
 ];
@@ -67,19 +70,35 @@ export const NAV_LABEL: Record<string, string> = Object.fromEntries(NAV.flatMap(
 
 /* ---------------- Marca ---------------- */
 
+/** Logo cargado por el hotel; si todavía no cargó ninguno, la casita de siempre. */
+export function BrandMark({ className, logoUrl, nombre }: { className?: string; logoUrl: string | null; nombre: string }) {
+  if (logoUrl) {
+    return <img src={logoUrl} alt={nombre} className={cx("h-full w-full rounded-[inherit] object-contain", className)} />;
+  }
+  return (
+    <svg viewBox="0 0 20 20" className={cx("h-5 w-5", className)} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 8.6 10 3l7 5.6V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
+      <path d="M7.6 17v-4.4h4.8V17" />
+    </svg>
+  );
+}
+
 function Brand({ collapsed }: { collapsed: boolean }) {
+  const brand = useBrand();
   return (
     <div className={cx("flex items-center gap-2.5 px-4 py-5", collapsed && "justify-center px-0")}>
-      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-brand text-brand-ink shadow-sm">
-        <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 8.6 10 3l7 5.6V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
-          <path d="M7.6 17v-4.4h4.8V17" />
-        </svg>
+      <span
+        className={cx(
+          "grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl shadow-sm",
+          brand.logoUrl ? "bg-surface ring-1 ring-line" : "bg-brand text-brand-ink",
+        )}
+      >
+        <BrandMark logoUrl={brand.logoUrl} nombre={brand.nombre} />
       </span>
       {!collapsed && (
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold leading-tight text-ink">Hospedaje Carlos</p>
-          <p className="truncate text-[11px] leading-tight text-subtle">Sistema de hospedaje</p>
+          <p className="truncate text-sm font-semibold leading-tight text-ink">{brand.nombre}</p>
+          <p className="truncate text-[11px] leading-tight text-subtle">{brand.lema}</p>
         </div>
       )}
     </div>
@@ -213,6 +232,7 @@ function Topbar({
   onOpenMobile: () => void;
   onLogout: () => void;
 }) {
+  const brandNombre = useBrand().nombre;
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-surface/85 px-4 backdrop-blur-md sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
@@ -224,7 +244,7 @@ function Topbar({
         </button>
 
         <div className="flex min-w-0 items-center gap-1.5 text-sm">
-          <span className="hidden text-muted sm:inline">Hospedaje Carlos</span>
+          <span className="hidden text-muted sm:inline">{brandNombre}</span>
           <IconChevronRight className="hidden h-3.5 w-3.5 text-subtle sm:inline" />
           <span className="truncate font-semibold text-ink">{title}</span>
         </div>

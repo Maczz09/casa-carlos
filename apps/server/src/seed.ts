@@ -141,9 +141,11 @@ export async function seedIfEmpty(
     numeroCuenta: "194-1234567-0-89",
     cci: "00219400123456789012",
     orden: 0,
-  });
-  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "YAPE", titular: "Hospedaje Carlos", orden: 1 });
-  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "PLIN", titular: "Hospedaje Carlos", orden: 2 });
+  }, admin.id);
+  // La foto del QR de cada billetera la carga el hotel desde Ajustes → Cobros:
+  // el QR que cobra de verdad sale de la app de la billetera, no se puede sembrar.
+  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "YAPE", titular: "Hospedaje Carlos", telefono: "999 888 777", orden: 1 }, admin.id);
+  await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "PLIN", titular: "Hospedaje Carlos", telefono: "999 888 777", orden: 2 }, admin.id);
 
   const catBebidas = await inventory.createCategory({ nombre: "Bebidas" });
   const catSnacks = await inventory.createCategory({ nombre: "Snacks" });

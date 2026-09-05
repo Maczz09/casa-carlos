@@ -41,7 +41,9 @@ import { cashboxRoutes } from "./routes/cashbox.js";
 import { reportingRoutes } from "./routes/reporting.js";
 import { notificationsRoutes } from "./routes/notifications.js";
 import { billingRoutes } from "./routes/billing.js";
-import { ProductImageStorage, MAX_PRODUCT_IMAGE_BYTES } from "./product-image-storage.js";
+import { brandRoutes } from "./routes/brand.js";
+import { ImageStorage, MAX_IMAGE_BYTES } from "./image-storage.js";
+import { BrandStore } from "./brand-store.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -139,7 +141,9 @@ async function main() {
   const stays = createStaysService(db, bus, rooms, pricing);
   staysPortRef = stays;
   const inventory = createInventoryService(db, bus);
-  const productImages = new ProductImageStorage(dataDir);
+  const productImages = new ImageStorage(dataDir, "product-images");
+  const qrImages = new ImageStorage(dataDir, "qr-images");
+  const brand = new BrandStore(dataDir);
   const sales = createSalesService(db, bus, rooms, pricing, stays, inventory);
   const payments = createPaymentsService(db, bus, sales);
   const cashbox = createCashboxService(db, bus, payments);
@@ -165,10 +169,10 @@ async function main() {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
   await app.register(websocketPlugin);
 
-  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, productImages, cashbox, reporting, notifications, billing, whatsapp, agentToken };
+  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, productImages, qrImages, brand, cashbox, reporting, notifications, billing, whatsapp, agentToken };
   registerAuth(app);
   await app.register(fastifyMultipart, {
-    limits: { files: 1, fileSize: MAX_PRODUCT_IMAGE_BYTES, fields: 0 },
+    limits: { files: 1, fileSize: MAX_IMAGE_BYTES, fields: 0 },
   });
   registerWebSocketGateway(app, bus, rooms, identity, kiosk, inventory);
 
@@ -186,6 +190,7 @@ async function main() {
   await app.register(reportingRoutes(services));
   await app.register(notificationsRoutes(services));
   await app.register(billingRoutes(services));
+  await app.register(brandRoutes(services));
 
   // Sirve las 2 SPA ya compiladas (`pnpm -r run build`) desde este mismo proceso —
   // en producción reemplaza los 3 procesos de desarrollo (server + 2 dev server de Vite)
@@ -198,6 +203,21 @@ async function main() {
     root: productImages.root,
     prefix: "/product-images/",
     maxAge: "7d",
+  });
+  await app.register(fastifyStatic, {
+    root: qrImages.root,
+    prefix: "/qr-images/",
+    maxAge: "7d",
+    decorateReply: false,
+  });
+  // El logo cambia poco pero cuando cambia tiene que verse ya: sin caché larga,
+  // a diferencia de las fotos de producto y los QR, que tienen nombre opaco
+  // distinto en cada carga.
+  await app.register(fastifyStatic, {
+    root: brand.root,
+    prefix: "/brand-images/",
+    maxAge: 0,
+    decorateReply: false,
   });
   if (existsSync(receptionDist)) {
     await app.register(fastifyStatic, { root: receptionDist, prefix: "/", decorateReply: false });
@@ -237,7 +257,9 @@ export type Services = {
   payments: ReturnType<typeof createPaymentsService>;
   kiosk: KioskStore;
   inventory: ReturnType<typeof createInventoryService>;
-  productImages: ProductImageStorage;
+  productImages: ImageStorage;
+  qrImages: ImageStorage;
+  brand: BrandStore;
   cashbox: ReturnType<typeof createCashboxService>;
   reporting: ReturnType<typeof createReportingService>;
   notifications: Awaited<ReturnType<typeof createNotificationsService>>;

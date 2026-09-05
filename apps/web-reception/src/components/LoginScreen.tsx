@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { ApiError } from "../api.js";
+import { useBrand } from "../hooks/useBrand.js";
+import { BrandMark } from "./layout.js";
 import { Button, Input, Notice, cx } from "./ui.js";
 
 interface Props {
@@ -8,6 +10,7 @@ interface Props {
 }
 
 export function LoginScreen({ onLogin, onLoginByPin }: Props) {
+  const brand = useBrand();
   const [mode, setMode] = useState<"password" | "pin">("password");
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
@@ -39,13 +42,10 @@ export function LoginScreen({ onLogin, onLoginByPin }: Props) {
         />
         <div className="relative flex h-full flex-col justify-between p-12 text-brand-ink">
           <div className="animate-fade-up flex items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/20 backdrop-blur">
-              <svg viewBox="0 0 20 20" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 8.6 10 3l7 5.6V16a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
-                <path d="M7.6 17v-4.4h4.8V17" />
-              </svg>
+            <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-2xl bg-white/20 backdrop-blur">
+              <BrandMark logoUrl={brand.logoUrl} nombre={brand.nombre} className={brand.logoUrl ? "p-1" : "h-6 w-6"} />
             </span>
-            <span className="text-lg font-semibold">Hospedaje Carlos</span>
+            <span className="text-lg font-semibold">{brand.nombre}</span>
           </div>
 
           <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>

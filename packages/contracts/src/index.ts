@@ -14,6 +14,7 @@ export * from "./entities/cashbox.js";
 export * from "./entities/reporting.js";
 export * from "./entities/notifications.js";
 export * from "./entities/billing.js";
+export * from "./entities/brand.js";
 
 export * from "./ports/identity-port.js";
 export * from "./ports/rooms-port.js";

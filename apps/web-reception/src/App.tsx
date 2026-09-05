@@ -18,6 +18,7 @@ import { RoomsModule } from "./modules/RoomsModule.js";
 import { ComprobantesModule } from "./modules/ComprobantesModule.js";
 import { DashboardModule } from "./modules/DashboardModule.js";
 import { NotificationsModule } from "./modules/NotificationsModule.js";
+import { SettingsModule } from "./modules/SettingsModule.js";
 
 export default function App() {
   const { user, loading, login, loginByPin, logout } = useAuth();
@@ -91,6 +92,8 @@ export default function App() {
         return <DashboardModule onGoToInventory={() => navigate("/bodega")} />;
       case "notificaciones":
         return <NotificationsModule />;
+      case "ajustes":
+        return user.rol === "ADMIN" ? <SettingsModule /> : <BoardModule floors={floors} categories={categories} onSelectRoom={(entry) => navigate(`/cuarto/${entry.room.id}`)} onNewSale={() => navigate("/venta")} />;
       default:
         return (
           <BoardModule

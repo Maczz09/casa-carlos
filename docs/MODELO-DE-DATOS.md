@@ -156,9 +156,10 @@ sales_boletas(
 ```sql
 payments_cuentas_cobro(
   id, tipo,                                  -- BANCO | BILLETERA
-  proveedor,                                 -- BCP | Interbank | YAPE | PLIN | LEMON | AGORA
-  titular, numero_cuenta, cci,
-  qr_imagen,                                 -- BLOB o ruta
+  metodo,                                    -- con qué PaymentMethod cobra: TRANSFERENCIA para todo banco
+  proveedor,                                 -- BCP | Interbank | Caja Ica… | YAPE | PLIN | LEMON | AGORA
+  titular, telefono, numero_cuenta, cci, notas,
+  qr_archivo, qr_mime_type,                  -- foto del QR de la billetera, en data/qr-images
   orden, activa )
 
 payments_pagos(

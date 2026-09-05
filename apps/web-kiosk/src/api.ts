@@ -1,4 +1,4 @@
-import type { Attribute, Category, CollectionAccount, Floor, FloorBoard, KioskProduct, Modality, ProposedPaymentLine } from "@casacarlos/contracts";
+import type { Attribute, Brand, Category, CollectionAccount, Floor, FloorBoard, KioskProduct, Modality, ProposedPaymentLine } from "@casacarlos/contracts";
 
 class ApiError extends Error {}
 
@@ -25,6 +25,7 @@ export const api = {
   attributes: () => get<Attribute[]>("/api/kiosk/attributes"),
   collectionAccounts: () => get<CollectionAccount[]>("/api/kiosk/collection-accounts"),
   modalities: () => get<Modality[]>("/api/kiosk/modalities"),
+  brand: () => get<Brand>("/api/brand"),
 
   products: () => get<KioskProduct[]>("/api/kiosk/products"),
 

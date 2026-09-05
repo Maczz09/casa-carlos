@@ -1,13 +1,28 @@
 import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
+/**
+ * Canales por los que el hotel cobra: billeteras digitales (con la foto de su
+ * QR) y cuentas bancarias (con número y CCI). Se administran desde
+ * Ajustes → Cobros y son lo que el kiosco le ofrece al huésped.
+ */
 export const paymentsCuentasCobro = sqliteTable("payments_cuentas_cobro", {
   id: text("id").primaryKey(),
   tipo: text("tipo", { enum: ["BANCO", "BILLETERA"] }).notNull(),
+  /** Método con el que se registra un pago cobrado por este canal. Un banco siempre cobra como TRANSFERENCIA. */
+  metodo: text("metodo", {
+    enum: ["EFECTIVO", "YAPE", "PLIN", "LEMON", "AGORA", "TRANSFERENCIA", "POS_CREDITO", "POS_DEBITO"],
+  })
+    .notNull()
+    .default("TRANSFERENCIA"),
   proveedor: text("proveedor").notNull(),
   titular: text("titular").notNull(),
+  telefono: text("telefono"),
   numeroCuenta: text("numero_cuenta"),
   cci: text("cci"),
-  qrImagenUrl: text("qr_imagen_url"),
+  notas: text("notas"),
+  /** Nombre opaco del archivo dentro de data/qr-images (la foto del QR de la billetera). */
+  qrArchivo: text("qr_archivo"),
+  qrMimeType: text("qr_mime_type", { enum: ["image/jpeg", "image/png", "image/webp"] }),
   orden: integer("orden").notNull().default(0),
   activa: integer("activa", { mode: "boolean" }).notNull().default(true),
 });

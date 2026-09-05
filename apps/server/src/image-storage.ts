@@ -1,13 +1,20 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
-import type { ProductImage } from "@casacarlos/contracts";
 
-export const MAX_PRODUCT_IMAGE_BYTES = 3 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
 
-type SupportedImage = { mimeType: ProductImage["mimeType"]; extension: "jpg" | "png" | "webp" };
+export type ImageMimeType = "image/jpeg" | "image/png" | "image/webp";
 
-function detectImage(buffer: Buffer): SupportedImage | null {
+type SupportedImage = { mimeType: ImageMimeType; extension: "jpg" | "png" | "webp" };
+
+/**
+ * Reconoce el formato por los primeros bytes del archivo y no por la extensión
+ * ni por el `Content-Type` que manda el navegador: los dos los elige quien sube
+ * el archivo. Solo se aceptan los tres formatos que cualquier navegador dibuja
+ * sin plugins.
+ */
+export function detectImage(buffer: Buffer): SupportedImage | null {
   if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
     return { mimeType: "image/jpeg", extension: "jpg" };
   }
@@ -20,17 +27,30 @@ function detectImage(buffer: Buffer): SupportedImage | null {
   return null;
 }
 
-export class ProductImageStorage {
+export interface StoredImage {
+  archivo: string;
+  mimeType: ImageMimeType;
+  tamanoBytes: number;
+}
+
+/**
+ * Guarda imágenes subidas por el hotel dentro de una carpeta de `data/` — las
+ * fotos de producto, los QR de las billeteras y el logo comparten validación,
+ * límite de tamaño y nombres opacos. Vive bajo `data/` a propósito: es
+ * contenido del cliente y tiene que sobrevivir a las actualizaciones igual que
+ * la base de datos (ver installer/casacarlos.iss).
+ */
+export class ImageStorage {
   readonly root: string;
 
-  constructor(dataDir: string) {
-    this.root = resolve(dataDir, "product-images");
+  constructor(dataDir: string, folder: string) {
+    this.root = resolve(dataDir, folder);
     mkdirSync(this.root, { recursive: true });
   }
 
-  save(buffer: Buffer): { archivo: string; mimeType: ProductImage["mimeType"]; tamanoBytes: number } {
+  save(buffer: Buffer): StoredImage {
     if (buffer.length === 0) throw new Error("La imagen está vacía.");
-    if (buffer.length > MAX_PRODUCT_IMAGE_BYTES) throw new Error("La imagen supera el límite de 3 MB.");
+    if (buffer.length > MAX_IMAGE_BYTES) throw new Error("La imagen supera el límite de 3 MB.");
     const detected = detectImage(buffer);
     if (!detected) throw new Error("Archivo inválido. Usa una imagen JPG, PNG o WebP real.");
 
@@ -41,7 +61,7 @@ export class ProductImageStorage {
 
   delete(archivo: string): void {
     // La metadata solo admite nombres opacos, pero se vuelve a reducir a
-    // basename para impedir que una fila manipulada salga de product-images.
+    // basename para impedir que una fila manipulada salga de la carpeta.
     const safeName = basename(archivo);
     if (safeName !== archivo) throw new Error("Nombre de imagen inválido.");
     const path = resolve(this.root, safeName);

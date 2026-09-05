@@ -1,6 +1,7 @@
-import { useState } from "react";
-import type { PaymentDetailInput, PaymentMethod } from "@casacarlos/contracts";
+import { useEffect, useMemo, useState } from "react";
+import type { CollectionAccount, PaymentDetailInput, PaymentMethod } from "@casacarlos/contracts";
 import { cents, format, subtract, sum } from "@casacarlos/money";
+import { api } from "../api.js";
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
   EFECTIVO: "Efectivo",
@@ -23,6 +24,13 @@ interface Row {
   recibido: string;
 }
 
+/**
+ * Efectivo y POS no dependen de ninguna cuenta: la plata se recibe en el
+ * mostrador o en el terminal del banco. Las billeteras y la transferencia sí —
+ * solo se ofrecen si el hotel cargó ese canal en Ajustes → Cobros.
+ */
+const METODOS_SIN_CUENTA: PaymentMethod[] = ["EFECTIVO", "POS_CREDITO", "POS_DEBITO"];
+
 const emptyRow = (): Row => ({ metodo: "EFECTIVO", monto: "", codigoOperacion: "", ordenanteNombres: "", ordenanteApellidos: "", bancoOrigen: "", recibido: "" });
 
 interface Props {
@@ -34,12 +42,33 @@ interface Props {
 }
 
 export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Props) {
+  const [accounts, setAccounts] = useState<CollectionAccount[] | null>(null);
   const [rows, setRows] = useState<Row[]>(() =>
     proposedSplit && proposedSplit.length > 0
       ? proposedSplit.map((p) => ({ ...emptyRow(), metodo: p.metodo as PaymentMethod, monto: (p.montoCentimos / 100).toFixed(2) }))
       : [{ ...emptyRow(), monto: (totalCentimos / 100).toFixed(2) }],
   );
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api
+      .collectionAccounts()
+      .then((cuentas) => setAccounts(cuentas.filter((c) => c.activa)))
+      .catch(() => setAccounts([]));
+  }, []);
+
+  /**
+   * Mientras las cuentas no llegan se ofrecen todos los métodos: es preferible
+   * mostrar uno de más que bloquear un cobro por una lista que todavía no cargó.
+   */
+  const metodos = useMemo<PaymentMethod[]>(() => {
+    if (accounts === null) return Object.keys(METHOD_LABEL) as PaymentMethod[];
+    const conCuenta = accounts.map((c) => c.metodo);
+    const propuestos = rows.map((r) => r.metodo);
+    return (Object.keys(METHOD_LABEL) as PaymentMethod[]).filter(
+      (m) => METODOS_SIN_CUENTA.includes(m) || conCuenta.includes(m) || propuestos.includes(m),
+    );
+  }, [accounts, rows]);
 
   const update = (idx: number, patch: Partial<Row>) => setRows((rs) => rs.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
   const addRow = () => setRows((rs) => [...rs, emptyRow()]);
@@ -83,9 +112,9 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
               onChange={(e) => update(idx, { metodo: e.target.value as PaymentMethod })}
               className="flex-1 rounded-lg border border-line bg-raised px-2 py-1.5 text-ink"
             >
-              {Object.entries(METHOD_LABEL).map(([value, label]) => (
+              {metodos.map((value) => (
                 <option key={value} value={value}>
-                  {label}
+                  {METHOD_LABEL[value]}
                 </option>
               ))}
             </select>

@@ -90,8 +90,8 @@ más.
    administrador que pida Windows).
 3. El asistente **detecta solo** que ya hay una instalación funcionando y
    avisa en pantalla "esto es una ACTUALIZACIÓN" antes de instalar — no hay
-   que tocar nada más, no vuelve a pedir los datos de SUNAT ni el
-   certificado.
+   que tocar nada más, no vuelve a pedir los datos de SUNAT, ni el
+   certificado, ni el nombre y el logo del hotel.
 4. Tarda unos minutos (actualiza y recompila las pantallas). Mientras tanto, recepción
    y kiosco van a estar apagados — mejor hacerlo fuera de horario, o cuando
    no haya un huésped a mitad de un check-in en el kiosco.
@@ -99,7 +99,8 @@ más.
 
 **Qué se conserva siempre, así se actualice mil veces:** la base de datos
 completa (todos los cuartos, ventas, clientes, historial), los respaldos
-diarios, las imágenes cargadas de los productos, y el archivo `.env` con el
+diarios, las imágenes cargadas de los productos, el logo y el nombre del
+hotel, las cuentas de cobro con sus QR, y el archivo `.env` con el
 RUC/certificado/credenciales de SUNAT ya cargados. Nada de eso se toca ni se
 pisa.
 
@@ -234,3 +235,53 @@ de venta. No puede alterar stock, costo, ficha, categoría ni imágenes.
 El kiosco muestra la portada, nombre, descripción, categoría, precio y si el
 producto está disponible o agotado. Precio, imagen y disponibilidad se
 actualizan en vivo sin recargar la pantalla.
+
+---
+
+## 10. Logo, nombre del hotel y formas de cobro
+
+Todo esto se administra desde **Ajustes**, en la barra lateral de recepción.
+Solo lo ve el administrador.
+
+### Al instalar por primera vez
+
+El asistente de instalación pregunta el **nombre del hotel** y deja elegir el
+**archivo del logo** (JPG, PNG o WebP). Los dos se pueden saltear y cargar
+después desde Ajustes; y una vez cargados, ninguna actualización los pisa.
+
+### Ajustes → Marca
+
+- **Cargar logo** / **Cambiar logo**: la imagen aparece en la barra lateral de
+  recepción, en la pantalla de acceso, en el kiosco del huésped y arriba de
+  los comprobantes impresos. Hasta 3 MB; se ve mejor cuadrada y con fondo
+  transparente.
+- **Nombre del hotel** y **bajada**: el texto que acompaña al logo en esas
+  mismas pantallas.
+
+El logo queda en `C:\CasaCarlos\datarand-images\` y el nombre en
+`C:\CasaCarlos\datarandrand.json`.
+
+### Ajustes → Cobros
+
+Acá se carga **por dónde cobra el hotel**. Lo que esté cargado y activo es
+exactamente lo que el kiosco le ofrece al huésped al momento de pagar: si no
+hay ninguna cuenta de Plin, Plin no aparece.
+
+- **Billeteras digitales** (Yape, Plin, Lemon, Agora): se agrega la billetera,
+  el titular y el teléfono. Después, desde la fila de esa billetera, se sube
+  la **foto del QR** con **Subir QR**.
+  > El QR tiene que ser el que exporta la app de la billetera desde el
+  > teléfono del hotel — es el único que cobra de verdad. El sistema no
+  > inventa ninguno.
+- **Cuentas bancarias**: se pueden cargar **varias, de bancos distintos**, con
+  número de cuenta y **CCI**. El huésped que elige Transferencia las ve todas
+  y transfiere a la que le quede cómoda.
+- **Nota para el huésped** (opcional): una línea corta que se muestra debajo
+  de los datos, por ejemplo "cuenta en soles".
+- **Editar** cambia cualquier dato. **Desactivar** saca ese medio de la
+  pantalla del kiosco sin borrar nada — los pagos que ya entraron por ahí
+  quedan intactos en el historial. La **✕** roja lo borra de verdad.
+
+En recepción, al registrar un pago, la lista de métodos también se acomoda a
+lo que esté cargado. Efectivo y POS (crédito/débito) están siempre, porque no
+dependen de ninguna cuenta.

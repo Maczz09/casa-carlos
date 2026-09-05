@@ -307,3 +307,15 @@ export function IconTag({ className }: IconProps) {
     </svg>
   );
 }
+
+/** Ajustes: los deslizadores de una consola, más legible que un engranaje a 18px. */
+export function IconSliders({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M3.4 6.2h5.2M12.2 6.2h4.4" />
+      <path d="M3.4 13.8h3.2M10.2 13.8h6.4" />
+      <circle cx="10.4" cy="6.2" r="1.8" />
+      <circle cx="8.4" cy="13.8" r="1.8" />
+    </svg>
+  );
+}

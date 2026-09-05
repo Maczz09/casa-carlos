@@ -96,6 +96,10 @@ Source: "..\vendor\webview2\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; F
 
 [Dirs]
 Name: "{app}\data"
+; Marca del hotel: el nombre y el logo que se eligen en el asistente. Viven
+; bajo data\ para que una actualización no los pise (ver apps/server/src/brand-store.ts).
+Name: "{app}\data\brand"
+Name: "{app}\data\brand-images"
 
 [Icons]
 ; Duplicados a propósito en Escritorio Y Menú Inicio — si algún día un accesos
@@ -189,6 +193,8 @@ Type: filesandordirs; Name: "{app}\desktop"
 
 [Code]
 var
+  BrandPage: TInputQueryWizardPage;
+  LogoPage: TInputFileWizardPage;
   SunatPage: TInputQueryWizardPage;
   SunatModePage: TInputOptionWizardPage;
   CertPage: TInputFileWizardPage;
@@ -211,7 +217,7 @@ begin
   Result := False;
   if EsActualizacion then
   begin
-    if (PageID = SunatPage.ID) or (PageID = SunatModePage.ID) or (PageID = CertPage.ID) then
+    if (PageID = BrandPage.ID) or (PageID = LogoPage.ID) or (PageID = SunatPage.ID) or (PageID = SunatModePage.ID) or (PageID = CertPage.ID) then
       Result := True;
   end;
 end;
@@ -265,9 +271,26 @@ end;
 
 procedure InitializeWizard;
 begin
+  // Identidad visible del hotel. No va al .env ni a la base: el servidor la
+  // lee de data\brand (ver apps/server/src/brand-store.ts), que es lo único
+  // que este asistente puede escribir y que además sobrevive a las
+  // actualizaciones. Se puede cambiar después desde Ajustes → Marca.
+  BrandPage := CreateInputQueryPage(wpSelectDir,
+    'Nombre del hotel', 'Es el nombre que van a ver en pantalla el personal y los huéspedes',
+    'Si lo dejás en blanco se usa "Hospedaje Carlos". Se puede cambiar después desde Ajustes → Marca, sin reinstalar nada.');
+  BrandPage.Add('Nombre del hotel:', False);
+  BrandPage.Add('Bajada (opcional):', False);
+  BrandPage.Values[0] := 'Hospedaje Carlos';
+  BrandPage.Values[1] := 'Sistema de hospedaje';
+
+  LogoPage := CreateInputFilePage(BrandPage.ID,
+    'Logo del hotel', 'La imagen que acompaña al nombre',
+    'Se muestra en la barra lateral de recepción, en la pantalla de acceso, en el kiosco del huésped y arriba de los comprobantes impresos. JPG, PNG o WebP; se ve mejor cuadrado y con fondo transparente. Podés saltear esto y cargarlo después desde Ajustes → Marca.');
+  LogoPage.Add('Archivo del logo:', 'Imágenes (*.png;*.jpg;*.jpeg;*.webp)|*.png;*.jpg;*.jpeg;*.webp|Todos los archivos|*.*', '.png');
+
   // Datos del emisor — los mismos nombres de variable que ya lee
   // configureSunat() en apps/server/src/index.ts.
-  SunatPage := CreateInputQueryPage(wpSelectDir,
+  SunatPage := CreateInputQueryPage(LogoPage.ID,
     'Datos del hotel (SUNAT)', 'Se usan para armar los comprobantes electrónicos',
     'Podés dejarlos en blanco ahora y completarlos después a mano en el .env de la instalación — el sistema arranca igual, en modo de prueba (MOCK), sin tocar SUNAT de verdad.');
   SunatPage.Add('RUC:', False);
@@ -353,14 +376,83 @@ begin
   SaveStringsToFile(EnvPath, Lines, False);
 end;
 
+/// <summary>
+/// Escapa una cadena para meterla dentro de un string JSON.
+/// </summary>
+function JsonEscape(Value: String): String;
+begin
+  Result := Value;
+  StringChangeEx(Result, '\', '\\', True);
+  StringChangeEx(Result, '"', '\"', True);
+end;
+
+/// <summary>
+/// Deja el nombre y el logo elegidos donde el servidor los busca:
+/// data\brand\brand.json y data\brand-images\logo.<ext>. El servidor
+/// revalida la imagen por sus bytes reales al leerla, así que un archivo que
+/// no sea una imagen de verdad se ignora en vez de romper la pantalla.
+/// </summary>
+procedure WriteBrandFiles;
+var
+  Lines: TArrayOfString;
+  Nombre: String;
+  Lema: String;
+  Extension: String;
+  LogoDest: String;
+  LogoArchivo: String;
+begin
+  Nombre := Trim(BrandPage.Values[0]);
+  if Nombre = '' then
+    Nombre := 'Hospedaje Carlos';
+  Lema := Trim(BrandPage.Values[1]);
+
+  LogoArchivo := '';
+  if LogoPage.Values[0] <> '' then
+  begin
+    Extension := LowerCase(ExtractFileExt(LogoPage.Values[0]));
+    if Extension = '.jpeg' then
+      Extension := '.jpg';
+    if (Extension <> '.png') and (Extension <> '.jpg') and (Extension <> '.webp') then
+      Extension := '.png';
+    LogoArchivo := 'logo' + Extension;
+    LogoDest := ExpandConstant('{app}\data\brand-images\') + LogoArchivo;
+    if not CopyFile(LogoPage.Values[0], LogoDest, False) then
+      LogoArchivo := '';
+  end;
+
+  SetArrayLength(Lines, 4);
+  Lines[0] := '{';
+  Lines[1] := '  "nombre": "' + JsonEscape(Nombre) + '",';
+  if LogoArchivo <> '' then
+    Lines[2] := '  "lema": "' + JsonEscape(Lema) + '",'
+  else
+    Lines[2] := '  "lema": "' + JsonEscape(Lema) + '"';
+  if LogoArchivo <> '' then
+  begin
+    SetArrayLength(Lines, 5);
+    Lines[3] := '  "logoArchivo": "' + JsonEscape(LogoArchivo) + '"';
+    Lines[4] := '}';
+  end
+  else
+    Lines[3] := '}';
+
+  // UTF-8: el nombre del hotel puede llevar tildes o ñ, y del otro lado lo lee
+  // Node como UTF-8. El BOM que agrega esta función lo descarta brand-store.ts.
+  SaveStringsToUTF8File(ExpandConstant('{app}\data\brand\brand.json'), Lines, False);
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
   begin
     // Si ya había un .env (actualización), no se toca -- son los secretos y
     // la configuración real del cliente. Solo se escribe uno nuevo la
-    // primera vez que se instala.
+    // primera vez que se instala. Lo mismo con la marca: en una actualización
+    // el logo y el nombre que ya cargó el hotel se quedan como están.
     if not EsActualizacion then
+    begin
       WriteEnvFile;
+      WriteBrandFiles;
+    end;
   end;
 end;

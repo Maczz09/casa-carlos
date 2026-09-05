@@ -1,0 +1,1 @@
+ALTER TABLE `payments_cuentas_cobro` DROP COLUMN `qr_imagen_url`;
