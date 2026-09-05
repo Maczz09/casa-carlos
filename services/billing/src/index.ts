@@ -17,7 +17,7 @@ export async function ensureBillingCorrelativosSeeded(db: Db): Promise<void> {
 
 export type { EmisorInfo, ReceptorInfo } from "./domain/ubl.js";
 export type { CertificateMaterial } from "./domain/signature.js";
-export { loadPfxCertificate } from "./domain/signature.js";
+export { loadPfxCertificate, inspectPfxCertificate, type CertificateInfo } from "./domain/signature.js";
 export type { SunatClient } from "./sunat/types.js";
 export { MockSunatClient } from "./sunat/mock-client.js";
 export { RealSunatClient, type RealSunatClientConfig } from "./sunat/real-client.js";

@@ -4,6 +4,7 @@ import { WALLET_PROVIDERS } from "@casacarlos/contracts";
 import { IconBank, IconPlus, IconWallet, IconX } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { setBrand, useBrand } from "../hooks/useBrand.js";
+import { SunatTab } from "./SunatSettingsTab.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Skeleton, Tabs, cx } from "../components/ui.js";
 
 /** Sugerencias, no una lista cerrada: el hotel puede cobrar en cualquier banco o caja. */
@@ -26,22 +27,23 @@ const BANCOS = [
 const WALLET_LABEL: Record<string, string> = { YAPE: "Yape", PLIN: "Plin", LEMON: "Lemon", AGORA: "Agora" };
 
 export function SettingsModule() {
-  const [tab, setTab] = useState<"marca" | "cobros">("marca");
+  const [tab, setTab] = useState<"marca" | "cobros" | "sunat">("marca");
 
   return (
     <>
-      <PageHeader title="Ajustes" subtitle="El logo y el nombre que muestra todo el sistema, y las cuentas por las que el hotel cobra" />
+      <PageHeader title="Ajustes" subtitle="El logo y el nombre que muestra todo el sistema, las cuentas por las que el hotel cobra y la facturación electrónica" />
       <div className="mb-5">
         <Tabs
           tabs={[
             { id: "marca" as const, label: "Marca" },
             { id: "cobros" as const, label: "Cobros" },
+            { id: "sunat" as const, label: "Facturación SUNAT" },
           ]}
           active={tab}
           onChange={setTab}
         />
       </div>
-      {tab === "marca" ? <BrandTab /> : <CollectionAccountsTab />}
+      {tab === "marca" ? <BrandTab /> : tab === "cobros" ? <CollectionAccountsTab /> : <SunatTab />}
     </>
   );
 }

@@ -239,7 +239,13 @@ SOL → Comprobantes de Pago → Certificado Digital Tributario).
   documento legal sigue siendo el XML firmado + CDR, no el PDF.
 - `SUNAT_MODE` en `.env` controla el modo: `MOCK` (sin red, default),
   `BETA` (ambiente de pruebas real de SUNAT), `PRODUCCION` (requiere el
-  certificado MYPE real del cliente + usuario/clave SOL secundarios).
+  certificado MYPE real del cliente + usuario/clave SOL secundarios). Esa
+  configuración es **editable en caliente** desde Ajustes → Facturación SUNAT
+  (`apps/server/src/sunat-config.ts`): la pantalla reescribe las claves
+  `SUNAT_*` de ese mismo `.env` y rehace el servicio de facturación en el
+  acto, sin reiniciar el servicio de Windows. Si la configuración guardada no
+  se puede usar al arrancar, el servidor levanta igual en `MOCK` y lo avisa —
+  si se cayera, no habría pantalla donde corregirla.
 - Serie y correlativo son propios de `billing` (`billing_correlativos`,
   incremento atómico vía `UPDATE...RETURNING`), no comparten numeración con
   `sales_ventas`.

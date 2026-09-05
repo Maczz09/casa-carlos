@@ -292,7 +292,7 @@ begin
   // configureSunat() en apps/server/src/index.ts.
   SunatPage := CreateInputQueryPage(LogoPage.ID,
     'Datos del hotel (SUNAT)', 'Se usan para armar los comprobantes electrónicos',
-    'Podés dejarlos en blanco ahora y completarlos después a mano en el .env de la instalación — el sistema arranca igual, en modo de prueba (MOCK), sin tocar SUNAT de verdad.');
+    'Podés dejarlos en blanco ahora: el sistema arranca igual en modo de prueba (MOCK), sin tocar SUNAT de verdad, y todo esto se completa o se corrige después desde Ajustes → Facturación SUNAT, sin reinstalar nada.');
   SunatPage.Add('RUC:', False);
   SunatPage.Add('Razón social:', False);
   SunatPage.Add('Nombre comercial:', False);
@@ -304,7 +304,7 @@ begin
 
   SunatModePage := CreateInputOptionPage(SunatPage.ID,
     'Modo de facturación electrónica', 'Elegí con qué ambiente de SUNAT arranca',
-    'MOCK no toca la red — sirve para probar el sistema sin certificado. Se puede cambiar después editando el archivo .env de la instalación (SUNAT_MODE).',
+    'MOCK no toca la red — sirve para probar el sistema sin certificado. El modo se puede cambiar cuando haga falta desde Ajustes → Facturación SUNAT.',
     False, False);
   SunatModePage.Add('MOCK — modo de prueba, sin SUNAT real (recomendado para empezar)');
   SunatModePage.Add('BETA — ambiente de pruebas real de SUNAT (necesita certificado)');
@@ -357,11 +357,11 @@ begin
   SetArrayLength(Lines, GetArrayLength(Lines) + 1);
   Lines[GetArrayLength(Lines) - 1] := 'SUNAT_DEPARTAMENTO=' + SunatPage.Values[7];
 
-  // El .pfx y las credenciales SOL/PRODUCCION no se piden en este asistente —
-  // son secretos reales del cliente, mejor que los complete a mano en el
-  // .env de la instalación después (queda documentado en el manual de uso)
-  // en vez de que pasen por los logs del instalador. Sí copiamos el archivo
-  // del certificado si lo seleccionó, para que quede ubicado y listo.
+  // Las credenciales SOL no se piden en este asistente: son secretos reales
+  // del cliente y no tienen por qué pasar por los logs del instalador. Se
+  // cargan después desde Ajustes → Facturación SUNAT, que además verifica el
+  // certificado contra su contraseña. Sí copiamos el archivo del certificado
+  // si lo seleccionó, para que quede ubicado y listo.
   if CertPage.Values[0] <> '' then
   begin
     CertDestPath := ExpandConstant('{app}\data\sunat-cert.pfx');
@@ -369,7 +369,7 @@ begin
     SetArrayLength(Lines, GetArrayLength(Lines) + 1);
     Lines[GetArrayLength(Lines) - 1] := 'SUNAT_CERT_PATH=' + CertDestPath;
     SetArrayLength(Lines, GetArrayLength(Lines) + 1);
-    Lines[GetArrayLength(Lines) - 1] := '# Completar a mano: SUNAT_CERT_PASSWORD, SUNAT_SOL_USER, SUNAT_SOL_PASSWORD';
+    Lines[GetArrayLength(Lines) - 1] := '# La contraseña del certificado y las credenciales SOL se cargan desde Ajustes → Facturación SUNAT';
   end;
 
   EnvPath := ExpandConstant('{app}\.env');

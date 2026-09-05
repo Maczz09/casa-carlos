@@ -35,6 +35,43 @@ export function loadPfxCertificate(pfxPath: string, password: string): Certifica
   };
 }
 
+export interface CertificateInfo {
+  /** A nombre de quién está emitido (CN del subject, o el subject entero si no trae CN). */
+  titular: string;
+  /** Quién lo emitió. */
+  emisor: string;
+  validoDesde: string;
+  validoHasta: string;
+}
+
+/**
+ * Los datos legibles de un .pfx, para poder mostrar en pantalla cuál
+ * certificado está cargado y hasta cuándo sirve. Lanza el mismo error que
+ * `loadPfxCertificate` si la contraseña no abre el archivo — eso lo convierte
+ * también en la validación de "esta contraseña es la correcta".
+ */
+export function inspectPfxCertificate(pfxPath: string, password: string): CertificateInfo {
+  const pfxDer = readFileSync(pfxPath, "binary");
+  const p12 = forge.pkcs12.pkcs12FromAsn1(forge.asn1.fromDer(pfxDer), password);
+  const certBagType = forge.pki.oids.certBag!;
+  const cert = p12.getBags({ bagType: certBagType })[certBagType]?.[0]?.cert;
+  if (!cert) {
+    throw new Error(`El archivo "${pfxPath}" no contiene un certificado válido (¿contraseña incorrecta?).`);
+  }
+
+  const nombreDe = (attrs: forge.pki.Certificate["subject"]): string => {
+    const cn = attrs.getField("CN") as { value?: string } | null;
+    return cn?.value ?? attrs.attributes.map((a) => String(a.value ?? "")).filter(Boolean).join(", ");
+  };
+
+  return {
+    titular: nombreDe(cert.subject),
+    emisor: nombreDe(cert.issuer),
+    validoDesde: cert.validity.notBefore.toISOString(),
+    validoHasta: cert.validity.notAfter.toISOString(),
+  };
+}
+
 const stripPemHeaders = (pem: string): string => pem.replace(/-----[^-]+-----|\r?\n/g, "");
 
 /**

@@ -126,12 +126,56 @@ Los dos dispositivos tienen que estar en la misma red WiFi/cableada.
 
 ## 6. Certificado SUNAT y datos de facturación
 
-El certificado digital para emitir boletas/facturas electrónicas vence
-cada cierto tiempo (SUNAT lo indica al momento de tramitarlo). Cuando haya
-que renovarlo, o si hay que cambiar algún dato del hotel (RUC, dirección,
-etc.), esos ajustes se hacen en un archivo de configuración
-(`C:\CasaCarlos\.env`) — **contactar a quien dio soporte técnico del
-sistema** para hacer este cambio, no editarlo sin ayuda.
+Todo esto se administra desde **Ajustes → Facturación SUNAT**, en la barra
+lateral de recepción. Solo lo ve el administrador. Sirve tanto para la
+primera carga como para corregir algo que quedó mal puesto en la
+instalación: los cambios se aplican al instante, sin reinstalar ni reiniciar
+el sistema.
+
+### Modo de trabajo
+
+- **MOCK — prueba interna**: no se envía nada a SUNAT. Los comprobantes se
+  arman y se guardan, pero no tienen valor legal. Sirve para practicar.
+- **BETA — pruebas con SUNAT**: se envía al ambiente de pruebas real de
+  SUNAT. Lo que se emita ahí no tiene valor legal.
+- **PRODUCCION — facturación real**: cada boleta y factura se emite de
+  verdad y queda declarada ante SUNAT.
+
+Arriba de todo, la pantalla muestra siempre en qué modo está funcionando el
+sistema. Si dice que la configuración guardada es una y está funcionando en
+otra, es porque algo de esa configuración no se pudo usar al arrancar (el
+caso típico: el certificado ya no está en su carpeta); abajo aparece la
+lista de lo que falta.
+
+### Datos del hotel y clave SOL
+
+- **Datos del hotel**: RUC, razón social, nombre comercial, dirección,
+  ubigeo, distrito, provincia y departamento. Van impresos dentro de cada
+  comprobante.
+- **Clave SOL**: el **usuario secundario** que se crea en el portal SOL de
+  SUNAT con el perfil de facturación electrónica. Nunca la clave SOL
+  principal del RUC. La clave guardada no se muestra nunca: dejar el campo
+  vacío al guardar significa conservar la que ya estaba.
+
+### Certificado digital
+
+El archivo `.pfx` que entrega SUNAT (el certificado gratuito para MYPE dura
+tres años). Se sube junto con su contraseña y **se verifica antes de
+reemplazar al anterior**: si la contraseña está mal, no se toca nada y el
+sistema sigue facturando con el certificado viejo. Una vez cargado, la
+pantalla muestra a nombre de quién está y hasta qué fecha sirve — ahí se ve
+de un vistazo cuándo hay que renovarlo.
+
+### Probar conexión
+
+El botón **Probar conexión** consulta a SUNAT sin emitir nada, para
+confirmar que la PC llega al servicio. En **producción** también avisa si
+SUNAT rechaza el usuario o la clave. En **BETA no sirve para probar
+credenciales**: ese ambiente responde igual con la clave correcta y con una
+equivocada.
+
+El archivo de configuración (`C:\CasaCarlos\.env`) sigue existiendo y es el
+mismo que edita esta pantalla; ya no hace falta tocarlo a mano.
 
 ---
 

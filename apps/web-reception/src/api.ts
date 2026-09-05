@@ -44,6 +44,8 @@ import type {
   ShiftTemplate,
   Stay,
   StayWithCustomer,
+  SunatConfig,
+  SunatTestResult,
   UpdateCollectionAccountInput,
   UpdateRecipientInput,
   User,
@@ -159,6 +161,31 @@ export const api = {
     return request<CollectionAccount>(`/api/payments/collection-accounts/${id}/qr`, { method: "POST", body: form });
   },
   deleteCollectionAccountQr: (id: string) => del<CollectionAccount>(`/api/payments/collection-accounts/${id}/qr`),
+
+  // ---- facturación electrónica (SUNAT) ----
+  sunatConfig: () => get<SunatConfig>("/api/sunat/config"),
+  updateSunatConfig: (input: {
+    modo?: "MOCK" | "BETA" | "PRODUCCION";
+    ruc?: string;
+    razonSocial?: string;
+    nombreComercial?: string;
+    direccion?: string;
+    ubigeo?: string;
+    distrito?: string;
+    provincia?: string;
+    departamento?: string;
+    solUser?: string;
+    solPassword?: string;
+  }) => patch<SunatConfig>("/api/sunat/config", input),
+  uploadSunatCertificate: (file: File, password: string) => {
+    const form = new FormData();
+    // La contraseña va ANTES del archivo a propósito: así el servidor ya la
+    // tiene cuando le llega el .pfx y puede verificarlo en el mismo paso.
+    form.append("password", password);
+    form.append("certificate", file);
+    return request<SunatConfig>("/api/sunat/certificate", { method: "POST", body: form });
+  },
+  testSunat: () => post<SunatTestResult>("/api/sunat/test"),
 
   // ---- marca (nombre y logo del hotel) ----
   brand: () => get<Brand>("/api/brand"),

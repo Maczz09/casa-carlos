@@ -44,6 +44,9 @@ import { billingRoutes } from "./routes/billing.js";
 import { brandRoutes } from "./routes/brand.js";
 import { ImageStorage, MAX_IMAGE_BYTES } from "./image-storage.js";
 import { BrandStore } from "./brand-store.js";
+import { SunatConfigStore, endpointPara, type SunatSecretConfig } from "./sunat-config.js";
+import type { SunatMode } from "@casacarlos/contracts";
+import { sunatRoutes } from "./routes/sunat.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -54,63 +57,45 @@ if (existsSync(envPath)) process.loadEnvFile(envPath);
 
 const PORT = Number(process.env.PORT ?? 4000);
 
-const SUNAT_BETA_ENDPOINT = "https://e-beta.sunat.gob.pe/ol-ti-itcpfegem-beta/billService";
-const SUNAT_PRODUCCION_ENDPOINT = "https://e-factura.sunat.gob.pe/ol-ti-itcpfegem/billService";
-
 /**
- * SUNAT_MODE=MOCK (por defecto) no toca la red ni pide certificado — para
- * desarrollo y demo. BETA usa el entorno de pruebas real de SUNAT (acepta
- * cualquier certificado, incluso uno autofirmado — no valida la cadena de
- * confianza). PRODUCCION exige el certificado digital MYPE real del cliente
- * y las credenciales SOL secundarias — ver docs/ARQUITECTURA.md y el reporte
- * de la fase F5 para el detalle de cómo obtenerlas.
+ * Arma el cliente de SUNAT para una configuración dada.
+ *
+ * MOCK no toca la red ni pide certificado — para desarrollo y demo. BETA usa
+ * el ambiente de pruebas real de SUNAT (acepta cualquier certificado, incluso
+ * uno autofirmado). PRODUCCION exige el certificado digital del hotel y las
+ * credenciales SOL secundarias — ver docs/ARQUITECTURA.md.
+ *
+ * La configuración se puede cambiar en caliente desde Ajustes → SUNAT
+ * (apps/server/src/sunat-config.ts); por eso esto es una función pura sobre
+ * una config y no lee `process.env` por su cuenta.
  */
-function configureSunat(): { emisor: EmisorInfo; sunatClient: SunatClient; cert: CertificateMaterial | null } {
-  const mode = (process.env.SUNAT_MODE ?? "MOCK").toUpperCase();
+function buildSunatRuntime(config: SunatSecretConfig): { modo: SunatMode; emisor: EmisorInfo; sunatClient: SunatClient; cert: CertificateMaterial | null } {
+  const emisor: EmisorInfo = config.emisor;
 
-  const emisor: EmisorInfo = {
-    ruc: process.env.SUNAT_RUC ?? "20000000000",
-    razonSocial: process.env.SUNAT_RAZON_SOCIAL ?? "HOSPEDAJE CARLOS SAC",
-    nombreComercial: process.env.SUNAT_NOMBRE_COMERCIAL ?? "HOSPEDAJE CARLOS",
-    direccion: process.env.SUNAT_DIRECCION ?? "AV PRINCIPAL S/N",
-    ubigeo: process.env.SUNAT_UBIGEO ?? "150101",
-    distrito: process.env.SUNAT_DISTRITO ?? "LIMA",
-    provincia: process.env.SUNAT_PROVINCIA ?? "LIMA",
-    departamento: process.env.SUNAT_DEPARTAMENTO ?? "LIMA",
-  };
-
-  if (mode === "MOCK") {
-    return { emisor, sunatClient: new MockSunatClient(), cert: null };
+  if (config.modo === "MOCK") {
+    return { modo: "MOCK", emisor, sunatClient: new MockSunatClient(), cert: null };
   }
 
-  if (mode !== "BETA" && mode !== "PRODUCCION") {
-    throw new Error(`SUNAT_MODE="${mode}" inválido — usa MOCK, BETA o PRODUCCION.`);
-  }
-
-  const solUser = process.env.SUNAT_SOL_USER;
-  const solPassword = process.env.SUNAT_SOL_PASSWORD;
-  const certPath = process.env.SUNAT_CERT_PATH;
-  const certPassword = process.env.SUNAT_CERT_PASSWORD;
-  if (!solUser || !solPassword || !certPath || !certPassword) {
+  const endpoint = endpointPara(config.modo);
+  if (!endpoint) throw new Error(`Modo de facturación "${config.modo}" inválido — usa MOCK, BETA o PRODUCCION.`);
+  if (!config.solUser || !config.solPassword || !config.certPath || !config.certPassword) {
     throw new Error(
-      `SUNAT_MODE=${mode} requiere SUNAT_SOL_USER, SUNAT_SOL_PASSWORD, SUNAT_CERT_PATH y SUNAT_CERT_PASSWORD en el entorno.`,
+      `El modo ${config.modo} necesita usuario SOL, clave SOL y el certificado digital con su contraseña. Cargalos en Ajustes → SUNAT.`,
     );
   }
 
-  const endpoint = mode === "PRODUCCION" ? SUNAT_PRODUCCION_ENDPOINT : SUNAT_BETA_ENDPOINT;
-  const sunatClient = new RealSunatClient({ endpoint, ruc: emisor.ruc, solUser, solPassword });
-  const cert = loadPfxCertificate(certPath, certPassword);
-  return { emisor, sunatClient, cert };
+  const sunatClient = new RealSunatClient({ endpoint, ruc: emisor.ruc, solUser: config.solUser, solPassword: config.solPassword });
+  let cert: CertificateMaterial;
+  try {
+    cert = loadPfxCertificate(config.certPath, config.certPassword);
+  } catch (err) {
+    // El error crudo de node-forge no le dice nada a quien está en el
+    // mostrador; lo que necesita saber es qué hacer al respecto.
+    throw new Error(`No se pudo usar el certificado digital guardado (${(err as Error).message}). Cargalo de nuevo en Ajustes → SUNAT junto con su contraseña.`);
+  }
+  return { modo: config.modo, emisor, sunatClient, cert };
 }
 
-/**
- * Token compartido con el agente de WhatsApp (apps/whatsapp-agent), que corre
- * como proceso aparte en la sesión del usuario. Se genera solo la primera vez
- * y queda en `data/` — así no hace falta configurar nada a mano ni tocar el
- * .env en las instalaciones que ya existen, y sobrevive a las actualizaciones
- * igual que la base de datos. Es un secreto local (ambos procesos viven en la
- * misma PC), solo evita que algo más en la máquina hable con estos endpoints.
- */
 function ensureAgentToken(dataDir: string): string {
   const tokenPath = resolve(dataDir, "whatsapp-agent.token");
   if (existsSync(tokenPath)) {
@@ -156,9 +141,21 @@ async function main() {
   const whatsapp = new WhatsAppBridge();
   const agentToken = ensureAgentToken(dataDir);
   const notifications = await createNotificationsService(db, bus, rooms, identity);
-  const { emisor, sunatClient, cert } = configureSunat();
+  const sunatConfig = new SunatConfigStore(envPath, dataDir);
   await ensureBillingCorrelativosSeeded(db);
-  const billing = createBillingService(db, sales, sunatClient, emisor, cert);
+  // Si la configuración guardada no sirve (certificado movido, clave mal
+  // cargada en la instalación), el servidor NO puede negarse a arrancar: sin
+  // servidor tampoco hay pantalla donde corregirla. Cae a MOCK avisando, y el
+  // administrador la arregla desde Ajustes → SUNAT.
+  let runtime: ReturnType<typeof buildSunatRuntime>;
+  try {
+    runtime = buildSunatRuntime(sunatConfig.current());
+  } catch (err) {
+    console.warn(`\n[SUNAT] ${(err as Error).message}`);
+    console.warn("[SUNAT] Arrancando en modo MOCK: los comprobantes NO se envían. Corregilo en Ajustes → SUNAT.\n");
+    runtime = buildSunatRuntime({ ...sunatConfig.current(), modo: "MOCK" });
+  }
+  const billing = createBillingService(db, sales, runtime.sunatClient, runtime.emisor, runtime.cert);
   const kiosk = new KioskStore(rooms, pricing, stays, sales, inventory, bus);
 
   await seedIfEmpty(rooms, pricing, identity, payments, inventory, cashbox);
@@ -169,10 +166,42 @@ async function main() {
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });
   await app.register(websocketPlugin);
 
-  const services = { identity, rooms, pricing, stays, sales, payments, kiosk, inventory, productImages, qrImages, brand, cashbox, reporting, notifications, billing, whatsapp, agentToken };
+  const services: Services = {
+    identity,
+    rooms,
+    pricing,
+    stays,
+    sales,
+    payments,
+    kiosk,
+    inventory,
+    productImages,
+    qrImages,
+    brand,
+    cashbox,
+    reporting,
+    notifications,
+    billing,
+    sunatConfig,
+    sunatModoActivo: runtime.modo,
+    // Rehace el servicio de facturación con la configuración recién guardada.
+    // Los manejadores de rutas leen `services.billing` en cada request, así
+    // que reemplazarlo acá alcanza para que el cambio aplique al toque, sin
+    // reiniciar el servicio de Windows.
+    applySunatConfig: (config: SunatSecretConfig) => {
+      const nuevo = buildSunatRuntime(config);
+      services.billing = createBillingService(db, sales, nuevo.sunatClient, nuevo.emisor, nuevo.cert);
+      services.sunatModoActivo = nuevo.modo;
+    },
+    whatsapp,
+    agentToken,
+  };
   registerAuth(app);
   await app.register(fastifyMultipart, {
-    limits: { files: 1, fileSize: MAX_IMAGE_BYTES, fields: 0 },
+    // `fields: 2` por la carga del certificado SUNAT, que viaja con su
+    // contraseña en el mismo formulario. Las subidas de imágenes no mandan
+    // campos y no se ven afectadas.
+    limits: { files: 1, fileSize: MAX_IMAGE_BYTES, fields: 2 },
   });
   registerWebSocketGateway(app, bus, rooms, identity, kiosk, inventory);
 
@@ -191,6 +220,7 @@ async function main() {
   await app.register(notificationsRoutes(services));
   await app.register(billingRoutes(services));
   await app.register(brandRoutes(services));
+  await app.register(sunatRoutes(services));
 
   // Sirve las 2 SPA ya compiladas (`pnpm -r run build`) desde este mismo proceso —
   // en producción reemplaza los 3 procesos de desarrollo (server + 2 dev server de Vite)
@@ -260,6 +290,11 @@ export type Services = {
   productImages: ImageStorage;
   qrImages: ImageStorage;
   brand: BrandStore;
+  sunatConfig: SunatConfigStore;
+  /** Modo con el que está funcionando la facturación ahora mismo — ver `SunatConfig.modoActivo`. */
+  sunatModoActivo: SunatMode;
+  /** Vuelve a construir `billing` con una configuración nueva. Lanza si esa configuración no sirve. */
+  applySunatConfig: (config: SunatSecretConfig) => void;
   cashbox: ReturnType<typeof createCashboxService>;
   reporting: ReturnType<typeof createReportingService>;
   notifications: Awaited<ReturnType<typeof createNotificationsService>>;

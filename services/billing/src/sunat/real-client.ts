@@ -92,6 +92,36 @@ export class RealSunatClient implements SunatClient {
     return { pendiente: false, aceptado: codigo === "0", codigo, descripcion, cdrXml: unzipped.xml };
   }
 
+  /**
+   * Golpea el servicio con una consulta inocua (un ticket que no existe) para
+   * ver si SUNAT contesta y si rechaza las credenciales. Sirve como prueba de
+   * conexión desde la PC del hotel y, en PRODUCCION, delata una clave SOL mal
+   * cargada (error 0102).
+   *
+   * **En BETA no prueba credenciales**: se comprobó contra el servicio real
+   * que el ambiente de pruebas responde exactamente lo mismo con la clave
+   * correcta, con una inventada y con un usuario inexistente. Por eso devuelve
+   * `credencialesRechazadas` en vez de un "autenticado: true" que ahí sería
+   * mentira — el mensaje que ve la persona lo aclara.
+   *
+   * A propósito NO reutiliza `getStatus`: ese método intenta descomprimir el
+   * contenido de la respuesta y ante un ticket inexistente SUNAT devuelve algo
+   * que no es un ZIP, así que la excepción del descompresor taparía el
+   * resultado de la prueba.
+   */
+  async checkConnectivity(): Promise<{ credencialesRechazadas: boolean; detalle: string }> {
+    const parsed = await this.call("getStatus", "<ser:getStatus><ticket>000000000000</ticket></ser:getStatus>");
+
+    const fault = this.extractFault(parsed);
+    if (fault) {
+      const detalle = `${fault.codigo ?? ""} ${fault.mensaje}`.trim();
+      return { credencialesRechazadas: /0102|usuario o contrase|clave incorrecta|no existe el usuario/i.test(detalle), detalle };
+    }
+
+    const statusCode = parsed?.Envelope?.Body?.getStatusResponse?.status?.statusCode;
+    return { credencialesRechazadas: false, detalle: statusCode !== undefined ? `estado ${String(statusCode)}` : "respuesta sin código de estado" };
+  }
+
   private async call(operation: "sendBill" | "sendSummary" | "getStatus", bodyXml: string): Promise<any> {
     const username = `${this.config.ruc}${this.config.solUser}`;
     const envelope = `<?xml version="1.0" encoding="UTF-8"?>
