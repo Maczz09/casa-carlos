@@ -453,6 +453,7 @@ body {
   .print-only-receipt * {
     visibility: visible;
     display: block !important;
+    font-weight: 700 !important;
   }
   .print-only-receipt {
     position: absolute;
@@ -465,39 +466,45 @@ body {
     font-family: "Consolas", "Courier New", monospace;
     font-size: 11px;
     line-height: 1.35;
+    font-weight: 700;
   }
   .print-only-receipt h2 {
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 13px;
+    font-weight: 900 !important;
     text-align: center;
     margin: 0 0 2mm;
   }
   .print-only-receipt p {
     margin: 0 0 1mm;
+    font-weight: 700 !important;
   }
   .print-only-receipt hr {
     border: none;
-    border-top: 1px dashed #000;
+    border-top: 1.5px solid #000;
     margin: 2mm 0;
   }
   .print-only-receipt table {
     width: 100%;
     border-collapse: collapse;
+    font-weight: 700 !important;
   }
   .print-only-receipt td {
     padding: 0;
     vertical-align: top;
+    font-weight: 700 !important;
   }
   .print-only-receipt td:last-child {
     text-align: right;
     white-space: nowrap;
+    font-weight: 700 !important;
   }
   .print-only-receipt .receipt-total {
     text-align: right;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 14px;
+    font-weight: 900 !important;
   }
   .print-only-receipt .receipt-center {
     text-align: center;
+    font-weight: 700 !important;
   }
 }

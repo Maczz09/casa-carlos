@@ -59,19 +59,26 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
     font-family: "Consolas", "Courier New", monospace;
     font-size: 11px;
     line-height: 1.35;
+    font-weight: 700;
     color: #000;
     background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  h2 { font-size: 12px; font-weight: 700; text-align: center; margin: 0 0 2mm; }
+  * {
+    font-weight: 700 !important;
+    box-sizing: border-box;
+  }
+  h2 { font-size: 13px; font-weight: 900 !important; text-align: center; margin: 0 0 2mm; }
   .logo { display: block; margin: 0 auto 1.5mm; max-width: 40mm; max-height: 18mm; }
-  p { margin: 0 0 1mm; }
-  hr { border: none; border-top: 1px dashed #000; margin: 2mm 0; }
-  table { width: 100%; border-collapse: collapse; }
-  td { padding: 0; vertical-align: top; }
-  td:last-child { text-align: right; white-space: nowrap; }
+  p { margin: 0 0 1mm; font-weight: 700 !important; }
+  hr { border: none; border-top: 1.5px solid #000; margin: 2mm 0; }
+  table { width: 100%; border-collapse: collapse; font-weight: 700 !important; }
+  td { padding: 0; vertical-align: top; font-weight: 700 !important; }
+  td:last-child { text-align: right; white-space: nowrap; font-weight: 700 !important; }
   .center { text-align: center; }
-  .tax td { padding-top: .8mm; }
-  .total { text-align: right; font-size: 13px; font-weight: 700; }
+  .tax td { padding-top: .8mm; font-weight: 700 !important; }
+  .total { text-align: right; font-size: 14px; font-weight: 900 !important; }
 </style>
 </head>
 <body>

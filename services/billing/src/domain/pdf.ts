@@ -37,9 +37,9 @@ function separador(doc: PDFKit.PDFDocument): void {
 }
 
 /** Etiqueta a la izquierda y monto a la derecha en la misma línea — el patrón que se repite en todos los totales. */
-function filaMonto(doc: PDFKit.PDFDocument, etiqueta: string, monto: string, negrita = false): void {
+function filaMonto(doc: PDFKit.PDFDocument, etiqueta: string, monto: string, negrita = true): void {
   const y = doc.y;
-  doc.font(negrita ? "Helvetica-Bold" : "Helvetica");
+  doc.font("Helvetica-Bold");
   doc.text(etiqueta, MARGIN, y, { width: CONTENT_WIDTH * 0.55 });
   doc.text(monto, MARGIN + CONTENT_WIDTH * 0.55, y, { width: CONTENT_WIDTH * 0.45, align: "right" });
 }
@@ -60,7 +60,7 @@ function drawHeader(doc: PDFKit.PDFDocument, emisor: EmisorInfo, comprobante: Co
     }
   }
   doc.fontSize(FONT_TITULO).font("Helvetica-Bold").text(emisor.nombreComercial, MARGIN, doc.y, centrado);
-  doc.fontSize(FONT_BASE).font("Helvetica");
+  doc.fontSize(FONT_BASE).font("Helvetica-Bold");
   if (emisor.razonSocial !== emisor.nombreComercial) doc.text(emisor.razonSocial, MARGIN, doc.y, centrado);
   doc.text(`RUC ${emisor.ruc}`, MARGIN, doc.y, centrado);
   doc.text(`${emisor.direccion}`, MARGIN, doc.y, centrado);
@@ -71,13 +71,13 @@ function drawHeader(doc: PDFKit.PDFDocument, emisor: EmisorInfo, comprobante: Co
   doc.fontSize(FONT_BASE + 1).font("Helvetica-Bold");
   doc.text(comprobante.tipo === "BOLETA" ? "BOLETA DE VENTA ELECTRÓNICA" : "FACTURA ELECTRÓNICA", MARGIN, doc.y, centrado);
   doc.fontSize(FONT_TITULO).text(`${comprobante.serie}-${comprobante.correlativo}`, MARGIN, doc.y, centrado);
-  doc.font("Helvetica").fontSize(FONT_BASE);
+  doc.font("Helvetica-Bold").fontSize(FONT_BASE);
 
   separador(doc);
 }
 
 function drawParty(doc: PDFKit.PDFDocument, comprobante: Comprobante, fechaEmision: string): void {
-  doc.fontSize(FONT_BASE).font("Helvetica");
+  doc.fontSize(FONT_BASE).font("Helvetica-Bold");
   doc.text(`Fecha: ${fechaEmision}`, MARGIN, doc.y, { width: CONTENT_WIDTH });
   doc.text(`${comprobante.receptorTipoDoc}: ${comprobante.receptorNumeroDoc}`, MARGIN, doc.y, { width: CONTENT_WIDTH });
   doc.text(`Cliente: ${comprobante.receptorRazonSocial}`, MARGIN, doc.y, { width: CONTENT_WIDTH });
@@ -90,22 +90,22 @@ function drawParty(doc: PDFKit.PDFDocument, comprobante: Comprobante, fechaEmisi
  * abajo), que es como imprimen los tickets de cualquier bodega.
  */
 function drawLines(doc: PDFKit.PDFDocument, comprobante: Comprobante): void {
-  doc.fontSize(FONT_BASE);
+  doc.fontSize(FONT_BASE).font("Helvetica-Bold");
   for (const linea of comprobante.lineas) {
-    doc.font("Helvetica").text(linea.descripcion, MARGIN, doc.y, { width: CONTENT_WIDTH });
-    filaMonto(doc, `${linea.cantidad} x ${format(cents(linea.precioUnitarioCentimos))}`, format(cents(linea.subtotalCentimos)));
+    doc.font("Helvetica-Bold").text(linea.descripcion, MARGIN, doc.y, { width: CONTENT_WIDTH });
+    filaMonto(doc, `${linea.cantidad} x ${format(cents(linea.precioUnitarioCentimos))}`, format(cents(linea.subtotalCentimos)), true);
     doc.moveDown(0.2);
   }
   separador(doc);
 }
 
 function drawTotals(doc: PDFKit.PDFDocument, comprobante: Comprobante): void {
-  doc.fontSize(FONT_BASE);
-  filaMonto(doc, "Op. Gravada:", format(cents(comprobante.valorVentaCentimos)));
-  filaMonto(doc, "IGV (18%):", format(cents(comprobante.igvCentimos)));
-  doc.fontSize(FONT_BASE + 1.5);
+  doc.fontSize(FONT_BASE).font("Helvetica-Bold");
+  filaMonto(doc, "Op. Gravada:", format(cents(comprobante.valorVentaCentimos)), true);
+  filaMonto(doc, "IGV (18%):", format(cents(comprobante.igvCentimos)), true);
+  doc.fontSize(FONT_BASE + 1.5).font("Helvetica-Bold");
   filaMonto(doc, "TOTAL:", format(cents(comprobante.totalCentimos)), true);
-  doc.fontSize(FONT_BASE).font("Helvetica").moveDown(0.3);
+  doc.fontSize(FONT_BASE).font("Helvetica-Bold").moveDown(0.3);
   doc.text(comprobante.montoLetras, MARGIN, doc.y, { width: CONTENT_WIDTH });
   separador(doc);
 }
@@ -118,7 +118,7 @@ function drawFooter(doc: PDFKit.PDFDocument, comprobante: Comprobante, qrPng: Bu
   doc.image(qrPng, MARGIN + (CONTENT_WIDTH - qrLado) / 2, doc.y, { width: qrLado, height: qrLado });
   doc.y += qrLado + 4;
 
-  doc.fontSize(FONT_BASE - 0.5).font("Helvetica");
+  doc.fontSize(FONT_BASE - 0.5).font("Helvetica-Bold");
   doc.text(
     `Representación impresa de la ${comprobante.tipo === "BOLETA" ? "Boleta de Venta" : "Factura"} Electrónica. Consulte su validez en SUNAT — Consulta de comprobantes.`,
     MARGIN,
@@ -137,6 +137,7 @@ function drawFooter(doc: PDFKit.PDFDocument, comprobante: Comprobante, qrPng: Bu
 /** Dibuja el ticket entero. Se corre dos veces: una para medir, otra de verdad — ver `generateComprobantePdf`. */
 function render(doc: PDFKit.PDFDocument, comprobante: Comprobante, emisor: EmisorInfo, fechaEmision: string, qrPng: Buffer, logo: Uint8Array | null): void {
   doc.lineGap(LINE_GAP);
+  doc.font("Helvetica-Bold");
   drawHeader(doc, emisor, comprobante, logo);
   drawParty(doc, comprobante, fechaEmision);
   drawLines(doc, comprobante);
