@@ -23,5 +23,34 @@ export function pricingRoutes(services: Services) {
         }
       },
     );
+    app.get("/api/pricing/category-rates", auth, async () => {
+      return services.pricing.listAllCategoryRates();
+    });
+
+    app.get<{ Params: { categoriaId: string } }>("/api/pricing/categories/:categoriaId/rates", auth, async (request, reply) => {
+      try {
+        const rates = await services.pricing.getCategoryRates(request.params.categoriaId);
+        return rates ?? { categoriaId: request.params.categoriaId, precioHorasCentimos: 4000, precioNocheCentimos: 6000 };
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post<{
+      Params: { categoriaId: string };
+      Body: { precioHorasCentimos: number; precioNocheCentimos: number; precioNocheBCentimos?: number };
+    }>("/api/pricing/categories/:categoriaId/rates", auth, async (request, reply) => {
+      try {
+        await services.pricing.setCategoryRates({
+          categoriaId: request.params.categoriaId,
+          precioHorasCentimos: request.body.precioHorasCentimos,
+          precioNocheCentimos: request.body.precioNocheCentimos,
+          precioNocheBCentimos: request.body.precioNocheBCentimos,
+        });
+        return { ok: true };
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
   };
 }

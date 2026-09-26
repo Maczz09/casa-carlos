@@ -86,4 +86,15 @@ export interface PricingPort {
 
   /** Total for `nights` nights (a lookup table, not `precio × n`). */
   resolveNightScalePrice(input: { modalidadId: string; categoriaId: string; noches: number }): Promise<number>;
+
+  getCategoryRates(categoriaId: string): Promise<CategoryRatesDto | null>;
+  listAllCategoryRates(): Promise<Record<string, CategoryRatesDto>>;
+  setCategoryRates(input: CategoryRatesDto): Promise<void>;
+}
+
+export interface CategoryRatesDto {
+  categoriaId: string;
+  precioHorasCentimos: number;
+  precioNocheCentimos: number;
+  precioNocheBCentimos?: number;
 }

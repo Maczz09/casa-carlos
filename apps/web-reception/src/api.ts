@@ -7,6 +7,7 @@ import type {
   CashSummary,
   Denominaciones,
   Category,
+  CategoryRatesDto,
   ChargeCode,
   CollectionAccount,
   CreateCollectionAccountInput,
@@ -156,6 +157,10 @@ export const api = {
   modalities: () => get<Modality[]>("/api/pricing/modalities"),
   resolveRate: (categoriaId: string, modalidadId: string) =>
     get<ResolvedRate>(`/api/pricing/resolve?categoriaId=${encodeURIComponent(categoriaId)}&modalidadId=${encodeURIComponent(modalidadId)}`),
+  categoryRates: () => get<Record<string, CategoryRatesDto>>("/api/pricing/category-rates"),
+  getCategoryRates: (categoriaId: string) => get<CategoryRatesDto>(`/api/pricing/categories/${encodeURIComponent(categoriaId)}/rates`),
+  setCategoryRates: (categoriaId: string, rates: { precioHorasCentimos: number; precioNocheCentimos: number; precioNocheBCentimos?: number }) =>
+    post<{ ok: true }>(`/api/pricing/categories/${encodeURIComponent(categoriaId)}/rates`, rates),
 
   checkOut: (stayId: string) => post<Stay>(`/api/reception/check-out/${stayId}`),
 

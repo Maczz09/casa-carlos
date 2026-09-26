@@ -76,6 +76,14 @@ export class PricingRepo {
   }
 
   async insertRate(row: RateRow): Promise<Rate> {
+    const existing = await this.findRate(row.franjaId, row.categoriaId, row.modalidadId);
+    if (existing) {
+      await this.db
+        .update(schema.pricingTarifas)
+        .set({ precioCentimos: row.precioCentimos })
+        .where(eq(schema.pricingTarifas.id, existing.id));
+      return { ...existing, precioCentimos: row.precioCentimos };
+    }
     await this.db.insert(schema.pricingTarifas).values(row);
     return toRate(row);
   }
@@ -96,6 +104,14 @@ export class PricingRepo {
   }
 
   async insertNightScale(row: NightScaleRow): Promise<NightScaleEntry> {
+    const existing = await this.findNightScale(row.modalidadId, row.categoriaId, row.noches);
+    if (existing) {
+      await this.db
+        .update(schema.pricingEscalaNoches)
+        .set({ precioTotalCentimos: row.precioTotalCentimos })
+        .where(eq(schema.pricingEscalaNoches.id, existing.id));
+      return { ...existing, precioTotalCentimos: row.precioTotalCentimos };
+    }
     await this.db.insert(schema.pricingEscalaNoches).values(row);
     return toNightScale(row);
   }
@@ -113,6 +129,16 @@ export class PricingRepo {
       )
       .get();
     return row ? toNightScale(row) : null;
+  }
+
+  async listAllRates(): Promise<Rate[]> {
+    const rows = await this.db.select().from(schema.pricingTarifas);
+    return rows.map(toRate);
+  }
+
+  async listAllNightScales(): Promise<NightScaleEntry[]> {
+    const rows = await this.db.select().from(schema.pricingEscalaNoches);
+    return rows.map(toNightScale);
   }
 
   async insertCharge(row: ChargeRow): Promise<Charge> {
