@@ -29,8 +29,8 @@ export function RoomCard({ entry, beds, fans, onClick }: Props) {
       <div className="h-1.5 w-full" style={{ background: style.accent }} />
 
       <button type="button" onClick={() => clickable && onClick(entry)} disabled={!clickable} className="block w-full text-left disabled:cursor-default">
-        <div className="relative bg-inset/60 p-2">
-          <div className="aspect-[220/130] transition-transform duration-300 group-hover:scale-[1.03]">
+        <div className="relative bg-inset/60 p-1.5">
+          <div className="aspect-[220/110] transition-transform duration-300 group-hover:scale-[1.03]">
             <RoomIllustration beds={beds} fans={fans} floorFill={style.floorFill} muted={style.muted} />
           </div>
 

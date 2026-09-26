@@ -47,13 +47,17 @@ export function kioskReceptionRoutes(services: Services) {
       }
     });
 
-    app.post<{ Body: { metodo: string | null } }>("/api/reception/kiosk/select-payment-method", auth, async (request, reply) => {
-      try {
-        return await services.kiosk.setPaymentMethod(request.body.metodo ?? null);
-      } catch (err) {
-        return reply.code(400).send({ error: (err as Error).message });
-      }
-    });
+    app.post<{ Body: { metodo: string | null; detalles?: { metodo: string; montoCentimos: number }[] } }>(
+      "/api/reception/kiosk/select-payment-method",
+      auth,
+      async (request, reply) => {
+        try {
+          return await services.kiosk.setPaymentMethod(request.body.metodo ?? null, request.body.detalles ?? null);
+        } catch (err) {
+          return reply.code(400).send({ error: (err as Error).message });
+        }
+      },
+    );
 
     app.post<{ Body: { wants: boolean } }>("/api/reception/kiosk/set-wants-products", auth, async (request, reply) => {
       try {
@@ -62,6 +66,12 @@ export function kioskReceptionRoutes(services: Services) {
         return reply.code(400).send({ error: (err as Error).message });
       }
     });
+
+    app.post<{ Body: { deltaY?: number; to?: "top" | "bottom" } }>("/api/reception/kiosk/scroll", auth, async (request) => {
+      services.kiosk.emitRemoteAction({ type: "kiosk_scroll", deltaY: request.body.deltaY, to: request.body.to });
+      return { ok: true };
+    });
   };
+
 }
 

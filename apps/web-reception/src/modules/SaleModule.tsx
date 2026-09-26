@@ -233,7 +233,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
           </div>
 
           {session.pisoId ? (
-            <div className="stagger grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
               {active?.rooms
                 .filter((r) => r.estado === "DISPONIBLE")
                 .map((entry, i) => {
@@ -255,14 +255,14 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
                           setBusy(false);
                         }
                       }}
-                      className="overflow-hidden rounded-2xl border border-line bg-surface text-left transition-all duration-200 hover:-translate-y-1 hover:border-brand hover:shadow-[var(--shadow-pop)]"
+                      className="overflow-hidden rounded-xl border border-line bg-surface text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-brand hover:shadow-[var(--shadow-pop)]"
                     >
-                      <div className="aspect-[220/130] bg-inset/60 p-1.5">
+                      <div className="aspect-[220/100] bg-inset/60 p-1">
                         <RoomIllustration beds={categoria?.camas ?? 1} fans={categoria?.ventiladores ?? 0} floorFill="var(--room-floor-teal)" />
                       </div>
-                      <div className="flex items-center justify-between px-3 py-2.5">
-                        <span className="font-semibold text-ink">{entry.room.numero}</span>
-                        {precio !== undefined && <span className="text-sm font-medium text-brand">{format(cents(precio))}</span>}
+                      <div className="flex items-center justify-between px-2.5 py-1.5">
+                        <span className="text-sm font-semibold text-ink">C. {entry.room.numero}</span>
+                        {precio !== undefined && <span className="text-xs font-semibold text-brand">{format(cents(precio))}</span>}
                       </div>
                     </button>
                   );

@@ -77,7 +77,11 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
   // Notifica en tiempo real al kiosco cuál método de pago está seleccionando recepción
   useEffect(() => {
     const methodToSend = rows.length > 1 ? "HIBRIDO" : (rows[0]?.metodo ?? "EFECTIVO");
-    void api.setKioskPaymentMethod(methodToSend).catch(() => {});
+    const detallesToSend = rows.map((r) => ({
+      metodo: r.metodo,
+      montoCentimos: Math.round((Number(r.monto) || 0) * 100),
+    }));
+    void api.setKioskPaymentMethod(methodToSend, detallesToSend).catch(() => {});
   }, [rows]);
 
 

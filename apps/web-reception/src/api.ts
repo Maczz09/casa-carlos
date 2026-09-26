@@ -173,7 +173,12 @@ export const api = {
     post<KioskSession>("/api/kiosk/remove-product", { lineId, motivo: motivo ?? "Quitado desde recepción" }),
   finishKioskProducts: () => post<KioskSession>("/api/kiosk/finish-products"),
   setKioskProductsDecision: (wants: boolean) => post<KioskSession>("/api/reception/kiosk/set-wants-products", { wants }),
-  setKioskPaymentMethod: (metodo: string | null) => post<KioskSession>("/api/reception/kiosk/select-payment-method", { metodo }),
+  setKioskPaymentMethod: (
+    metodo: string | null,
+    detalles?: { metodo: string; montoCentimos: number }[]
+  ) => post<KioskSession>("/api/reception/kiosk/select-payment-method", { metodo, detalles }),
+  scrollKiosk: (input: { deltaY?: number; to?: "top" | "bottom" }) =>
+    post<{ ok: true }>("/api/reception/kiosk/scroll", input),
 
   activeStays: () => get<StayWithCustomer[]>("/api/stays/active"),
   staysByRange: (range: { desde: string; hasta: string }) => get<StayWithCustomer[]>(`/api/stays?desde=${encodeURIComponent(range.desde)}&hasta=${encodeURIComponent(range.hasta)}`),

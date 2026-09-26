@@ -7,6 +7,7 @@ export function inventoryRoutes(services: Services) {
   return async function (app: FastifyInstance) {
     const auth = { preHandler: requireAnyPermission(services.identity, ["INVENTORY_MANAGE", "SALES_MANAGE", "DASHBOARD_VIEW"]) };
     const admin = { preHandler: requireAdmin(services.identity) };
+    const inventoryManage = { preHandler: requirePermission(services.identity, "INVENTORY_MANAGE") };
     const categories = { preHandler: requirePermission(services.identity, "CATEGORIES_MANAGE") };
 
     app.get("/api/inventory/products", auth, async () => services.inventory.listProducts());
@@ -150,7 +151,7 @@ export function inventoryRoutes(services: Services) {
 
     app.post<{ Params: { id: string }; Body: { cantidad: number; motivo: string } }>(
       "/api/inventory/products/:id/stock-in",
-      admin,
+      inventoryManage,
       async (request, reply) => {
         try {
           return await services.inventory.registerStockIn({ productoId: request.params.id, cantidad: request.body.cantidad, motivo: request.body.motivo, usuarioId: request.user!.id });
@@ -162,7 +163,7 @@ export function inventoryRoutes(services: Services) {
 
     app.post<{ Params: { id: string }; Body: { cantidad: number; motivo: string } }>(
       "/api/inventory/products/:id/adjust",
-      admin,
+      inventoryManage,
       async (request, reply) => {
         try {
           return await services.inventory.adjustStock({ productoId: request.params.id, cantidad: request.body.cantidad, motivo: request.body.motivo, usuarioId: request.user!.id });

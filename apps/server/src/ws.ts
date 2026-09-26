@@ -67,6 +67,7 @@ export function registerWebSocketGateway(
     if (event === "inventory.catalog_changed") void broadcastProducts();
   });
   kiosk.onChange(() => broadcastKioskSession());
+  kiosk.onRemoteAction((action) => send(kioskSockets, action));
 
   app.get("/ws", { websocket: true }, async (socket: WebSocket, request) => {
     const token = (request.query as { token?: string } | undefined)?.token;
@@ -81,9 +82,19 @@ export function registerWebSocketGateway(
     socket.send(JSON.stringify({ type: "kiosk", session: kiosk.getCurrent() }));
     socket.send(JSON.stringify({ type: "products", products: await publicProducts() }));
 
+    socket.on("message", (raw) => {
+      try {
+        const msg = JSON.parse(raw.toString());
+        if (msg.type === "kiosk_scroll" || msg.type === "kiosk_action") {
+          send(kioskSockets, msg);
+        }
+      } catch {}
+    });
+
     socket.on("close", () => receptionSockets.delete(socket));
     socket.on("error", () => receptionSockets.delete(socket));
   });
+
 
   app.get("/ws-kiosk", { websocket: true }, async (socket: WebSocket) => {
     kioskSockets.add(socket);

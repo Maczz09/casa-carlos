@@ -28,6 +28,7 @@ import { useBrand } from "../hooks/useBrand.js";
 import type { OperationalAlert } from "../hooks/useOperationalAlerts.js";
 import type { Theme } from "../hooks/useTheme.js";
 import { startAppTour, useFirstRunTour } from "./AppTour.js";
+import { KioskRemoteViewer } from "./KioskRemoteViewer.js";
 
 export interface NavEntry {
   id: string;
@@ -401,6 +402,7 @@ export function AppShell({
           onStartTour={() => startAppTour(user)}
         />
         <main className="flex-1 p-4 sm:p-6"><div className="mx-auto w-full max-w-[1880px]">{children}</div></main>
+        <KioskRemoteViewer />
       </div>
     </div>
   );

@@ -28,6 +28,27 @@ export function useKioskState(): { floors: FloorBoard[]; products: KioskProduct[
           if (msg.type === "board") setFloors(msg.floors);
           if (msg.type === "kiosk") setSession(msg.session);
           if (msg.type === "products") setProducts(msg.products);
+          if (msg.type === "kiosk_scroll") {
+            const deltaY = typeof msg.deltaY === "number" ? msg.deltaY : 0;
+            const to = msg.to;
+            const doScroll = (el: Element | Window) => {
+              try {
+                if (to === "top") {
+                  el.scrollTo({ top: 0, behavior: "smooth" });
+                } else if (to === "bottom") {
+                  const max = el instanceof Window ? Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) : el.scrollHeight;
+                  el.scrollTo({ top: max, behavior: "smooth" });
+                } else if (deltaY) {
+                  el.scrollBy({ top: deltaY, behavior: "smooth" });
+                }
+              } catch {
+                // ignore
+              }
+            };
+            doScroll(window);
+            document.querySelectorAll(".overflow-y-auto, .overflow-auto, main").forEach((el) => doScroll(el));
+            window.dispatchEvent(new CustomEvent("casacarlos:remote-scroll", { detail: msg }));
+          }
         } catch {
           // ignore malformed frames
         }

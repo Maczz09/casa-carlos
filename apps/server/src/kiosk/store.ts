@@ -8,6 +8,7 @@ type Listener = (session: KioskSession | null) => void;
 export class KioskStore {
   private session: KioskSession | null = null;
   private readonly listeners = new Set<Listener>();
+  private readonly actionListeners = new Set<(action: unknown) => void>();
 
   constructor(
     private readonly rooms: RoomsPort,
@@ -29,6 +30,16 @@ export class KioskStore {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
+
+  emitRemoteAction(action: unknown): void {
+    for (const listener of this.actionListeners) listener(action);
+  }
+
+  onRemoteAction(listener: (action: unknown) => void): () => void {
+    this.actionListeners.add(listener);
+    return () => this.actionListeners.delete(listener);
+  }
+
 
   async start(usuarioId: string, modalidadId: string, bloques: number, noches: number): Promise<KioskSession> {
     const modality = await this.pricing.getModality(modalidadId);
@@ -184,10 +195,16 @@ export class KioskStore {
     return this.commit({ ...session, estado: "SELECCION_PAGO", metodoPagoSeleccionado: "EFECTIVO" });
   }
 
-  async setPaymentMethod(metodo: string | null): Promise<KioskSession> {
+  async setPaymentMethod(metodo: string | null, detalles?: ProposedPaymentLine[] | null): Promise<KioskSession> {
     const session = this.mustGet();
-    return this.commit({ ...session, metodoPagoSeleccionado: metodo, error: null });
+    return this.commit({
+      ...session,
+      metodoPagoSeleccionado: metodo,
+      propuestaPago: detalles !== undefined ? detalles : session.propuestaPago,
+      error: null,
+    });
   }
+
 
   async proposePayment(detalles: ProposedPaymentLine[]): Promise<KioskSession> {
     const session = this.mustGet();
