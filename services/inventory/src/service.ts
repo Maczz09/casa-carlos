@@ -89,6 +89,12 @@ export class InventoryService implements InventoryPort {
     if (input.categoriaId && !(await this.repo.getCategory(input.categoriaId))) {
       throw new Error("La categoría elegida no existe.");
     }
+    if (input.codigoBarras) {
+      const existing = await this.repo.findByBarcode(input.codigoBarras);
+      if (existing) {
+        throw new Error(`El código de barras "${input.codigoBarras}" ya está registrado en "${existing.nombre}".`);
+      }
+    }
     const product = await this.repo.insertProduct({
       id: newId(),
       codigoBarras: input.codigoBarras ?? null,
@@ -129,6 +135,12 @@ export class InventoryService implements InventoryPort {
     const before = await this.getProduct(id);
     if (patch.categoriaId && !(await this.repo.getCategory(patch.categoriaId))) {
       throw new Error("La categoría elegida no existe.");
+    }
+    if (patch.codigoBarras) {
+      const existing = await this.repo.findByBarcode(patch.codigoBarras);
+      if (existing && existing.id !== id) {
+        throw new Error(`El código de barras "${patch.codigoBarras}" ya está registrado en "${existing.nombre}".`);
+      }
     }
     if (patch.precioCentimos !== undefined && patch.precioCentimos < 0) throw new Error("El precio no puede ser negativo.");
     const product = await this.repo.updateProduct(id, patch);

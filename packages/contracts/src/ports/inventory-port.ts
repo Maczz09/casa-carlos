@@ -13,6 +13,7 @@ export interface CreateProductInput {
 }
 
 export interface UpdateProductInput {
+  codigoBarras?: string | null;
   nombre?: string;
   descripcion?: string | null;
   categoriaId?: string | null;

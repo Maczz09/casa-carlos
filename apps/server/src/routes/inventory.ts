@@ -82,6 +82,7 @@ export function inventoryRoutes(services: Services) {
     app.patch<{
       Params: { id: string };
       Body: {
+        codigoBarras?: string | null;
         nombre?: string;
         descripcion?: string | null;
         categoriaId?: string | null;
@@ -90,7 +91,7 @@ export function inventoryRoutes(services: Services) {
         stockMinimo?: number;
         estado?: ProductState;
       };
-    }>("/api/inventory/products/:id", admin, async (request, reply) => {
+    }>("/api/inventory/products/:id", inventoryManage, async (request, reply) => {
       try {
         return await services.inventory.updateProduct(request.params.id, request.body, request.user!.id);
       } catch (err) {

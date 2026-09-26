@@ -274,7 +274,16 @@ export const api = {
   }) => post<Product>("/api/inventory/products", input),
   updateProduct: (
     id: string,
-    patchBody: { nombre?: string; descripcion?: string | null; categoriaId?: string | null; precioCentimos?: number; costoCentimos?: number; stockMinimo?: number; estado?: ProductState },
+    patchBody: {
+      codigoBarras?: string | null;
+      nombre?: string;
+      descripcion?: string | null;
+      categoriaId?: string | null;
+      precioCentimos?: number;
+      costoCentimos?: number;
+      stockMinimo?: number;
+      estado?: ProductState;
+    },
   ) => patch<Product>(`/api/inventory/products/${id}`, patchBody),
   updateProductPrice: (id: string, precioCentimos: number) => patch<Product>(`/api/inventory/products/${id}/price`, { precioCentimos }),
   uploadProductImage: (id: string, file: File) => {

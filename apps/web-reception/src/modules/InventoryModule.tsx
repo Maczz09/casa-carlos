@@ -300,20 +300,29 @@ function ReceptionPriceCatalog({
 
 function ReceptionPriceCard({ product, onReload, onOpenStock }: { product: Product; onReload: () => Promise<void>; onOpenStock: () => void }) {
   const [price, setPrice] = useState((product.precioCentimos / 100).toFixed(2));
+  const [barcode, setBarcode] = useState(product.codigoBarras ?? "");
+  const [editingBarcode, setEditingBarcode] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  useEffect(() => setPrice((product.precioCentimos / 100).toFixed(2)), [product.precioCentimos]);
+  useEffect(() => {
+    setPrice((product.precioCentimos / 100).toFixed(2));
+    setBarcode(product.codigoBarras ?? "");
+  }, [product.precioCentimos, product.codigoBarras]);
 
   const save = async () => {
     setBusy(true);
     setMessage(null);
     try {
-      await api.updateProductPrice(product.id, soles(Number(price) || 0));
-      setMessage("Precio actualizado");
+      await api.updateProduct(product.id, {
+        precioCentimos: soles(Number(price) || 0),
+        codigoBarras: barcode.trim() || null,
+      });
+      setMessage("Guardado correctamente");
+      setEditingBarcode(false);
       await onReload();
     } catch (error) {
-      setMessage(error instanceof ApiError ? error.message : "No se pudo actualizar el precio.");
+      setMessage(error instanceof ApiError ? error.message : "No se pudo actualizar.");
     } finally {
       setBusy(false);
     }
@@ -327,7 +336,18 @@ function ReceptionPriceCard({ product, onReload, onOpenStock }: { product: Produ
         <ProductPicture product={product} className="h-20 w-20" />
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-ink">{product.nombre}</p>
-          <p className="text-xs text-muted">{product.categoria ?? "Sin categoría"}</p>
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+            <span>{product.categoria ?? "Sin categoría"}</span>
+            <span>·</span>
+            <span className="font-mono text-ink/80">{product.codigoBarras ? `Cód: ${product.codigoBarras}` : "Sin código"}</span>
+            <button
+              type="button"
+              onClick={() => setEditingBarcode(!editingBarcode)}
+              className="text-[11px] text-brand hover:underline font-medium ml-1"
+            >
+              {editingBarcode ? "Cancelar" : product.codigoBarras ? "Cambiar cód." : "+ Código"}
+            </button>
+          </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Badge tone={product.stock === 0 ? "tone-red" : low ? "tone-amber" : "tone-teal"}>
               Stock: {product.stock}
@@ -336,6 +356,19 @@ function ReceptionPriceCard({ product, onReload, onOpenStock }: { product: Produ
           </div>
         </div>
       </div>
+
+      {editingBarcode && (
+        <div className="rounded-xl border border-line bg-surface p-2.5 space-y-1">
+          <Field label="Código de barras (escanear o escribir)">
+            <Input
+              autoFocus
+              placeholder="Código de barras"
+              value={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
+            />
+          </Field>
+        </div>
+      )}
 
       <div className="flex items-end gap-2 pt-2 border-t border-line-soft">
         <Field label="Precio venta (S/)">
@@ -349,7 +382,7 @@ function ReceptionPriceCard({ product, onReload, onOpenStock }: { product: Produ
         </Button>
       </div>
 
-      {message && <p className={cx("text-xs", message === "Precio actualizado" ? "text-ok" : "text-danger")}>{message}</p>}
+      {message && <p className={cx("text-xs", message.includes("correctamente") ? "text-ok" : "text-danger")}>{message}</p>}
     </div>
   );
 }
@@ -522,6 +555,7 @@ function AdminProductDetail({
   const [adjustReason, setAdjustReason] = useState("Conteo físico de inventario");
   const [edit, setEdit] = useState({
     nombre: product.nombre,
+    codigoBarras: product.codigoBarras ?? "",
     descripcion: product.descripcion ?? "",
     categoriaId: product.categoriaId ?? "",
     precio: (product.precioCentimos / 100).toFixed(2),
@@ -532,6 +566,19 @@ function AdminProductDetail({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    setEdit({
+      nombre: product.nombre,
+      codigoBarras: product.codigoBarras ?? "",
+      descripcion: product.descripcion ?? "",
+      categoriaId: product.categoriaId ?? "",
+      precio: (product.precioCentimos / 100).toFixed(2),
+      costo: (product.costoCentimos / 100).toFixed(2),
+      stockMinimo: String(product.stockMinimo),
+      estado: product.estado,
+    });
+  }, [product]);
+
+  useEffect(() => {
     void api.productMovements(product.id).then(setMovements).catch(() => {});
   }, [product.id]);
 
@@ -540,6 +587,7 @@ function AdminProductDetail({
     try {
       await api.updateProduct(product.id, {
         nombre: edit.nombre.trim(),
+        codigoBarras: edit.codigoBarras.trim() || null,
         descripcion: edit.descripcion.trim() || null,
         categoriaId: edit.categoriaId || null,
         precioCentimos: soles(Number(edit.precio) || 0),
@@ -603,6 +651,13 @@ function AdminProductDetail({
         <div>
           <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-subtle">Ficha y Precios</p>
           <div className="grid gap-3 sm:grid-cols-2">
+            <Field label="Código de barras">
+              <Input
+                placeholder="Escanear o ingresar código"
+                value={edit.codigoBarras}
+                onChange={(event) => setEdit({ ...edit, codigoBarras: event.target.value })}
+              />
+            </Field>
             <Field label="Nombre"><Input value={edit.nombre} onChange={(event) => setEdit({ ...edit, nombre: event.target.value })} /></Field>
             <Field label="Categoría">
               <Select value={edit.categoriaId} onChange={(event) => setEdit({ ...edit, categoriaId: event.target.value })}>
