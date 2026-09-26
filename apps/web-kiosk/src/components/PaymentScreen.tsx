@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { CollectionAccount, PaymentMethod } from "@casacarlos/contracts";
 import { cents, format, sum } from "@casacarlos/money";
-import { IconBank, IconCash, IconCombine, IconWallet } from "@casacarlos/ui";
+import { IconBank, IconCash, IconCombine, IconWallet, prepareCelebrationAudio } from "@casacarlos/ui";
 import { Shell } from "./Shell.js";
 
 interface Props {
@@ -138,13 +138,14 @@ export function PaymentScreen({ totalCentimos, collectionAccounts, onPropose, on
 
         <button
           disabled={busy || (method !== "EFECTIVO" && method !== "HIBRIDO" && cuentasDelMetodo.length === 0) || (method === "HIBRIDO" && !hybridOk)}
-          onClick={() =>
+          onClick={() => {
+            prepareCelebrationAudio();
             onPropose(
               method === "HIBRIDO"
                 ? hybridRows.map((r) => ({ metodo: r.metodo, montoCentimos: Math.round((Number(r.monto) || 0) * 100) }))
                 : [{ metodo: method, montoCentimos: totalCentimos }],
-            )
-          }
+            );
+          }}
           className="mt-2 w-full max-w-md rounded-2xl bg-brand py-5 text-xl font-medium text-brand-ink shadow-[var(--shadow-card)] transition-transform active:scale-[0.98] disabled:opacity-40"
         >
           Ya pagué, avisar a recepción

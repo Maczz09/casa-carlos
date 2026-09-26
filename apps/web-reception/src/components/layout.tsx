@@ -1,5 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
-import type { User } from "@casacarlos/contracts";
+import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
+import "overlayscrollbars/overlayscrollbars.css";
+import type { AppPermission, User } from "@casacarlos/contracts";
 import {
   IconBed,
   IconBell,
@@ -9,6 +11,7 @@ import {
   IconChart,
   IconChevronRight,
   IconGrid,
+  IconFileChart,
   IconLogout,
   IconMenu,
   IconMoon,
@@ -17,17 +20,21 @@ import {
   IconSliders,
   IconSun,
   IconTag,
+  IconUsers,
   IconX,
 } from "@casacarlos/ui";
 import { cx } from "./ui.js";
 import { useBrand } from "../hooks/useBrand.js";
+import type { OperationalAlert } from "../hooks/useOperationalAlerts.js";
 import type { Theme } from "../hooks/useTheme.js";
+import { startAppTour, useFirstRunTour } from "./AppTour.js";
 
 export interface NavEntry {
   id: string;
   label: string;
   icon: ReactNode;
   adminOnly?: boolean;
+  permission: AppPermission;
 }
 
 export interface NavGroup {
@@ -41,27 +48,29 @@ export const NAV: NavGroup[] = [
   {
     title: "Operación",
     items: [
-      { id: "tablero", label: "Tablero de cuartos", icon: <IconGrid className={ICON} /> },
-      { id: "venta", label: "Nueva venta", icon: <IconPlus className={ICON} /> },
-      { id: "reservas", label: "Reservas", icon: <IconCalendar className={ICON} /> },
+      { id: "tablero", label: "Tablero de cuartos", icon: <IconGrid className={ICON} />, permission: "BOARD_VIEW" },
+      { id: "venta", label: "Nueva venta", icon: <IconPlus className={ICON} />, permission: "SALES_MANAGE" },
+      { id: "reservas", label: "Reservas", icon: <IconCalendar className={ICON} />, permission: "RESERVATIONS_MANAGE" },
     ],
   },
   {
     title: "Gestión",
     items: [
-      { id: "caja", label: "Caja", icon: <IconCash className={ICON} /> },
-      { id: "bodega", label: "Bodega", icon: <IconBox className={ICON} /> },
-      { id: "categorias", label: "Categorías", icon: <IconTag className={ICON} />, adminOnly: true },
-      { id: "cuartos-admin", label: "Cuartos", icon: <IconBed className={ICON} />, adminOnly: true },
-      { id: "comprobantes", label: "Comprobantes", icon: <IconReceipt className={ICON} />, adminOnly: true },
+      { id: "caja", label: "Caja", icon: <IconCash className={ICON} />, permission: "CASHBOX_MANAGE" },
+      { id: "bodega", label: "Bodega", icon: <IconBox className={ICON} />, permission: "INVENTORY_MANAGE" },
+      { id: "categorias", label: "Categorías", icon: <IconTag className={ICON} />, permission: "CATEGORIES_MANAGE" },
+      { id: "cuartos-admin", label: "Cuartos", icon: <IconBed className={ICON} />, permission: "ROOMS_MANAGE" },
+      { id: "comprobantes", label: "Comprobantes", icon: <IconReceipt className={ICON} />, permission: "BILLING_MANAGE" },
     ],
   },
   {
     title: "Administración",
     items: [
-      { id: "dashboard", label: "Dashboard", icon: <IconChart className={ICON} />, adminOnly: true },
-      { id: "notificaciones", label: "Notificaciones", icon: <IconBell className={ICON} />, adminOnly: true },
-      { id: "ajustes", label: "Ajustes", icon: <IconSliders className={ICON} />, adminOnly: true },
+      { id: "dashboard", label: "Dashboard", icon: <IconChart className={ICON} />, permission: "DASHBOARD_VIEW" },
+      { id: "reportes", label: "Reportes", icon: <IconFileChart className={ICON} />, permission: "REPORTS_EXPORT" },
+      { id: "notificaciones", label: "Notificaciones", icon: <IconBell className={ICON} />, permission: "NOTIFICATIONS_MANAGE" },
+      { id: "usuarios", label: "Usuarios", icon: <IconUsers className={ICON} />, permission: "USERS_MANAGE" },
+      { id: "ajustes", label: "Ajustes", icon: <IconSliders className={ICON} />, permission: "SETTINGS_MANAGE" },
     ],
   },
 ];
@@ -86,7 +95,7 @@ export function BrandMark({ className, logoUrl, nombre }: { className?: string; 
 function Brand({ collapsed }: { collapsed: boolean }) {
   const brand = useBrand();
   return (
-    <div className={cx("flex items-center gap-2.5 px-4 py-5", collapsed && "justify-center px-0")}>
+    <div data-tour="brand" className={cx("flex items-center gap-2.5 px-4 py-5", collapsed && "justify-center px-0")}>
       <span
         className={cx(
           "grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-xl shadow-sm",
@@ -120,6 +129,7 @@ function NavButton({
 }) {
   return (
     <button
+      data-tour={entry.id}
       onClick={onClick}
       title={collapsed ? entry.label : undefined}
       className={cx(
@@ -150,15 +160,13 @@ function Sidebar({
   onNavigate: (id: string) => void;
   onCloseMobile: () => void;
 }) {
-  const isAdmin = user.rol === "ADMIN";
-
   return (
     <>
       {mobileOpen && <div onClick={onCloseMobile} className="animate-fade fixed inset-0 z-40 bg-black/50 lg:hidden" />}
 
       <aside
         className={cx(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-line bg-surface transition-all duration-300 ease-out",
+          "app-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-line bg-surface transition-all duration-300 ease-out",
           collapsed ? "lg:w-[76px]" : "lg:w-[260px]",
           "w-[260px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
@@ -166,34 +174,36 @@ function Sidebar({
       >
         <Brand collapsed={collapsed} />
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-4">
-          {NAV.map((group) => {
-            const items = group.items.filter((i) => !i.adminOnly || isAdmin);
-            if (items.length === 0) return null;
-            return (
-              <div key={group.title} className="mb-5">
-                {!collapsed && <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-subtle">{group.title}</p>}
-                <div className="flex flex-col gap-1">
-                  {items.map((entry) => (
-                    <NavButton
-                      key={entry.id}
-                      entry={entry}
-                      active={active === entry.id}
-                      collapsed={collapsed}
-                      onClick={() => {
-                        onNavigate(entry.id);
-                        onCloseMobile();
-                      }}
-                    />
-                  ))}
+        <OverlayScrollbarsComponent defer options={{ scrollbars: { autoHide: "leave", autoHideDelay: 350, theme: "os-theme-casacarlos" } }} className="min-h-0 flex-1">
+          <nav className="px-3 pb-4">
+            {NAV.map((group) => {
+              const items = group.items.filter((item) => user.permisos.includes(item.permission));
+              if (items.length === 0) return null;
+              return (
+                <div key={group.title} className="mb-5">
+                  {!collapsed && <p className="px-3 pb-2 text-[10px] font-semibold uppercase tracking-widest text-subtle">{group.title}</p>}
+                  <div className="flex flex-col gap-1">
+                    {items.map((entry) => (
+                      <NavButton
+                        key={entry.id}
+                        entry={entry}
+                        active={active === entry.id}
+                        collapsed={collapsed}
+                        onClick={() => {
+                          onNavigate(entry.id);
+                          onCloseMobile();
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </nav>
+              );
+            })}
+          </nav>
+        </OverlayScrollbarsComponent>
 
         <div className={cx("border-t border-line-soft p-3", collapsed && "px-2")}>
-          <div className={cx("flex items-center gap-2.5 rounded-xl bg-inset p-2.5", collapsed && "justify-center p-2")}>
+          <div data-tour="profile" className={cx("flex items-center gap-2.5 rounded-xl bg-inset p-2.5", collapsed && "justify-center p-2")}>
             <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand/15 text-xs font-bold text-brand">
               {user.nombres.charAt(0)}
               {user.apellidos.charAt(0)}
@@ -223,6 +233,11 @@ function Topbar({
   onToggleSidebar,
   onOpenMobile,
   onLogout,
+  notificationsEnabled,
+  onEnableNotifications,
+  alerts,
+  onDismissAlert,
+  onStartTour,
 }: {
   title: string;
   connected: boolean;
@@ -231,10 +246,16 @@ function Topbar({
   onToggleSidebar: () => void;
   onOpenMobile: () => void;
   onLogout: () => void;
+  notificationsEnabled: boolean;
+  onEnableNotifications: () => void;
+  alerts: OperationalAlert[];
+  onDismissAlert: (id: string) => void;
+  onStartTour: () => void;
 }) {
   const brandNombre = useBrand().nombre;
+  const [alertsOpen, setAlertsOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-surface/85 px-4 backdrop-blur-md sm:px-6">
+    <header className="app-topbar sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-surface/85 px-4 backdrop-blur-md sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
         <button onClick={onToggleSidebar} className="hidden rounded-lg p-2 text-muted transition-colors hover:bg-inset hover:text-ink lg:block">
           <IconMenu className="h-5 w-5" />
@@ -250,8 +271,9 @@ function Topbar({
         </div>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="relative flex shrink-0 items-center gap-1.5">
         <span
+          data-tour="live"
           className={cx(
             "hidden items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium sm:inline-flex",
             connected ? "tone-teal" : "tone-amber",
@@ -260,6 +282,42 @@ function Topbar({
           <span className={cx("h-1.5 w-1.5 rounded-full", connected ? "bg-current" : "bg-current animate-pulse")} />
           {connected ? "En vivo" : "Reconectando…"}
         </span>
+
+        <button
+          data-tour="alerts"
+          onClick={() => setAlertsOpen((open) => !open)}
+          title="Centro de avisos"
+          aria-expanded={alertsOpen}
+          className={cx("relative rounded-lg p-2 transition-colors hover:bg-inset", notificationsEnabled ? "text-brand" : "text-muted hover:text-ink")}
+        >
+          <IconBell className="h-5 w-5" />
+          {(notificationsEnabled || alerts.length > 0) && <span className={cx("absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full ring-2 ring-surface", alerts.length > 0 ? "bg-warn" : "bg-ok")} />}
+        </button>
+
+        {alertsOpen && (
+          <section className="absolute right-0 top-12 z-50 w-[min(92vw,380px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-pop)]" aria-label="Centro de avisos">
+            <div className="flex items-center justify-between border-b border-line px-4 py-3">
+              <div><p className="text-sm font-semibold text-ink">Centro de avisos</p><p className="text-xs text-muted">Cambios operativos recientes</p></div>
+              <button onClick={() => setAlertsOpen(false)} className="rounded-lg px-2 py-1 text-xs text-muted hover:bg-inset hover:text-ink">Cerrar</button>
+            </div>
+            <div className="max-h-72 overflow-y-auto p-2">
+              {alerts.length === 0 ? <p className="px-2 py-5 text-center text-sm text-muted">No hay avisos pendientes.</p> : alerts.map((alert) => (
+                <div key={alert.id} className="mb-1 rounded-xl bg-inset px-3 py-2.5 last:mb-0">
+                  <div className="flex gap-2"><div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{alert.title}</p><p className="mt-0.5 text-xs leading-relaxed text-muted">{alert.message}</p></div><button onClick={() => onDismissAlert(alert.id)} className="shrink-0 text-xs text-muted hover:text-ink">Descartar</button></div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-line p-2">
+              <button onClick={onEnableNotifications} className="w-full rounded-xl bg-brand-soft px-3 py-2 text-sm font-medium text-brand transition-colors hover:bg-brand/15">
+                {notificationsEnabled ? "Avisos de Windows y sonido activados" : "Activar avisos de Windows y sonido"}
+              </button>
+            </div>
+          </section>
+        )}
+
+        <button onClick={onStartTour} title="Guía del sistema" className="grid h-9 w-9 place-items-center rounded-lg text-sm font-bold text-muted transition-colors hover:bg-inset hover:text-ink">
+          ?
+        </button>
 
         <button
           onClick={onToggleTheme}
@@ -288,6 +346,10 @@ export function AppShell({
   onToggleTheme,
   onNavigate,
   onLogout,
+  notificationsEnabled,
+  onEnableNotifications,
+  alerts,
+  onDismissAlert,
   children,
 }: {
   user: User;
@@ -298,17 +360,22 @@ export function AppShell({
   onToggleTheme: () => void;
   onNavigate: (id: string) => void;
   onLogout: () => void;
+  notificationsEnabled: boolean;
+  onEnableNotifications: () => void;
+  alerts: OperationalAlert[];
+  onDismissAlert: (id: string) => void;
   children: ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("casacarlos.sidebar") === "collapsed");
   const [mobileOpen, setMobileOpen] = useState(false);
+  useFirstRunTour(user);
 
   useEffect(() => {
     localStorage.setItem("casacarlos.sidebar", collapsed ? "collapsed" : "expanded");
   }, [collapsed]);
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-[100dvh] bg-bg">
       <Sidebar
         user={user}
         active={active}
@@ -318,7 +385,7 @@ export function AppShell({
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      <div className={cx("flex min-h-screen flex-col transition-all duration-300 ease-out", collapsed ? "lg:pl-[76px]" : "lg:pl-[260px]")}>
+      <div className={cx("flex min-h-[100dvh] flex-col transition-all duration-300 ease-out", collapsed ? "lg:pl-[76px]" : "lg:pl-[260px]")}>
         <Topbar
           title={title}
           connected={connected}
@@ -327,8 +394,13 @@ export function AppShell({
           onToggleSidebar={() => setCollapsed((c) => !c)}
           onOpenMobile={() => setMobileOpen(true)}
           onLogout={onLogout}
+          notificationsEnabled={notificationsEnabled}
+          onEnableNotifications={onEnableNotifications}
+          alerts={alerts}
+          onDismissAlert={onDismissAlert}
+          onStartTour={() => startAppTour(user)}
         />
-        <main className="flex-1 p-4 sm:p-6">{children}</main>
+        <main className="flex-1 p-4 sm:p-6"><div className="mx-auto w-full max-w-[1880px]">{children}</div></main>
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import type { Db } from "@casacarlos/db";
-import { newId } from "@casacarlos/contracts";
-import type { AuthResult, CreateUserInput, IdentityPort, User } from "@casacarlos/contracts";
+import { DEFAULT_PERMISSIONS_BY_ROLE, newId } from "@casacarlos/contracts";
+import type { AuthResult, CreateUserInput, IdentityPort, RegisterUserInput, UpdateUserInput, User } from "@casacarlos/contracts";
 import { IdentityRepo } from "./repo.js";
 import { hashPassword, hashPin, hashToken, newToken, verifyPassword, verifyPin } from "./crypto.js";
 
@@ -25,6 +25,7 @@ export class IdentityService implements IdentityPort {
       passwordHash: hashPassword(input.password),
       pinHash: input.pin ? hashPin(input.pin) : null,
       rol: input.rol,
+      permisosJson: JSON.stringify(input.permisos ?? DEFAULT_PERMISSIONS_BY_ROLE[input.rol]),
       telefonoWhatsapp: input.telefonoWhatsapp ?? null,
       activo: true,
       creadoEn: new Date().toISOString(),
@@ -34,6 +35,61 @@ export class IdentityService implements IdentityPort {
 
   async listUsers(): Promise<User[]> {
     return this.repo.listAll();
+  }
+
+  async registerUser(input: RegisterUserInput): Promise<User> {
+    const total = await this.repo.countUsers();
+    if (total === 0) {
+      return this.createUser({ ...input, rol: "ADMIN", permisos: DEFAULT_PERMISSIONS_BY_ROLE.ADMIN });
+    }
+
+    const approver = input.adminUsuario ? await this.repo.findByUsername(input.adminUsuario) : null;
+    if (!approver || !approver.activo || approver.rol !== "ADMIN" || !input.adminPassword || !verifyPassword(input.adminPassword, approver.passwordHash)) {
+      throw new Error("Las credenciales del administrador no son válidas.");
+    }
+    return this.createUser({
+      usuario: input.usuario,
+      password: input.password,
+      nombres: input.nombres,
+      apellidos: input.apellidos,
+      pin: input.pin,
+      telefonoWhatsapp: input.telefonoWhatsapp,
+      rol: "RECEPCIONISTA",
+    });
+  }
+
+  async updateUser(id: string, input: UpdateUserInput, actorId: string): Promise<User> {
+    const found = await this.repo.findById(id);
+    if (!found) throw new Error(`Usuario ${id} no encontrado.`);
+    if (id === actorId && input.activo === false) throw new Error("No podés desactivar tu propia cuenta mientras la estás usando.");
+
+    const removesAdmin = found.rol === "ADMIN" && found.activo && (input.rol === "RECEPCIONISTA" || input.activo === false);
+    if (removesAdmin && (await this.repo.countActiveAdmins()) <= 1) {
+      throw new Error("Debe quedar al menos un administrador activo.");
+    }
+
+    if (input.usuario && input.usuario !== found.usuario) {
+      const duplicate = await this.repo.findByUsername(input.usuario);
+      if (duplicate) throw new Error(`El usuario "${input.usuario}" ya existe.`);
+    }
+
+    const nextRole = input.rol ?? found.rol;
+    const patch: Partial<typeof found> = {};
+    if (input.usuario !== undefined) patch.usuario = input.usuario;
+    if (input.nombres !== undefined) patch.nombres = input.nombres;
+    if (input.apellidos !== undefined) patch.apellidos = input.apellidos;
+    if (input.rol !== undefined) patch.rol = input.rol;
+    if (input.telefonoWhatsapp !== undefined) patch.telefonoWhatsapp = input.telefonoWhatsapp;
+    if (input.activo !== undefined) patch.activo = input.activo;
+    if (input.password) patch.passwordHash = hashPassword(input.password);
+    if (input.pin !== undefined) patch.pinHash = input.pin ? hashPin(input.pin) : null;
+    if (input.permisos !== undefined) patch.permisosJson = JSON.stringify(input.permisos);
+    else if (input.rol !== undefined && input.rol !== found.rol) patch.permisosJson = JSON.stringify(DEFAULT_PERMISSIONS_BY_ROLE[nextRole]);
+    return this.repo.updateUser(id, patch);
+  }
+
+  async deleteUser(id: string, actorId: string): Promise<User> {
+    return this.updateUser(id, { activo: false }, actorId);
   }
 
   async login(usuario: string, password: string): Promise<AuthResult> {

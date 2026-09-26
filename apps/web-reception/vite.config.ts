@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
@@ -6,9 +7,16 @@ import tailwindcss from "@tailwindcss/vite";
 // otro puerto con CC_API_TARGET — sirve, por ejemplo, cuando el servicio de
 // Windows ya instalado está ocupando el 4000 en la misma máquina.
 const apiHost = process.env["CC_API_TARGET"] ?? "localhost:4000";
+// FortuneSheet declara este runtime como dependencia implícita. Con pnpm la
+// librería vive detrás de un enlace simbólico y Rollup no lo encuentra desde
+// ahí; el alias mantiene la hoja y los reportes exportables en builds limpios.
+const regeneratorRuntime = fileURLToPath(new URL("./node_modules/regenerator-runtime/runtime.js", import.meta.url));
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: { "regenerator-runtime": regeneratorRuntime },
+  },
   server: {
     port: 5173,
     proxy: {

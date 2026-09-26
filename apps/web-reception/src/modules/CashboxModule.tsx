@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import type { Arqueo, CashSummary, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
-import { cents, format, soles } from "@casacarlos/money";
+import type { Arqueo, CashMovementType, CashSummary, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import { cents, format, soles, splitIncludedIgv } from "@casacarlos/money";
 import { IconCash, IconPrinter, IconReceipt } from "@casacarlos/ui";
-import { api, ApiError } from "../api.js";
+import { ArcElement, Chart as ChartJS, Legend, Tooltip as ChartTooltip } from "chart.js";
+import { Doughnut } from "react-chartjs-2";
+import { api, ApiError, type CashMovementView } from "../api.js";
 import { DenominationCounter, sumDenominaciones } from "../components/DenominationCounter.js";
 import { printReceiptForSale } from "../components/receipt.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, StatCard, Tabs, Textarea, cx } from "../components/ui.js";
@@ -25,7 +27,62 @@ const daysAgoIso = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-type Tab = "turno" | "ventas" | "historial";
+type Tab = "turno" | "movimientos" | "ventas" | "historial";
+
+const MOVEMENT_LABEL: Record<CashMovementType, string> = {
+  APERTURA: "Apertura de caja",
+  VENTA: "Cobro de venta",
+  INGRESO: "Ingreso manual",
+  EGRESO: "Egreso manual",
+  AJUSTE: "Ajuste",
+  VUELTO: "Vuelto entregado",
+  CIERRE: "Cierre de caja",
+};
+
+const movementTone = (tipo: CashMovementType): string => {
+  if (tipo === "VENTA" || tipo === "INGRESO" || tipo === "APERTURA") return "tone-teal";
+  if (tipo === "EGRESO" || tipo === "VUELTO") return "tone-red";
+  if (tipo === "AJUSTE") return "tone-amber";
+  return "tone-stone";
+};
+
+const movementAmount = (movement: CashMovementView): string => {
+  const outgoing = movement.tipo === "EGRESO" || movement.tipo === "VUELTO" || (movement.tipo === "AJUSTE" && movement.montoCentimos < 0);
+  const neutral = movement.tipo === "CIERRE";
+  return `${outgoing ? "−" : neutral ? "" : "+"}${format(cents(Math.abs(movement.montoCentimos)))}`;
+};
+
+ChartJS.register(ArcElement, ChartTooltip, Legend);
+
+function PaymentMethodChart({ summary }: { summary: CashSummary }) {
+  const data = {
+    labels: summary.porMetodo.map((item) => METHOD_LABEL[item.metodo] ?? item.metodo),
+    datasets: [
+      {
+        data: summary.porMetodo.map((item) => item.totalCentimos / 100),
+        backgroundColor: ["#14b8a6", "#7c3aed", "#0ea5e9", "#f59e0b", "#ec4899", "#22c55e", "#6366f1", "#f97316"],
+        borderColor: "transparent",
+        hoverOffset: 5,
+      },
+    ],
+  };
+  return (
+    <div className="mx-auto h-52 max-w-[280px]">
+      <Doughnut
+        data={data}
+        options={{
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "68%",
+          plugins: {
+            legend: { position: "bottom", labels: { color: "#718096", usePointStyle: true, pointStyle: "circle", boxWidth: 8, padding: 14 } },
+            tooltip: { callbacks: { label: (context) => `${context.label}: S/ ${Number(context.raw).toFixed(2)}` } },
+          },
+        }}
+      />
+    </div>
+  );
+}
 
 export function CashboxModule() {
   const [tab, setTab] = useState<Tab>("turno");
@@ -61,6 +118,14 @@ export function CashboxModule() {
   const [ventas, setVentas] = useState<Sale[] | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
 
+  const [movementDesde, setMovementDesde] = useState(todayIso());
+  const [movementHasta, setMovementHasta] = useState(todayIso());
+  const [movementHoraDesde, setMovementHoraDesde] = useState("00:00");
+  const [movementHoraHasta, setMovementHoraHasta] = useState("23:59");
+  const [movementTipo, setMovementTipo] = useState("");
+  const [movementMetodo, setMovementMetodo] = useState("");
+  const [movements, setMovements] = useState<CashMovementView[] | null>(null);
+
   const loadShift = async () => {
     const current = await api.myShift();
     setShift(current);
@@ -86,9 +151,23 @@ export function CashboxModule() {
     setVentas(await api.salesByRange({ desde: ventasDesde, hasta: ventasHasta }));
   };
 
+  const loadMovements = async () => {
+    setMovements(null);
+    setError(null);
+    try {
+      const desdeIso = new Date(`${movementDesde}T${movementHoraDesde || "00:00"}:00`).toISOString();
+      const hastaIso = new Date(`${movementHasta}T${movementHoraHasta || "23:59"}:59.999`).toISOString();
+      setMovements(await api.cashMovements({ desde: desdeIso, hasta: hastaIso, tipo: movementTipo || undefined, metodo: movementMetodo || undefined }));
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudieron cargar los movimientos.");
+      setMovements([]);
+    }
+  };
+
   useEffect(() => {
     if (tab === "historial") loadHistory();
     if (tab === "ventas") loadVentas();
+    if (tab === "movimientos") loadMovements();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
@@ -197,8 +276,19 @@ export function CashboxModule() {
     <>
       <PageHeader
         title="Caja"
-        subtitle="Turno actual, ventas del periodo y cuadre histórico"
-        actions={<Tabs<Tab> tabs={[{ id: "turno", label: "Mi turno" }, { id: "ventas", label: "Ventas" }, { id: "historial", label: "Historial" }]} active={tab} onChange={setTab} />}
+        subtitle="Control del dinero, impuestos y trazabilidad de cada entrada y salida"
+        actions={
+          <Tabs<Tab>
+            tabs={[
+              { id: "turno", label: "Mi turno" },
+              { id: "movimientos", label: "Movimientos" },
+              { id: "ventas", label: "Ventas" },
+              { id: "historial", label: "Cierres" },
+            ]}
+            active={tab}
+            onChange={setTab}
+          />
+        }
       />
 
       {error && (
@@ -247,34 +337,46 @@ export function CashboxModule() {
           )}
 
           {shift && summary && !closing && (
-            <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-              <div className="flex flex-col gap-5">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <StatCard label="Efectivo esperado" value={format(cents(summary.efectivoEsperadoCentimos))} hint="Lo que debería haber en caja" icon={<IconCash className="h-4 w-4" />} />
-                  <StatCard label="Apertura" value={format(cents(summary.aperturaCentimos))} hint={`Abierto ${new Date(shift.abiertoEn).toLocaleString("es-PE")}`} tone="tone-sky" delay={60} />
-                </div>
-
-                <Section title="Movimientos del turno">
-                  <Row label="Apertura" value={format(cents(summary.aperturaCentimos))} />
-                  <Row label="Ingresos manuales" value={format(cents(summary.ingresosManualesCentimos))} tone="text-ok" />
-                  <Row label="Egresos manuales" value={`−${format(cents(summary.egresosManualesCentimos))}`} tone="text-danger" />
-                  <Row label="Vueltos entregados" value={`−${format(cents(summary.vueltosCentimos))}`} tone="text-danger" />
-                  <div className="mt-2 border-t border-line pt-2">
-                    <Row label="Efectivo esperado en caja" value={format(cents(summary.efectivoEsperadoCentimos))} strong tone="text-brand" />
-                  </div>
-                </Section>
-
-                {summary.porMetodo.length > 0 && (
-                  <Section title="Cobrado por método" delay={60}>
-                    {summary.porMetodo.map((m) => (
-                      <Row key={m.metodo} label={`${METHOD_LABEL[m.metodo] ?? m.metodo} (${m.cantidad})`} value={format(cents(m.totalCentimos))} />
-                    ))}
-                  </Section>
-                )}
+            <div className="flex flex-col gap-5">
+              <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <StatCard label="Cobrado en el turno" value={format(cents(summary.ventasBrutasCentimos))} hint={`${summary.porMetodo.reduce((sum, item) => sum + item.cantidad, 0)} operaciones cobradas`} icon={<IconReceipt className="h-4 w-4" />} />
+                <StatCard label="Valor de venta" value={format(cents(summary.valorVentaCentimos))} hint="Base imponible incluida" tone="tone-sky" delay={40} />
+                <StatCard label="IGV (18%)" value={format(cents(summary.igvCentimos))} hint="Impuesto incluido en las ventas" tone="tone-violet" delay={80} />
+                <StatCard label="Efectivo esperado" value={format(cents(summary.efectivoEsperadoCentimos))} hint="Dinero físico que debe haber" icon={<IconCash className="h-4 w-4" />} delay={120} />
               </div>
 
-              <div className="flex flex-col gap-5">
-                <Section title="Acciones" delay={120}>
+              <div className="grid gap-5 xl:grid-cols-[1.55fr_0.8fr]">
+                <div className="flex flex-col gap-5">
+                  <Section title="Resumen del turno" subtitle={`Abierto ${new Date(shift.abiertoEn).toLocaleString("es-PE")}`}>
+                    <Row label="Fondo de apertura" value={format(cents(summary.aperturaCentimos))} />
+                    <Row label="Ingresos manuales" value={format(cents(summary.ingresosManualesCentimos))} tone="text-ok" />
+                    <Row label="Egresos manuales" value={`−${format(cents(summary.egresosManualesCentimos))}`} tone="text-danger" />
+                    <Row label="Vueltos entregados" value={`−${format(cents(summary.vueltosCentimos))}`} tone="text-danger" />
+                    <div className="mt-2 border-t border-line pt-2">
+                      <Row label="Efectivo esperado en caja" value={format(cents(summary.efectivoEsperadoCentimos))} strong tone="text-brand" />
+                    </div>
+                  </Section>
+
+                  {summary.porMetodo.length > 0 && (
+                    <Section title="Cobros por método" subtitle="Importes recibidos, incluido el IGV" delay={60}>
+                      <div className="grid items-center gap-4 md:grid-cols-[260px_1fr]">
+                        <PaymentMethodChart summary={summary} />
+                        <div className="grid gap-x-6 sm:grid-cols-2 md:grid-cols-1">
+                          {summary.porMetodo.map((m) => (
+                            <Row key={m.metodo} label={`${METHOD_LABEL[m.metodo] ?? m.metodo} · ${m.cantidad}`} value={format(cents(m.totalCentimos))} />
+                          ))}
+                        </div>
+                      </div>
+                    </Section>
+                  )}
+                </div>
+
+                <div className="flex flex-col gap-5">
+                  <Section title="Acciones rápidas" delay={120}>
+                    <div className="mb-3 rounded-xl border border-line bg-inset/60 p-3">
+                      <p className="text-xs font-medium uppercase tracking-wide text-subtle">Fondo inicial</p>
+                      <p className="mt-1 text-lg font-semibold tabular-nums text-ink">{format(cents(summary.aperturaCentimos))}</p>
+                    </div>
                   <div className="flex flex-col gap-2">
                     {showMovForm ? (
                       <div className="animate-fade flex flex-col gap-3 rounded-xl bg-inset p-3">
@@ -337,7 +439,7 @@ export function CashboxModule() {
                       Cerrar turno
                     </Button>
                   </div>
-                </Section>
+                  </Section>
 
                 {arqueos.length > 0 && (
                   <Section title="Arqueos de este turno" delay={180}>
@@ -351,6 +453,7 @@ export function CashboxModule() {
                     ))}
                   </Section>
                 )}
+                </div>
               </div>
             </div>
           )}
@@ -387,6 +490,82 @@ export function CashboxModule() {
         </>
       )}
 
+      {/* ---------------- Libro de movimientos ---------------- */}
+      {tab === "movimientos" && (
+        <>
+          <Card className="mb-5 p-4">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_1fr_.72fr_.72fr_1fr_1fr_auto] xl:items-end">
+              <Field label="Desde">
+                <Input type="date" value={movementDesde} onChange={(e) => setMovementDesde(e.target.value)} />
+              </Field>
+              <Field label="Hasta">
+                <Input type="date" value={movementHasta} onChange={(e) => setMovementHasta(e.target.value)} />
+              </Field>
+              <Field label="Hora inicial">
+                <Input type="time" value={movementHoraDesde} onChange={(e) => setMovementHoraDesde(e.target.value)} />
+              </Field>
+              <Field label="Hora final">
+                <Input type="time" value={movementHoraHasta} onChange={(e) => setMovementHoraHasta(e.target.value)} />
+              </Field>
+              <Field label="Movimiento">
+                <select value={movementTipo} onChange={(e) => setMovementTipo(e.target.value)} className="w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25">
+                  <option value="">Todos</option>
+                  {Object.entries(MOVEMENT_LABEL).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </Field>
+              <Field label="Método">
+                <select value={movementMetodo} onChange={(e) => setMovementMetodo(e.target.value)} className="w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25">
+                  <option value="">Todos</option>
+                  {Object.entries(METHOD_LABEL).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </Field>
+              <Button variant="primary" onClick={loadMovements}>Aplicar filtros</Button>
+            </div>
+          </Card>
+
+          <Section
+            title="Todos los movimientos"
+            subtitle={movements ? `${movements.length} registros entre ${movementHoraDesde} y ${movementHoraHasta}` : "Cargando trazabilidad…"}
+          >
+            {movements === null ? (
+              <div className="flex flex-col gap-2">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>
+            ) : movements.length === 0 ? (
+              <EmptyState icon={<IconCash className="h-6 w-6" />} title="No hay movimientos" hint="Probá ampliando las fechas, horas o quitando filtros." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[860px] text-left text-sm">
+                  <thead className="text-xs uppercase tracking-wide text-subtle">
+                    <tr>
+                      <th className="pb-3 font-semibold">Fecha y hora</th>
+                      <th className="pb-3 font-semibold">Tipo</th>
+                      <th className="pb-3 font-semibold">Método / referencia</th>
+                      <th className="pb-3 font-semibold">Registrado por</th>
+                      <th className="pb-3 font-semibold">Motivo</th>
+                      <th className="pb-3 text-right font-semibold">Importe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {movements.map((movement) => (
+                      <tr key={movement.id} className="border-t border-line-soft transition-colors hover:bg-inset/60">
+                        <td className="py-3 pr-4 tabular-nums text-muted">{new Date(movement.ocurridoEn).toLocaleString("es-PE")}</td>
+                        <td className="py-3 pr-4"><Badge tone={movementTone(movement.tipo)}>{MOVEMENT_LABEL[movement.tipo]}</Badge></td>
+                        <td className="py-3 pr-4 text-muted">
+                          {movement.metodo ? METHOD_LABEL[movement.metodo] ?? movement.metodo : "—"}
+                          {movement.ventaId ? <span className="block text-[11px] text-subtle">Venta {movement.ventaId.slice(0, 8)}</span> : null}
+                        </td>
+                        <td className="py-3 pr-4 text-muted">{movement.usuarioNombre}</td>
+                        <td className="max-w-[260px] truncate py-3 pr-4 text-muted">{movement.motivo || "—"}</td>
+                        <td className={cx("py-3 text-right font-semibold tabular-nums", movement.tipo === "EGRESO" || movement.tipo === "VUELTO" ? "text-danger" : movement.tipo === "CIERRE" ? "text-muted" : "text-ok")}>{movementAmount(movement)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Section>
+        </>
+      )}
+
       {/* ---------------- Ventas ---------------- */}
       {tab === "ventas" && (
         <>
@@ -401,7 +580,11 @@ export function CashboxModule() {
               Filtrar
             </Button>
             <span className="ml-auto self-center text-sm text-muted">
-              {ventas ? `${ventas.length} venta${ventas.length === 1 ? "" : "s"} · ${format(cents(ventas.reduce((s, v) => s + v.totalCentimos, 0)))}` : ""}
+              {ventas ? (() => {
+                const total = cents(ventas.reduce((s, v) => s + v.totalCentimos, 0));
+                const impuestos = splitIncludedIgv(total);
+                return `${ventas.length} venta${ventas.length === 1 ? "" : "s"} · IGV ${format(impuestos.igv)} · Total ${format(total)}`;
+              })() : ""}
             </span>
           </Card>
 
@@ -466,6 +649,9 @@ export function CashboxModule() {
 
           {rangeSummary && (
             <Section title="Resumen del periodo" className="mb-5">
+              <Row label="Ventas brutas" value={format(cents(rangeSummary.ventasBrutasCentimos))} strong />
+              <Row label="Valor de venta" value={format(cents(rangeSummary.valorVentaCentimos))} />
+              <Row label="IGV (18%)" value={format(cents(rangeSummary.igvCentimos))} strong tone="text-brand" />
               <Row label="Efectivo esperado del periodo" value={format(cents(rangeSummary.efectivoEsperadoCentimos))} strong tone="text-brand" />
               {rangeSummary.porMetodo.map((m) => (
                 <Row key={m.metodo} label={METHOD_LABEL[m.metodo] ?? m.metodo} value={format(cents(m.totalCentimos))} />

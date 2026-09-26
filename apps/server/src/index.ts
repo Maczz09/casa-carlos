@@ -28,6 +28,7 @@ import { registerAuth } from "./auth.js";
 import { registerWebSocketGateway } from "./ws.js";
 import { KioskStore } from "./kiosk/store.js";
 import { authRoutes } from "./routes/auth.js";
+import { usersRoutes } from "./routes/users.js";
 import { roomsRoutes } from "./routes/rooms.js";
 import { pricingRoutes } from "./routes/pricing.js";
 import { staysRoutes } from "./routes/stays.js";
@@ -155,7 +156,7 @@ async function main() {
     console.warn("[SUNAT] Arrancando en modo MOCK: los comprobantes NO se envían. Corregilo en Ajustes → SUNAT.\n");
     runtime = buildSunatRuntime({ ...sunatConfig.current(), modo: "MOCK" });
   }
-  const billing = createBillingService(db, sales, runtime.sunatClient, runtime.emisor, runtime.cert);
+  const billing = createBillingService(db, sales, runtime.sunatClient, runtime.emisor, runtime.cert, () => brand.readPdfLogo());
   const kiosk = new KioskStore(rooms, pricing, stays, sales, inventory, bus);
 
   await seedIfEmpty(rooms, pricing, identity, payments, inventory, cashbox);
@@ -190,7 +191,7 @@ async function main() {
     // reiniciar el servicio de Windows.
     applySunatConfig: (config: SunatSecretConfig) => {
       const nuevo = buildSunatRuntime(config);
-      services.billing = createBillingService(db, sales, nuevo.sunatClient, nuevo.emisor, nuevo.cert);
+      services.billing = createBillingService(db, sales, nuevo.sunatClient, nuevo.emisor, nuevo.cert, () => brand.readPdfLogo());
       services.sunatModoActivo = nuevo.modo;
     },
     whatsapp,
@@ -206,6 +207,7 @@ async function main() {
   registerWebSocketGateway(app, bus, rooms, identity, kiosk, inventory);
 
   await app.register(authRoutes(services));
+  await app.register(usersRoutes(services));
   await app.register(roomsRoutes(services));
   await app.register(pricingRoutes(services));
   await app.register(staysRoutes(services));

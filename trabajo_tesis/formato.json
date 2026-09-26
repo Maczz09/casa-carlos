@@ -1,0 +1,2371 @@
+{
+  "path": "C:\\Users\\maxmo\\Downloads\\Formato Proyecto.docx",
+  "paragraphs": [
+    {
+      "location": "body/p[0]",
+      "style": "Heading 1",
+      "text": "CARÁTULA",
+      "runs": [
+        {
+          "text": "CARÁTULA",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[1]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[2]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[3]",
+      "style": "Normal",
+      "text": "Facultad de xxxxx",
+      "runs": [
+        {
+          "text": "Facultad de ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "xxxxx",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[4]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[5]",
+      "style": "Normal",
+      "text": "Carrera de xxxxxx",
+      "runs": [
+        {
+          "text": "Carrera ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "de ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "xxxxxx",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[6]",
+      "style": "Normal",
+      "text": "Taller de Investigación",
+      "runs": [
+        {
+          "text": "Taller de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[7]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[8]",
+      "style": "Normal",
+      "text": "PROYECTO",
+      "runs": [
+        {
+          "text": "PROYECTO",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[9]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[10]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[11]",
+      "style": "Normal",
+      "text": "Apellidos , nombres (ORCID:XXXXXXXX) ",
+      "runs": [
+        {
+          "text": "Apellidos ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ",",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "nombres ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "(ORCID:",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "XXXXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ")",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[12]",
+      "style": "Normal",
+      "text": "Apellidos , nombres (ORCID:XXXXXXXX) ",
+      "runs": [
+        {
+          "text": "Apellidos ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ",",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "nombres ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "(ORCID:",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "XXXXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ")",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[13]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[14]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[15]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[16]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[17]",
+      "style": "Normal",
+      "text": "Docente: Apellidos, nombres (ORCID: XXXXXXX)",
+      "runs": [
+        {
+          "text": "Docente",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ": ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Apellidos, nombres",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " (ORCID",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ": XXXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ")",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[18]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[19]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[20]",
+      "style": "Normal",
+      "text": "Ica, Perú",
+      "runs": [
+        {
+          "text": "Ica, Perú",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[21]",
+      "style": "Normal",
+      "text": "XXXXXX, 202_",
+      "runs": [
+        {
+          "text": "XXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ", 202",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "_",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[22]",
+      "style": "Heading 1",
+      "text": "REPORTE DE SIMILITUD",
+      "runs": [
+        {
+          "text": "REPORTE DE SIMILITUD",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[23]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[24]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[25]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[26]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[27]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[28]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[29]",
+      "style": "Heading 1",
+      "text": "DEDICATORIA",
+      "runs": [
+        {
+          "text": "DEDICATORIA",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[30]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[31]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[32]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[33]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[34]",
+      "style": "Heading 1",
+      "text": "AGRADECIMIENTO",
+      "runs": [
+        {
+          "text": "AGRADECIMIENTO",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[35]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[36]",
+      "style": "TOC Heading",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[37]",
+      "style": "Heading 1",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[38]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[39]",
+      "style": "Heading 1",
+      "text": "ÍNDICE DE TABLAS",
+      "runs": [
+        {
+          "text": "ÍNDICE DE TABLAS",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[40]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[41]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[42]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[43]",
+      "style": "Heading 1",
+      "text": "ÍNDICE DE FIGURAS",
+      "runs": [
+        {
+          "text": "ÍNDICE DE FIGURAS",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[44]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[45]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[46]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[47]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 1",
+      "runs": [
+        {
+          "text": "CAPÍTULO 1",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[48]",
+      "style": "Heading 1",
+      "text": "PROBLEMA DE INVESTIGACIÓN",
+      "runs": [
+        {
+          "text": "PROBLEMA DE INVESTIGACIÓN",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[49]",
+      "style": "Heading 2",
+      "text": "Descripción del Problema",
+      "runs": [
+        {
+          "text": "Descripción del Problema",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[50]",
+      "style": "Normal",
+      "text": "Descripción del Problema: Debe ir de lo general a lo particular (macro a micro). Utiliza datos estadísticos y citas recientes para evidenciar que el problema es real.",
+      "runs": [
+        {
+          "text": "Descripción del Problema: Debe ir de lo general a lo particular (macro a micro). Utiliza datos estadísticos y citas recientes para evidenciar que el problema es real.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[51]",
+      "style": "Heading 2",
+      "text": "Formulación del Problema",
+      "runs": [
+        {
+          "text": "Formulación del Problema",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[52]",
+      "style": "Heading 3",
+      "text": "Pregunta General",
+      "runs": [
+        {
+          "text": "Pregunta General",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[53]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[54]",
+      "style": "Heading 3",
+      "text": "Preguntas Específicas",
+      "runs": [
+        {
+          "text": "Preguntas Específicas",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[55]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[56]",
+      "style": "Heading 2",
+      "text": "Objetivo de la Investigación",
+      "runs": [
+        {
+          "text": "Objetivo de la Investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[57]",
+      "style": "Heading 3",
+      "text": "Objetivo General ",
+      "runs": [
+        {
+          "text": "Objetivo General",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[58]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[59]",
+      "style": "Heading 3",
+      "text": "Objetivos Específicos",
+      "runs": [
+        {
+          "text": "Objetivos Específicos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[60]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[61]",
+      "style": "Heading 2",
+      "text": "Hipótesis",
+      "runs": [
+        {
+          "text": "Hipótesis",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[62]",
+      "style": "Heading 3",
+      "text": "Hipótesis General",
+      "runs": [
+        {
+          "text": "Hipótesis General",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[63]",
+      "style": "List Paragraph",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[64]",
+      "style": "Heading 3",
+      "text": "Hipótesis Específicas",
+      "runs": [
+        {
+          "text": "Hipótesis Específicas",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[65]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[66]",
+      "style": "Heading 2",
+      "text": "Justificación e Importancia",
+      "runs": [
+        {
+          "text": "Justificación e Importancia",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[67]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[68]",
+      "style": "Heading 2",
+      "text": "Limitaciones",
+      "runs": [
+        {
+          "text": "Limitaciones",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[69]",
+      "style": "Normal",
+      "text": ".",
+      "runs": [
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[70]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 2",
+      "runs": [
+        {
+          "text": "CAPÍTULO 2",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[71]",
+      "style": "Heading 1",
+      "text": "MARCO TEÓRICO",
+      "runs": [
+        {
+          "text": "MARCO TEÓRICO",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[72]",
+      "style": "Heading 2",
+      "text": "Estado del arte",
+      "runs": [
+        {
+          "text": "Estado del arte",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[73]",
+      "style": "Normal (Web)",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[74]",
+      "style": "Heading 2",
+      "text": "Bases Teóricas",
+      "runs": [
+        {
+          "text": "Bases Teóricas",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[75]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[76]",
+      "style": "Heading 2",
+      "text": "Definición de términos",
+      "runs": [
+        {
+          "text": "Definición de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": null
+        },
+        {
+          "text": "términos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[77]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[78]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[79]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 3",
+      "runs": [
+        {
+          "text": "CAPÍTULO 3",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[80]",
+      "style": "Heading 1",
+      "text": "METODOLOGÍA DE LA INVESTIGACIÓN",
+      "runs": [
+        {
+          "text": "METODOLOGÍA DE LA INVESTIGACIÓN",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[81]",
+      "style": "Heading 2",
+      "text": "Método y diseño de la investigación",
+      "runs": [
+        {
+          "text": "Método y diseño de la investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[82]",
+      "style": "Heading 3",
+      "text": "Tipo de investigación",
+      "runs": [
+        {
+          "text": "Tipo de investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[83]",
+      "style": "Heading 3",
+      "text": "Enfoque de investigación",
+      "runs": [
+        {
+          "text": "Enfoque de investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[84]",
+      "style": "Heading 3",
+      "text": "Diseño de investigación ",
+      "runs": [
+        {
+          "text": "Diseño de investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[85]",
+      "style": "Heading 3",
+      "text": "Alcance de la investigación ",
+      "runs": [
+        {
+          "text": "Alcance de la investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[86]",
+      "style": "Heading 2",
+      "text": "Materiales y métodos",
+      "runs": [
+        {
+          "text": "Materiales",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " y m",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "étodos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[87]",
+      "style": "Heading 3",
+      "text": "Método",
+      "runs": [
+        {
+          "text": "Método",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[88]",
+      "style": "Heading 3",
+      "text": "Población",
+      "runs": [
+        {
+          "text": "Población",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[89]",
+      "style": "Heading 3",
+      "text": "Muestra",
+      "runs": [
+        {
+          "text": "Muestra",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[90]",
+      "style": "Heading 3",
+      "text": "Criterios de inclusión",
+      "runs": [
+        {
+          "text": "Criterios de inclusión",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[91]",
+      "style": "Heading 3",
+      "text": "Criterios de exclusión",
+      "runs": [
+        {
+          "text": "Criterios de exclusión",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[92]",
+      "style": "Heading 2",
+      "text": "Técnicas e instrumentos de recolección y procesamiento de datos ",
+      "runs": [
+        {
+          "text": "Técnicas e instrumentos de recolección y procesamiento de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[93]",
+      "style": "Heading 3",
+      "text": "Técnica de recolección de datos ",
+      "runs": [
+        {
+          "text": "Técnica de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[94]",
+      "style": "Heading 3",
+      "text": "Instrumento\t",
+      "runs": [
+        {
+          "text": "Instrumento",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "\t",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[95]",
+      "style": "Heading 3",
+      "text": "Fuentes de recolección de datos ",
+      "runs": [
+        {
+          "text": "Fuentes de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[96]",
+      "style": "Heading 3",
+      "text": "Validez del instrumento ",
+      "runs": [
+        {
+          "text": "Validez del instrumento",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[97]",
+      "style": "Heading 3",
+      "text": "Confiabilidad del instrumento ",
+      "runs": [
+        {
+          "text": "Confiabilidad del instrumento",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[98]",
+      "style": "Heading 3",
+      "text": "Proceso de recolección de datos ",
+      "runs": [
+        {
+          "text": "Proceso de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[99]",
+      "style": "Heading 3",
+      "text": "Procesamiento de datos ",
+      "runs": [
+        {
+          "text": "Procesamiento de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[100]",
+      "style": "Heading 2",
+      "text": " Aspectos éticos",
+      "runs": [
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "Aspectos éticos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[101]",
+      "style": "Heading 1",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[102]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 4",
+      "runs": [
+        {
+          "text": "CAPÍTULO 4",
+          "bold": true,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[103]",
+      "style": "Normal",
+      "text": "ASPECTOS ADMINISTRATIVOS",
+      "runs": [
+        {
+          "text": "ASPECTOS ADMINISTRATIVOS",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[104]",
+      "style": "Normal (Web)",
+      "text": "el cronograma debe diseñarse específicamente para un ciclo académico de 14 semanas. Se recomienda el uso de un Diagrama de Gantt distribuido de la siguiente manera:",
+      "runs": [
+        {
+          "text": "el cronograma debe diseñarse específicamente para un ciclo académico de 14 semanas. Se recomienda el uso de un ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Diagrama de Gantt",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " distribuido de la siguiente manera:",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[105]",
+      "style": "Normal (Web)",
+      "text": "Semanas 1-3: Ajuste del planteamiento del problema, objetivos y marco teórico.",
+      "runs": [
+        {
+          "text": "Semanas 1-3:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Ajuste del planteamiento del problema, objetivos y marco teórico",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[106]",
+      "style": "Normal (Web)",
+      "text": "Semanas 4-6: Definición metodológica, validación de instrumentos y obtención del dictamen ético.",
+      "runs": [
+        {
+          "text": "Semanas 4-6:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Definición metodológica, validación de instrumentos y obtención del dictamen ético",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[107]",
+      "style": "Normal (Web)",
+      "text": "Semanas 7-10: Trabajo de campo (recolección de datos) y procesamiento estadístico.",
+      "runs": [
+        {
+          "text": "Semanas 7-10:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Trabajo de campo (recolección de datos) y procesamiento estadístico",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[108]",
+      "style": "Normal (Web)",
+      "text": "Semanas 11-14: Análisis de resultados, redacción de conclusiones y revisión final por el asesor.",
+      "runs": [
+        {
+          "text": "Semanas 11-14:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Análisis de resultados, redacción de conclusiones y revisión final por el asesor",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[109]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[110]",
+      "style": "Normal",
+      "text": "CRONOGRAMA Y PRESUPUESTO",
+      "runs": [
+        {
+          "text": "CRONOGRAMA Y PRESUPUESTO",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[111]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": false,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[112]",
+      "style": "Heading 1",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[113]",
+      "style": "Heading 1",
+      "text": "ANEXOS",
+      "runs": [
+        {
+          "text": "ANEXOS",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[114]",
+      "style": "Heading 2",
+      "text": "Anexo 01: Matriz de Consistencia ",
+      "runs": [
+        {
+          "text": "Anexo 01: Matriz de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "Consistencia",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[115]",
+      "style": "Normal",
+      "text": ".",
+      "runs": [
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[116]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[117]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[118]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[119]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[120]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[121]",
+      "style": "Heading 2",
+      "text": "Anexo 02: Instrumentos de recolección de datos ",
+      "runs": [
+        {
+          "text": "Anexo 0",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "2",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": ": Instrumentos de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[122]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[123]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[124]",
+      "style": "Heading 1",
+      "text": "BIBLIOGRAFÍA",
+      "runs": [
+        {
+          "text": "BIBLIOGRAFÍA",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[125]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[126]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[127]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[128]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[129]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[130]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[131]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[132]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[133]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[134]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[135]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    }
+  ],
+  "table_paragraphs": [],
+  "headers_footers": [
+    {
+      "location": "section[0]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[0]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[0]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[1]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[1]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[1]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[2]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[2]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[2]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[3]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[3]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[3]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[4]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[4]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[4]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[5]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[5]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[5]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    }
+  ],
+  "sections": [
+    {
+      "index": 0,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 1,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 2,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 3,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1418,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1701,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 4,
+      "width_twips": 16838,
+      "height_twips": 11906,
+      "top_margin_twips": 1701,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1418,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 5,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1418,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1701,
+      "start_type": "NEW_PAGE (2)"
+    }
+  ],
+  "styles": [
+    {
+      "name": "Normal",
+      "font": "Arial",
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Heading 1",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 2",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 3",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 4",
+      "font": null,
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Heading 5",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Heading 6",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": true
+    },
+    {
+      "name": "Heading 7",
+      "font": null,
+      "size_pt": null,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 8",
+      "font": null,
+      "size_pt": null,
+      "bold": true,
+      "italic": true
+    },
+    {
+      "name": "Heading 9",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": true
+    },
+    {
+      "name": "Title",
+      "font": null,
+      "size_pt": 36.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Subtitle",
+      "font": null,
+      "size_pt": 14.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Quote",
+      "font": null,
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "List Paragraph",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Intense Quote",
+      "font": null,
+      "size_pt": 16.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Caption",
+      "font": null,
+      "size_pt": null,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "No Spacing",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "TOC Heading",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Default",
+      "font": "Arial",
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "toc 1",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "toc 2",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "toc 3",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Header",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Footer",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "table of figures",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Normal (Web)",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    }
+  ],
+  "inline_shapes": 1,
+  "tables": 0,
+  "package_parts": [
+    "[Content_Types].xml",
+    "_rels/.rels",
+    "customXml/_rels/item1.xml.rels",
+    "customXml/item1.xml",
+    "customXml/itemProps1.xml",
+    "docProps/app.xml",
+    "docProps/core.xml",
+    "word/_rels/document.xml.rels",
+    "word/document.xml",
+    "word/endnotes.xml",
+    "word/fontTable.xml",
+    "word/footer1.xml",
+    "word/footer2.xml",
+    "word/footer3.xml",
+    "word/footnotes.xml",
+    "word/media/image1.png",
+    "word/numbering.xml",
+    "word/settings.xml",
+    "word/styles.xml",
+    "word/theme/theme1.xml",
+    "word/webSettings.xml"
+  ]
+}

@@ -1,4 +1,4 @@
-import { and, eq, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import type { Db } from "@casacarlos/db";
 import { schema } from "@casacarlos/db";
 import type { Customer, Stay, StayWithCustomer } from "@casacarlos/contracts";
@@ -84,6 +84,17 @@ export class StaysRepo {
       .where(inArray(schema.staysEstadias.estado, [...BLOCKING_STATES]))
       .all();
     return rows.map(toStay);
+  }
+
+  async listOverlapping(desde: string, hasta: string): Promise<Stay[]> {
+    const startIso = `${desde}T00:00:00.000Z`;
+    const endIso = `${hasta}T23:59:59.999Z`;
+    const rows = await this.db
+      .select()
+      .from(schema.staysEstadias)
+      .where(and(lte(schema.staysEstadias.bloqueoDesde, endIso), gte(schema.staysEstadias.bloqueoHasta, startIso)))
+      .all();
+    return rows.map(toStay).sort((a, b) => a.bloqueoDesde.localeCompare(b.bloqueoDesde));
   }
 
   async listEnCursoDue(now: Date): Promise<Stay[]> {

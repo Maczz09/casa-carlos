@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CollectionAccount, PaymentDetailInput, PaymentMethod } from "@casacarlos/contracts";
 import { cents, format, subtract, sum } from "@casacarlos/money";
+import { prepareCelebrationAudio } from "@casacarlos/ui";
 import { api } from "../api.js";
 
 const METHOD_LABEL: Record<PaymentMethod, string> = {
@@ -49,6 +50,22 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
       : [{ ...emptyRow(), monto: (totalCentimos / 100).toFixed(2) }],
   );
   const [error, setError] = useState<string | null>(null);
+  const proposalSignature = (proposedSplit ?? []).map((item) => `${item.metodo}:${item.montoCentimos}`).join("|");
+
+  // La propuesta llega por WebSocket después de que el formulario de
+  // Recepción ya puede estar abierto. Sin este efecto React conservaba la
+  // primera fila (por defecto efectivo) aunque el huésped eligiera Yape,
+  // transferencia o una combinación desde el kiosco.
+  useEffect(() => {
+    if (proposedSplit && proposedSplit.length > 0) {
+      setRows(proposedSplit.map((proposal) => ({ ...emptyRow(), metodo: proposal.metodo as PaymentMethod, monto: (proposal.montoCentimos / 100).toFixed(2) })));
+    } else {
+      setRows([{ ...emptyRow(), monto: (totalCentimos / 100).toFixed(2) }]);
+    }
+    setError(null);
+    // La firma evita reiniciar los códigos que Recepción ya está escribiendo
+    // ante un mensaje de sesión que no cambia los métodos propuestos.
+  }, [proposalSignature, totalCentimos]);
 
   useEffect(() => {
     api
@@ -80,6 +97,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
   const diff = subtract(total, entered);
 
   const submit = async () => {
+    prepareCelebrationAudio();
     setError(null);
     if (diff !== 0) {
       setError(`La suma de los métodos debe ser exactamente ${format(total)}.`);
@@ -103,6 +121,12 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
         <span className="text-muted">Total a cobrar</span>
         <span className="text-xl font-semibold text-ink">{format(total)}</span>
       </div>
+
+      {proposedSplit && proposedSplit.length > 0 && (
+        <p className="rounded-lg bg-brand-soft px-3 py-2 text-sm text-brand">
+          Métodos cargados desde el kiosco. Verificá el importe y completá los códigos de operación antes de registrar.
+        </p>
+      )}
 
       {rows.map((row, idx) => (
         <div key={idx} className="rounded-lg border border-line p-3">

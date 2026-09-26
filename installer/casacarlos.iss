@@ -31,7 +31,7 @@
 ; que poder actualizarla en el mismo lugar sin dejar una segunda instalación
 ; huérfana. Ver PrepareToInstall más abajo.
 #define AppName "Hospedaje Carlos"
-#define AppVersion "1.1"
+#define AppVersion "1.2.0"
 #define AppPublisher "Hospedaje Carlos"
 #define ServiceName "CasaCarlos"
 
@@ -52,6 +52,11 @@ SolidCompression=yes
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
+; Node 24, Tauri y el soporte vigente del sistema se validan sobre Windows
+; 10 22H2 (build 19045) o Windows 11, ambos de 64 bits.
+MinVersion=10.0.19045
+; Dependencias, aplicaciones compiladas, base y margen de actualización.
+ExtraDiskSpaceRequired=4294967296
 WizardStyle=modern
 CloseApplications=yes
 RestartApplications=no
@@ -94,6 +99,12 @@ Source: "..\apps\desktop\publish\*"; DestDir: "{app}\desktop"; Flags: recursesub
 ; archivo es opcional para que una compilación sin red siga siendo posible.
 Source: "..\vendor\webview2\MicrosoftEdgeWebview2Setup.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall skipifsourcedoesntexist
 
+; Runtimes de Microsoft usados por Node y por el wrapper del servicio. Se
+; incluyen en el mismo setup: el cliente no tiene que buscarlos ni instalarlos
+; por separado. En Windows actualizado normalmente ya existen y se omiten.
+Source: "..\vendor\windows-prerequisites\VC_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
+Source: "..\vendor\windows-prerequisites\ndp48-x86-x64-allos-enu.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall
+
 [Dirs]
 Name: "{app}\data"
 ; Marca del hotel: el nombre y el logo que se eligen en el asistente. Viven
@@ -131,14 +142,28 @@ Name: "{commondesktop}\{#AppName} — WhatsApp"; Filename: "wscript.exe"; \
   Comment: "Abrilo si los avisos por WhatsApp dejaron de salir"
 
 [Run]
-; 1) Asegura WebView2, motor visual de la aplicación de escritorio. Si ya
+; 1) Instala los requisitos nativos. Los checks evitan repetir instaladores
+;    que el sistema operativo ya tenga al día.
+Filename: "{tmp}\ndp48-x86-x64-allos-enu.exe"; \
+  Parameters: "/q /norestart"; \
+  StatusMsg: "Comprobando .NET Framework 4.8..."; \
+  Check: NeedsDotNet48; \
+  Flags: runhidden waituntilterminated
+
+Filename: "{tmp}\VC_redist.x64.exe"; \
+  Parameters: "/install /quiet /norestart"; \
+  StatusMsg: "Preparando Microsoft Visual C++..."; \
+  Check: NeedsVCRuntime; \
+  Flags: runhidden waituntilterminated
+
+; 2) Asegura WebView2, motor visual de la aplicación de escritorio. Si ya
 ;    existe, el instalador oficial termina inmediatamente sin cambiar nada.
 Filename: "{tmp}\MicrosoftEdgeWebview2Setup.exe"; \
   Parameters: "/silent /install"; \
   StatusMsg: "Preparando la aplicación de escritorio..."; \
   Flags: runhidden waituntilterminated skipifdoesntexist
 
-; 2) Dependencias + build de las 2 SPA. `corepack` (incluido en el Node
+; 3) Dependencias + build de las 2 SPA. `corepack` (incluido en el Node
 ;    portátil) resuelve pnpm en la versión fijada por "packageManager" en
 ;    package.json — no hace falta instalar pnpm aparte ni que el cliente
 ;    tenga Node propio.
@@ -154,14 +179,26 @@ Filename: "{app}\vendor\node-win-x64\corepack.cmd"; \
   StatusMsg: "Compilando recepción y kiosco..."; \
   Flags: runhidden waituntilterminated
 
-; 3) Registra y arranca el servicio de Windows.
+; 4) Habilita el servidor solo en redes privadas y para equipos de la misma
+;    red local. Al actualizar se reemplaza la regla para evitar duplicados.
+Filename: "{sys}\netsh.exe"; \
+  Parameters: "advfirewall firewall delete rule name=""Hospedaje Carlos - Servidor local"""; \
+  StatusMsg: "Actualizando el acceso de red local..."; \
+  Flags: runhidden waituntilterminated
+
+Filename: "{sys}\netsh.exe"; \
+  Parameters: "advfirewall firewall add rule name=""Hospedaje Carlos - Servidor local"" dir=in action=allow protocol=TCP localport=4000 profile=private remoteip=localsubnet enable=yes"; \
+  StatusMsg: "Habilitando el acceso seguro desde la red privada..."; \
+  Flags: runhidden waituntilterminated
+
+; 5) Registra y arranca el servicio de Windows.
 Filename: "{app}\vendor\node-win-x64\node.exe"; \
   Parameters: "scripts\service\install-service.cjs"; \
   WorkingDir: "{app}"; \
   StatusMsg: "Registrando el servicio de Windows..."; \
   Flags: runhidden waituntilterminated
 
-; 4) Arranca el asistente de WhatsApp ya mismo y oculto -- si no, recién
+; 6) Arranca el asistente de WhatsApp ya mismo y oculto -- si no, recién
 ;    saldría al próximo inicio de sesión (ver el acceso directo en
 ;    {commonstartup}) y quien acaba de instalar vería "Agente apagado" sin
 ;    entender por qué. Sin "postinstall": eso lo dejaba como casilla opcional
@@ -182,6 +219,12 @@ Filename: "{app}\vendor\node-win-x64\node.exe"; \
   RunOnceId: "UninstallCasaCarlosService"; \
   Flags: runhidden waituntilterminated
 
+; Retira únicamente la regla creada por este instalador.
+Filename: "{sys}\netsh.exe"; \
+  Parameters: "advfirewall firewall delete rule name=""Hospedaje Carlos - Servidor local"""; \
+  RunOnceId: "UninstallCasaCarlosFirewall"; \
+  Flags: runhidden waituntilterminated
+
 [UninstallDelete]
 ; Nunca borrar la base de datos ni los respaldos al desinstalar — son los
 ; datos reales del hotel, no archivos de la aplicación.
@@ -193,6 +236,7 @@ Type: filesandordirs; Name: "{app}\desktop"
 
 [Code]
 var
+  RequirementsPage: TOutputMsgWizardPage;
   BrandPage: TInputQueryWizardPage;
   LogoPage: TInputFileWizardPage;
   SunatPage: TInputQueryWizardPage;
@@ -210,6 +254,29 @@ var
 function EsActualizacion: Boolean;
 begin
   Result := FileExists(ExpandConstant('{app}\.env'));
+end;
+
+function IsDotNet48Installed: Boolean;
+var
+  Release: Cardinal;
+begin
+  Result := RegQueryDWordValue(HKLM64,
+    'SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full',
+    'Release', Release) and (Release >= 528040);
+end;
+
+function NeedsDotNet48: Boolean;
+begin
+  Result := not IsDotNet48Installed;
+end;
+
+function NeedsVCRuntime: Boolean;
+var
+  Installed: Cardinal;
+begin
+  Result := not (RegQueryDWordValue(HKLM64,
+    'SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64',
+    'Installed', Installed) and (Installed = 1));
 end;
 
 function ShouldSkipPage(PageID: Integer): Boolean;
@@ -271,11 +338,21 @@ end;
 
 procedure InitializeWizard;
 begin
+  RequirementsPage := CreateOutputMsgPage(wpSelectDir,
+    'Requisitos del equipo', 'El instalador prepara automáticamente los componentes necesarios',
+    'Compatible con Windows 10 22H2 o Windows 11, únicamente de 64 bits.' + #13#10 + #13#10 +
+    'Requisitos mínimos:' + #13#10 +
+    '• 4 GB de memoria RAM (8 GB recomendados).' + #13#10 +
+    '• 4 GB libres en disco.' + #13#10 +
+    '• Permisos de administrador.' + #13#10 +
+    '• Internet durante la primera instalación y para facturación SUNAT.' + #13#10 + #13#10 +
+    'Este mismo asistente instala .NET Framework 4.8, Microsoft Visual C++ y WebView2 si hacen falta. Node.js y pnpm ya vienen incluidos. También habilita el puerto 4000 solo para la red privada local.');
+
   // Identidad visible del hotel. No va al .env ni a la base: el servidor la
   // lee de data\brand (ver apps/server/src/brand-store.ts), que es lo único
   // que este asistente puede escribir y que además sobrevive a las
   // actualizaciones. Se puede cambiar después desde Ajustes → Marca.
-  BrandPage := CreateInputQueryPage(wpSelectDir,
+  BrandPage := CreateInputQueryPage(RequirementsPage.ID,
     'Nombre del hotel', 'Es el nombre que van a ver en pantalla el personal y los huéspedes',
     'Si lo dejás en blanco se usa "Hospedaje Carlos". Se puede cambiar después desde Ajustes → Marca, sin reinstalar nada.');
   BrandPage.Add('Nombre del hotel:', False);

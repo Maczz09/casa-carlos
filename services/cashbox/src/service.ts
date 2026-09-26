@@ -6,6 +6,7 @@ import type {
   CashboxPort,
   CashMovement,
   CashSummary,
+  CashMovementFilter,
   CloseShiftInput,
   CreateShiftTemplateInput,
   DateRange,
@@ -17,7 +18,7 @@ import type {
   Shift,
   ShiftTemplate,
 } from "@casacarlos/contracts";
-import { cents, format } from "@casacarlos/money";
+import { cents, format, splitIncludedIgv } from "@casacarlos/money";
 import type { EventBus } from "@casacarlos/bus";
 import { CashboxRepo } from "./repo.js";
 import { sumDenominaciones } from "./domain/denominaciones.js";
@@ -167,6 +168,13 @@ export class CashboxService implements CashboxPort {
     return this.repo.listMovementsForShift(turnoId);
   }
 
+  async listAllMovements(filter?: CashMovementFilter): Promise<CashMovement[]> {
+    if (filter?.desde && filter?.hasta && filter.desde > filter.hasta) {
+      throw new Error("La fecha y hora inicial no pueden ser posteriores a la final.");
+    }
+    return this.repo.listAllMovements(filter);
+  }
+
   /** Conteo de caja a mitad de turno — no cierra nada, solo deja constancia de cómo está la caja en ese momento. */
   async registrarArqueo(input: RegistrarArqueoInput): Promise<Arqueo> {
     const shift = await this.getShift(input.turnoId);
@@ -219,9 +227,11 @@ export class CashboxService implements CashboxPort {
     let ingresosManualesCentimos = 0;
     let egresosManualesCentimos = 0;
     let vueltosCentimos = 0;
+    let ventasBrutasCentimos = 0;
 
     for (const m of movements) {
       if (m.tipo === "VENTA" && m.metodo) {
+        ventasBrutasCentimos += m.montoCentimos;
         const entry = porMetodoMap.get(m.metodo) ?? { totalCentimos: 0, cantidad: 0 };
         entry.totalCentimos += m.montoCentimos;
         entry.cantidad += 1;
@@ -232,6 +242,8 @@ export class CashboxService implements CashboxPort {
       if (m.tipo === "VUELTO") vueltosCentimos += m.montoCentimos;
     }
 
+    const impuestos = splitIncludedIgv(cents(ventasBrutasCentimos));
+
     return {
       aperturaCentimos,
       efectivoEsperadoCentimos: expectedCash(movements),
@@ -241,6 +253,9 @@ export class CashboxService implements CashboxPort {
       ingresosManualesCentimos,
       egresosManualesCentimos,
       vueltosCentimos,
+      ventasBrutasCentimos,
+      valorVentaCentimos: impuestos.valorVenta,
+      igvCentimos: impuestos.igv,
     };
   }
 

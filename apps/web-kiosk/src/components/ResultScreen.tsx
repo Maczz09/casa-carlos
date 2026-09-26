@@ -1,3 +1,5 @@
+import { CelebrationOverlay, SuccessMotion } from "@casacarlos/ui";
+
 interface Props {
   accepted: boolean;
   roomNumber?: string;
@@ -6,12 +8,14 @@ interface Props {
 
 export function ResultScreen({ accepted, roomNumber, hotel }: Props) {
   return (
-    <div className="animate-fade flex h-screen flex-col items-center justify-center bg-bg px-10 text-center">
+    <div className="animate-fade flex min-h-[100dvh] flex-col items-center justify-center bg-bg px-10 text-center">
+      {accepted && <CelebrationOverlay />}
       <div
-        className={`animate-pop flex h-20 w-20 items-center justify-center rounded-full text-4xl ${
+        className={`animate-pop relative flex h-20 w-20 items-center justify-center rounded-full text-4xl ${
           accepted ? "bg-brand-soft text-brand" : "bg-danger/10 text-danger"
         }`}
       >
+        {accepted && <SuccessMotion className="absolute -inset-14" />}
         {accepted ? "✓" : "✕"}
       </div>
       <h1 className="animate-fade-up mt-6 font-serif text-4xl text-ink" style={{ animationDelay: "80ms" }}>

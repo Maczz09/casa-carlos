@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
-import { requireAdmin } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 export function reportingRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const admin = { preHandler: requireAdmin(services.identity) };
+    const admin = { preHandler: requirePermission(services.identity, "DASHBOARD_VIEW") };
 
     app.get<{ Querystring: { desde: string; hasta: string } }>("/api/reporting/dashboard", admin, async (request, reply) => {
       const { desde, hasta } = request.query;

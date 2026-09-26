@@ -72,6 +72,13 @@ export interface HoraPico {
   cantidad: number;
 }
 
+export interface SerieTemporalPunto {
+  fecha: string;
+  ventasCentimos: number;
+  igvCentimos: number;
+  cantidadVentas: number;
+}
+
 export interface DashboardReport {
   rango: DateRange;
   comparativa: ComparativePeriod;
@@ -83,4 +90,5 @@ export interface DashboardReport {
   ingresosPorMetodo: IngresoPorMetodo[];
   cargosExtra: CargoExtraTotal[];
   horasPico: HoraPico[];
+  serieTemporal: SerieTemporalPunto[];
 }

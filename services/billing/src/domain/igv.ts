@@ -1,5 +1,4 @@
-/** Tasa de IGV vigente en Perú (18%). */
-const IGV_RATE = 0.18;
+import { cents, splitIncludedIgv } from "@casacarlos/money";
 
 export interface DesgloseIgv {
   valorVentaCentimos: number;
@@ -13,7 +12,6 @@ export interface DesgloseIgv {
  * `valorVenta + igv === totalCentimos` siempre cierre exacto.
  */
 export function desglosarIgv(totalCentimos: number): DesgloseIgv {
-  const valorVentaCentimos = Math.round(totalCentimos / (1 + IGV_RATE));
-  const igvCentimos = totalCentimos - valorVentaCentimos;
-  return { valorVentaCentimos, igvCentimos };
+  const { valorVenta, igv } = splitIncludedIgv(cents(totalCentimos));
+  return { valorVentaCentimos: valorVenta, igvCentimos: igv };
 }

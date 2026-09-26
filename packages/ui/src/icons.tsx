@@ -20,6 +20,25 @@ export function IconCheck({ className }: IconProps) {
   );
 }
 
+export function IconUsers({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <circle cx="7" cy="7" r="3" />
+      <path d="M2.5 17c.4-3.3 2-5 4.5-5s4.1 1.7 4.5 5" />
+      <path d="M12.2 4.8a2.7 2.7 0 0 1 0 5.2M13 12c2.5 0 4 1.7 4.4 5" />
+    </svg>
+  );
+}
+
+export function IconFileChart({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M5 2.5h6l4 4V17a.8.8 0 0 1-.8.8H5.8A.8.8 0 0 1 5 17Z" />
+      <path d="M11 2.5v4h4M8 14v-3M10.8 14V9M13.6 14v-1.8" />
+    </svg>
+  );
+}
+
 /** Reservado */
 export function IconBookmark({ className }: IconProps) {
   return (

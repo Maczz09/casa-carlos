@@ -10,6 +10,7 @@ import type {
   ChargeCode,
   CollectionAccount,
   CreateCollectionAccountInput,
+  CreateUserInput,
   Comprobante,
   ComunicacionBaja,
   CreateRecipientInput,
@@ -48,8 +49,10 @@ import type {
   SunatTestResult,
   UpdateCollectionAccountInput,
   UpdateRecipientInput,
+  UpdateUserInput,
   User,
 } from "@casacarlos/contracts";
+import { cents, splitIncludedIgv } from "@casacarlos/money";
 
 const TOKEN_KEY = "cc_token";
 
@@ -63,6 +66,23 @@ export function setToken(token: string | null): void {
 }
 
 class ApiError extends Error {}
+
+export type CashMovementView = CashMovement & { usuarioNombre: string };
+
+// Compatibilidad de actualización: la versión anterior del servicio no
+// incluía todavía el desglose tributario. La interfaz puede convivir con ella
+// unos segundos mientras el instalador reinicia el servicio.
+const normalizeCashSummary = (summary: CashSummary): CashSummary => {
+  if (Number.isInteger(summary.ventasBrutasCentimos) && Number.isInteger(summary.valorVentaCentimos) && Number.isInteger(summary.igvCentimos)) return summary;
+  const ventasBrutasCentimos = summary.porMetodo.reduce((total, item) => total + item.totalCentimos, 0);
+  const split = splitIncludedIgv(cents(ventasBrutasCentimos));
+  return { ...summary, ventasBrutasCentimos, valorVentaCentimos: split.valorVenta, igvCentimos: split.igv };
+};
+
+const normalizeDashboard = (report: DashboardReport): DashboardReport => ({
+  ...report,
+  serieTemporal: Array.isArray(report.serieTemporal) ? report.serieTemporal : [],
+});
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = getToken();
@@ -90,7 +110,22 @@ const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 export const api = {
   login: (usuario: string, password: string) => post<AuthResult>("/api/auth/login", { usuario, password }),
   loginByPin: (pin: string) => post<AuthResult>("/api/auth/pin", { pin }),
+  register: (input: {
+    usuario: string;
+    password: string;
+    nombres: string;
+    apellidos: string;
+    pin?: string;
+    telefonoWhatsapp?: string | null;
+    adminUsuario?: string;
+    adminPassword?: string;
+  }) => post<User>("/api/auth/register", input),
   me: () => get<User>("/api/me"),
+
+  users: () => get<User[]>("/api/users"),
+  createUser: (input: CreateUserInput) => post<User>("/api/users", input),
+  updateUser: (id: string, input: UpdateUserInput) => patch<User>(`/api/users/${id}`, input),
+  deleteUser: (id: string) => del<User>(`/api/users/${id}`),
 
   board: () => get<FloorBoard[]>("/api/rooms/board"),
   floors: () => get<Floor[]>("/api/rooms/floors"),
@@ -134,6 +169,7 @@ export const api = {
   finishKioskProducts: () => post<KioskSession>("/api/kiosk/finish-products"),
 
   activeStays: () => get<StayWithCustomer[]>("/api/stays/active"),
+  staysByRange: (range: { desde: string; hasta: string }) => get<StayWithCustomer[]>(`/api/stays?desde=${encodeURIComponent(range.desde)}&hasta=${encodeURIComponent(range.hasta)}`),
   getStay: (id: string) => get<StayWithCustomer>(`/api/stays/${id}`),
   cancelStay: (id: string, motivo: string) => post<Stay>(`/api/stays/${id}/cancel`, { motivo }),
   checkInReservation: (id: string) => post<Stay>(`/api/stays/${id}/check-in`),
@@ -148,7 +184,11 @@ export const api = {
   cancelLine: (saleId: string, lineId: string, motivo: string) => post<{ ok: true }>(`/api/sales/${saleId}/lines/${lineId}/cancel`, { motivo }),
 
   createPayment: (saleId: string, detalles: PaymentDetailInput[]) => post<PaymentWithDetails>("/api/payments", { saleId, detalles }),
-  acceptPayment: (id: string) => post<PaymentWithDetails>(`/api/payments/${id}/accept`),
+  acceptPayment: async (id: string) => {
+    const payment = await post<PaymentWithDetails>(`/api/payments/${id}/accept`);
+    window.dispatchEvent(new Event("casacarlos:payment-success"));
+    return payment;
+  },
   rejectPayment: (id: string, motivo: string) => post<PaymentWithDetails>(`/api/payments/${id}/reject`, { motivo }),
   collectionAccounts: () => get<CollectionAccount[]>("/api/payments/collection-accounts"),
   createCollectionAccount: (input: CreateCollectionAccountInput) => post<CollectionAccount>("/api/payments/collection-accounts", input),
@@ -247,13 +287,20 @@ export const api = {
   addCashMovement: (id: string, input: { tipo: "INGRESO" | "EGRESO" | "AJUSTE"; montoCentimos: number; motivo: string }) =>
     post<CashMovement>(`/api/cashbox/shifts/${id}/movements`, input),
   shiftMovements: (id: string) => get<CashMovement[]>(`/api/cashbox/shifts/${id}/movements`),
-  shiftSummary: (id: string) => get<CashSummary>(`/api/cashbox/shifts/${id}/summary`),
-  rangeSummary: (range: { desde: string; hasta: string }) => get<CashSummary>(`/api/cashbox/summary?desde=${range.desde}&hasta=${range.hasta}`),
+  cashMovements: (filter: { desde?: string; hasta?: string; tipo?: string; metodo?: string }) => {
+    const params = new URLSearchParams();
+    Object.entries(filter).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+    });
+    return get<CashMovementView[]>(`/api/cashbox/movements${params.size ? `?${params.toString()}` : ""}`);
+  },
+  shiftSummary: (id: string) => get<CashSummary>(`/api/cashbox/shifts/${id}/summary`).then(normalizeCashSummary),
+  rangeSummary: (range: { desde: string; hasta: string }) => get<CashSummary>(`/api/cashbox/summary?desde=${range.desde}&hasta=${range.hasta}`).then(normalizeCashSummary),
   registrarArqueo: (id: string, denominaciones: Denominaciones) => post<Arqueo>(`/api/cashbox/shifts/${id}/arqueo`, { denominaciones }),
   arqueos: (id: string) => get<Arqueo[]>(`/api/cashbox/shifts/${id}/arqueos`),
 
   // ---- reporting ----
-  dashboard: (range: DateRange) => get<DashboardReport>(`/api/reporting/dashboard?desde=${range.desde}&hasta=${range.hasta}`),
+  dashboard: (range: DateRange) => get<DashboardReport>(`/api/reporting/dashboard?desde=${range.desde}&hasta=${range.hasta}`).then(normalizeDashboard),
 
   // ---- notifications ----
   notificationRecipients: () => get<NotificationRecipient[]>("/api/notifications/recipients"),

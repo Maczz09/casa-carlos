@@ -47,9 +47,19 @@ function filaMonto(doc: PDFKit.PDFDocument, etiqueta: string, monto: string, neg
 /** Alto de sobra para la pasada de medición — nunca se imprime, solo sirve para que nada se corte antes de saber el alto real. */
 const ALTO_MEDICION = 2000 * MM;
 
-function drawHeader(doc: PDFKit.PDFDocument, emisor: EmisorInfo, comprobante: Comprobante): void {
+function drawHeader(doc: PDFKit.PDFDocument, emisor: EmisorInfo, comprobante: Comprobante, logo: Uint8Array | null): void {
   const centrado = { width: CONTENT_WIDTH, align: "center" as const };
-  doc.fontSize(FONT_TITULO).font("Helvetica-Bold").text(emisor.nombreComercial, MARGIN, MARGIN, centrado);
+  if (logo && logo.length > 0) {
+    const logoHeight = 14 * MM;
+    try {
+      doc.image(Buffer.from(logo), MARGIN, MARGIN, { fit: [CONTENT_WIDTH, logoHeight], align: "center", valign: "center" });
+      doc.y = MARGIN + logoHeight + 2 * MM;
+    } catch {
+      // Un logo dañado no debe impedir descargar el comprobante legal.
+      doc.y = MARGIN;
+    }
+  }
+  doc.fontSize(FONT_TITULO).font("Helvetica-Bold").text(emisor.nombreComercial, MARGIN, doc.y, centrado);
   doc.fontSize(FONT_BASE).font("Helvetica");
   if (emisor.razonSocial !== emisor.nombreComercial) doc.text(emisor.razonSocial, MARGIN, doc.y, centrado);
   doc.text(`RUC ${emisor.ruc}`, MARGIN, doc.y, centrado);
@@ -125,9 +135,9 @@ function drawFooter(doc: PDFKit.PDFDocument, comprobante: Comprobante, qrPng: Bu
 }
 
 /** Dibuja el ticket entero. Se corre dos veces: una para medir, otra de verdad — ver `generateComprobantePdf`. */
-function render(doc: PDFKit.PDFDocument, comprobante: Comprobante, emisor: EmisorInfo, fechaEmision: string, qrPng: Buffer): void {
+function render(doc: PDFKit.PDFDocument, comprobante: Comprobante, emisor: EmisorInfo, fechaEmision: string, qrPng: Buffer, logo: Uint8Array | null): void {
   doc.lineGap(LINE_GAP);
-  drawHeader(doc, emisor, comprobante);
+  drawHeader(doc, emisor, comprobante, logo);
   drawParty(doc, comprobante, fechaEmision);
   drawLines(doc, comprobante);
   drawTotals(doc, comprobante);
@@ -139,7 +149,7 @@ function nuevoDoc(alto: number): PDFKit.PDFDocument {
 }
 
 /** PDF de cortesía para el huésped — el documento legal es el XML firmado + su CDR (`GET /api/billing/:id/xml`), no este PDF. */
-export async function generateComprobantePdf(comprobante: Comprobante, emisor: EmisorInfo): Promise<Buffer> {
+export async function generateComprobantePdf(comprobante: Comprobante, emisor: EmisorInfo, logo: Uint8Array | null = null): Promise<Buffer> {
   const fechaEmision = comprobante.creadoEn.slice(0, 10);
   const qrPng = await qrPngBuffer(buildQrPayload(comprobante, emisor.ruc, fechaEmision));
 
@@ -151,7 +161,7 @@ export async function generateComprobantePdf(comprobante: Comprobante, emisor: E
   // páginas), así que se dibuja una vez en una hoja larguísima solo para leer
   // dónde terminó, y recién ahí se dibuja el definitivo con ese alto.
   const medicion = nuevoDoc(ALTO_MEDICION);
-  render(medicion, comprobante, emisor, fechaEmision, qrPng);
+  render(medicion, comprobante, emisor, fechaEmision, qrPng, logo);
   const alto = medicion.y + MARGIN;
   medicion.end();
 
@@ -160,7 +170,7 @@ export async function generateComprobantePdf(comprobante: Comprobante, emisor: E
   doc.on("data", (chunk: Buffer) => chunks.push(chunk));
   const done = new Promise<Buffer>((resolve) => doc.on("end", () => resolve(Buffer.concat(chunks))));
 
-  render(doc, comprobante, emisor, fechaEmision, qrPng);
+  render(doc, comprobante, emisor, fechaEmision, qrPng, logo);
 
   doc.end();
   return done;

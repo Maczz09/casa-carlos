@@ -1,0 +1,905 @@
+{
+  "path": "C:\\Users\\maxmo\\Downloads\\TESIS_2\\Formato Proyecto (1).docx",
+  "paragraph_count": 160,
+  "table_count": 2,
+  "paragraphs": [
+    {
+      "index": 1,
+      "style": "Heading 1",
+      "text": "CARÁTULA"
+    },
+    {
+      "index": 2,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 3,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 4,
+      "style": "Normal",
+      "text": "Facultad de Ingeniería"
+    },
+    {
+      "index": 5,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 6,
+      "style": "Normal",
+      "text": "Carrera de Ingeniería de Sistemas e Informática"
+    },
+    {
+      "index": 7,
+      "style": "Normal",
+      "text": "Taller de Investigación"
+    },
+    {
+      "index": 8,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 9,
+      "style": "Normal",
+      "text": "Sistema IoT para el monitoreo de condiciones del suelo y momento de cosecha."
+    },
+    {
+      "index": 10,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 11,
+      "style": "Normal",
+      "text": "Paz Herrera, Edgar Alexis (ORCID: 0009-0001-8617-206X) "
+    },
+    {
+      "index": 12,
+      "style": "Normal",
+      "text": "Garcia Lopez, Max Alessandro (ORCID: 0009-0003-5208-4437) "
+    },
+    {
+      "index": 13,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 14,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 15,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 16,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 17,
+      "style": "Normal",
+      "text": "Docente: Apellidos, nombres (ORCID: XXXXXXX)"
+    },
+    {
+      "index": 18,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 19,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 20,
+      "style": "Normal",
+      "text": "Piura, Perú"
+    },
+    {
+      "index": 21,
+      "style": "Normal",
+      "text": "XXXXXX, 2026"
+    },
+    {
+      "index": 22,
+      "style": "Heading 1",
+      "text": "REPORTE DE SIMILITUD"
+    },
+    {
+      "index": 23,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 24,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 25,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 26,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 27,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 28,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 29,
+      "style": "Heading 1",
+      "text": "DEDICATORIA"
+    },
+    {
+      "index": 30,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 31,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 32,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 33,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 34,
+      "style": "Heading 1",
+      "text": "AGRADECIMIENTO"
+    },
+    {
+      "index": 35,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 36,
+      "style": "TOC Heading",
+      "text": ""
+    },
+    {
+      "index": 37,
+      "style": "Heading 1",
+      "text": ""
+    },
+    {
+      "index": 38,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 39,
+      "style": "Heading 1",
+      "text": "ÍNDICE DE TABLAS"
+    },
+    {
+      "index": 40,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 41,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 42,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 43,
+      "style": "Heading 1",
+      "text": "ÍNDICE DE FIGURAS"
+    },
+    {
+      "index": 44,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 45,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 46,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 47,
+      "style": "Heading 1",
+      "text": "CAPÍTULO 1"
+    },
+    {
+      "index": 48,
+      "style": "Heading 1",
+      "text": "PROBLEMA DE INVESTIGACIÓN"
+    },
+    {
+      "index": 49,
+      "style": "Heading 2",
+      "text": "Descripción del Problema"
+    },
+    {
+      "index": 50,
+      "style": "Normal",
+      "text": "La producción de frutas y hortalizas es un sector de importancia estratégica para garantizar la seguridad alimentaria y el desarrollo de la economía agrícola. En 2023, la producción mundial de frutas y hortalizas alcanzó los 2.100 millones de toneladas métricas, lo que supone un 1 % más que la cifra récord de 2022 [1]. Esta tendencia hace que cada vez sea mayor la necesidad de disponer de información actualizada sobre el suelo y los cultivos: la introducción de métodos de agricultura de precisión está generando un volumen cada vez mayor de datos y, para aprovecharlos de forma eficaz, es necesario integrar la información procedente de diferentes fuentes con el fin de respaldar la toma de decisiones [2]; por su parte, las prácticas de cultivo que se basan únicamente en métodos tradicionales se enfrentan a problemas de diferencias en el rendimiento y baja productividad, y la aplicación de las tecnologías digitales tiene precisamente como objetivo reducir esta brecha [3]."
+    },
+    {
+      "index": 51,
+      "style": "Normal",
+      "text": "En el cultivo de pimientos (Capsicum annuum L.), la gestión de los nutrientes debe adaptarse a las distintas fases de crecimiento y desarrollo del cultivo: las curvas de contenido crítico de nitrógeno ayudan a establecer una relación entre el estado nutricional, las fases fenológicas y la respuesta del rendimiento, lo que permite mantener el rendimiento ajustando las dosis de fertilización con nitrógeno y evitando al mismo tiempo la sobresaturación del suelo [4]. Del mismo modo, las dosis y los métodos de aplicación del fósforo también influyen en el rendimiento, la tasa de absorción y la eficiencia de utilización de este nutriente [5]. Dado que estos ajustes dependen de las condiciones reales del suelo en cada fase de crecimiento, el seguimiento de los niveles NPK constituye la base de la gestión de los procesos agrícolas y sirve como mecanismo complementario al seguimiento continuo, aunque no puede sustituir al análisis químico de laboratorio."
+    },
+    {
+      "index": 52,
+      "style": "Normal",
+      "text": "Llevar seguimiento en el campo requiere la integración de sensores, modelos y aplicaciones de distintos fabricantes, y es precisamente aquí donde la interoperabilidad se convierte en un gran obstáculo: la diversidad de dispositivos y protocolos en el Internet de las cosas (IoT) [6] sigue siendo un reto sin resolver, y en el sector agrícola los datos procedentes de distintas fuentes deben integrarse primero antes de poder utilizarlos [2]. La revisión sistemática anterior ofrece mecanismos para el desacoplamiento de componentes, arquitectura orientada a servicios [7], microservicios [8] y procesamiento distribuido en contenedores [9], pero la validación de estos mecanismos en este ámbito se ha centrado hasta ahora principalmente en explotaciones ganaderas [10] y pequeñas plataformas de prueba [3]. Por lo tanto, cuando los datos proceden de sensores de suelo individuales situados en el campo y deben combinarse con evaluaciones visuales de los cultivos, no existe actualmente ninguna evidencia fiable sobre su eficacia."
+    },
+    {
+      "index": 53,
+      "style": "Normal",
+      "text": "En Piura, el diagnóstico de la evaluación de campo debe determinarse si las mediciones del contenido de nitrógeno (N), fósforo (P) y potasio (K) se realizan de forma esporádica o aislada, lo que dificulta la detección de tendencias. La cosecha del pimiento se basa principalmente en observaciones y en la experiencia; por lo tanto, puede variar en función de las condiciones de cosecha y los criterios de maduración. El módulo del Internet de las cosas (IoT) facilitará el seguimiento mediante valores de medición verificados previamente, pero no establecerá programas de fertilización ni sustituirá al análisis de laboratorio."
+    },
+    {
+      "index": 54,
+      "style": "Normal",
+      "text": "Un segundo módulo independiente aplicará técnicas de machine learning a imágenes de fruta para ayudar a determinar el momento de la cosecha. Los índices de precisión descritos en los estudios pertinentes oscilan entre el 81 % y el 98,2 % [11], [12], lo que sirve de base para entrenar y evaluar este modelo utilizando nuestras propias imágenes y criterios de expertos. Estos dos módulos se integrarán a través de una aplicación basada en servicios e identificadores comunes [2], [6]–[9], que no asumirá una relación causal entre los niveles de nutrientes y la madurez visual."
+    },
+    {
+      "index": 55,
+      "style": "Normal",
+      "text": "Por lo tanto, el mayor reto radica en que, en la ausencia de un mecanismo integrado y contrastado que permita tanto supervisar los niveles de nitrógeno, fósforo y potasio (NPK) en el suelo como facilitar la evaluación visual del momento óptimo de cosecha, teniendo en cuenta las condiciones locales. En este contexto, se propone evaluar un sistema compuesto por un módulo de IoT, un clasificador basado en machine learning y una aplicación central, y plantear la siguiente pregunta: ¿en qué medida puede la implementación de un sistema de IoT y aprendizaje automático mejorar el seguimiento del estado del suelo y del momento de la cosecha?\n"
+    },
+    {
+      "index": 56,
+      "style": "Heading 2",
+      "text": "Formulación del Problema"
+    },
+    {
+      "index": 57,
+      "style": "Heading 3",
+      "text": "Pregunta General"
+    },
+    {
+      "index": 58,
+      "style": "Normal",
+      "text": "¿En qué medida la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha?"
+    },
+    {
+      "index": 59,
+      "style": "Heading 3",
+      "text": "Preguntas Específicas"
+    },
+    {
+      "index": 60,
+      "style": "Normal",
+      "text": "PE1: ¿En qué medida la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo?"
+    },
+    {
+      "index": 61,
+      "style": "Normal",
+      "text": "PE2: ¿En qué medida la implementación de learning favorece el monitoreo de las condiciones del suelo?"
+    },
+    {
+      "index": 62,
+      "style": "Normal",
+      "text": "PE3: ¿En qué medida la implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha?"
+    },
+    {
+      "index": 63,
+      "style": "Normal",
+      "text": "PE4: ¿En qué medida la implementación de machine learning potencia el monitoreo en el momento de cosecha?"
+    },
+    {
+      "index": 64,
+      "style": "Heading 2",
+      "text": "Objetivo de la Investigación"
+    },
+    {
+      "index": 65,
+      "style": "Heading 3",
+      "text": "Objetivo General "
+    },
+    {
+      "index": 66,
+      "style": "Normal",
+      "text": "Determinar si la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha."
+    },
+    {
+      "index": 67,
+      "style": "Heading 3",
+      "text": "Objetivos Específicos"
+    },
+    {
+      "index": 68,
+      "style": "Normal",
+      "text": "OE1: Determinar si la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo."
+    },
+    {
+      "index": 69,
+      "style": "Normal",
+      "text": "OE2: Evaluar si la implementación de machine learning favorece el monitoreo de las condiciones del suelo."
+    },
+    {
+      "index": 70,
+      "style": "Normal",
+      "text": "OE3: Analizar si la implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha."
+    },
+    {
+      "index": 71,
+      "style": "Normal",
+      "text": "OE4: Establecer si la implementación de machine learning potencia el monitoreo en el momento de cosecha."
+    },
+    {
+      "index": 72,
+      "style": "Heading 2",
+      "text": "Hipótesis"
+    },
+    {
+      "index": 73,
+      "style": "Heading 3",
+      "text": "Hipótesis General"
+    },
+    {
+      "index": 74,
+      "style": "Normal",
+      "text": "La implementación de un sistema IoT y machine learning mejorará significativamente el monitoreo de las condiciones del suelo y el momento de cosecha."
+    },
+    {
+      "index": 75,
+      "style": "Heading 3",
+      "text": "Hipótesis Específicas"
+    },
+    {
+      "index": 76,
+      "style": "Normal",
+      "text": "HE1: La implementación de un sistema IoT optimiza el monitoreo de las condiciones del suelo."
+    },
+    {
+      "index": 77,
+      "style": "Normal",
+      "text": "HE2: La implementación de machine learning favorece el monitoreo de las condiciones del suelo"
+    },
+    {
+      "index": 78,
+      "style": "Normal",
+      "text": "HE3: La implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha."
+    },
+    {
+      "index": 79,
+      "style": "Normal",
+      "text": "HE4: La implementación de machine learning potencia el monitoreo en el momento de cosecha."
+    },
+    {
+      "index": 80,
+      "style": "Heading 2",
+      "text": "Justificación e Importancia"
+    },
+    {
+      "index": 81,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 82,
+      "style": "Heading 2",
+      "text": "Limitaciones"
+    },
+    {
+      "index": 83,
+      "style": "Heading 1",
+      "text": "CAPÍTULO 2"
+    },
+    {
+      "index": 84,
+      "style": "Heading 1",
+      "text": "MARCO TEÓRICO"
+    },
+    {
+      "index": 85,
+      "style": "Heading 2",
+      "text": "Estado del arte"
+    },
+    {
+      "index": 86,
+      "style": "Normal (Web)",
+      "text": ""
+    },
+    {
+      "index": 87,
+      "style": "Heading 2",
+      "text": "Bases Teóricas"
+    },
+    {
+      "index": 88,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 89,
+      "style": "Heading 2",
+      "text": "Definición de términos"
+    },
+    {
+      "index": 90,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 91,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 92,
+      "style": "Heading 1",
+      "text": "CAPÍTULO 3"
+    },
+    {
+      "index": 93,
+      "style": "Heading 1",
+      "text": "METODOLOGÍA DE LA INVESTIGACIÓN"
+    },
+    {
+      "index": 94,
+      "style": "Heading 2",
+      "text": "Método y diseño de la investigación"
+    },
+    {
+      "index": 95,
+      "style": "Heading 3",
+      "text": "Tipo de investigación"
+    },
+    {
+      "index": 96,
+      "style": "Heading 3",
+      "text": "Enfoque de investigación"
+    },
+    {
+      "index": 97,
+      "style": "Heading 3",
+      "text": "Diseño de investigación "
+    },
+    {
+      "index": 98,
+      "style": "Heading 3",
+      "text": "Alcance de la investigación "
+    },
+    {
+      "index": 99,
+      "style": "Heading 2",
+      "text": "Materiales y métodos"
+    },
+    {
+      "index": 100,
+      "style": "Heading 3",
+      "text": "Método"
+    },
+    {
+      "index": 101,
+      "style": "Heading 3",
+      "text": "Población"
+    },
+    {
+      "index": 102,
+      "style": "Heading 3",
+      "text": "Muestra"
+    },
+    {
+      "index": 103,
+      "style": "Heading 3",
+      "text": "Criterios de inclusión"
+    },
+    {
+      "index": 104,
+      "style": "Heading 3",
+      "text": "Criterios de exclusión"
+    },
+    {
+      "index": 105,
+      "style": "Heading 2",
+      "text": "Técnicas e instrumentos de recolección y procesamiento de datos "
+    },
+    {
+      "index": 106,
+      "style": "Heading 3",
+      "text": "Técnica de recolección de datos "
+    },
+    {
+      "index": 107,
+      "style": "Heading 3",
+      "text": "Instrumento\t"
+    },
+    {
+      "index": 108,
+      "style": "Heading 3",
+      "text": "Fuentes de recolección de datos "
+    },
+    {
+      "index": 109,
+      "style": "Heading 3",
+      "text": "Validez del instrumento "
+    },
+    {
+      "index": 110,
+      "style": "Heading 3",
+      "text": "Confiabilidad del instrumento "
+    },
+    {
+      "index": 111,
+      "style": "Heading 3",
+      "text": "Proceso de recolección de datos "
+    },
+    {
+      "index": 112,
+      "style": "Heading 3",
+      "text": "Procesamiento de datos "
+    },
+    {
+      "index": 113,
+      "style": "Heading 2",
+      "text": " Aspectos éticos"
+    },
+    {
+      "index": 114,
+      "style": "Heading 1",
+      "text": ""
+    },
+    {
+      "index": 115,
+      "style": "Heading 1",
+      "text": "CAPÍTULO 4"
+    },
+    {
+      "index": 116,
+      "style": "Normal",
+      "text": "ASPECTOS ADMINISTRATIVOS"
+    },
+    {
+      "index": 117,
+      "style": "Normal (Web)",
+      "text": "el cronograma debe diseñarse específicamente para un ciclo académico de 14 semanas. Se recomienda el uso de un Diagrama de Gantt distribuido de la siguiente manera:"
+    },
+    {
+      "index": 118,
+      "style": "Normal (Web)",
+      "text": "Semanas 1-3: Ajuste del planteamiento del problema, objetivos y marco teórico."
+    },
+    {
+      "index": 119,
+      "style": "Normal (Web)",
+      "text": "Semanas 4-6: Definición metodológica, validación de instrumentos y obtención del dictamen ético."
+    },
+    {
+      "index": 120,
+      "style": "Normal (Web)",
+      "text": "Semanas 7-10: Trabajo de campo (recolección de datos) y procesamiento estadístico."
+    },
+    {
+      "index": 121,
+      "style": "Normal (Web)",
+      "text": "Semanas 11-14: Análisis de resultados, redacción de conclusiones y revisión final por el asesor."
+    },
+    {
+      "index": 122,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 123,
+      "style": "Normal",
+      "text": "CRONOGRAMA Y PRESUPUESTO"
+    },
+    {
+      "index": 124,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 125,
+      "style": "Heading 1",
+      "text": ""
+    },
+    {
+      "index": 126,
+      "style": "Heading 1",
+      "text": "ANEXOS"
+    },
+    {
+      "index": 127,
+      "style": "Heading 2",
+      "text": "Anexo 01: Matriz de Consistencia "
+    },
+    {
+      "index": 128,
+      "style": "Normal",
+      "text": "."
+    },
+    {
+      "index": 129,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 130,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 131,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 132,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 133,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 134,
+      "style": "Heading 2",
+      "text": "Anexo 02: Instrumentos de recolección de datos "
+    },
+    {
+      "index": 135,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 136,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 137,
+      "style": "Heading 1",
+      "text": "BIBLIOGRAFÍA"
+    },
+    {
+      "index": 138,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 139,
+      "style": "Normal",
+      "text": "[1] Food and Agriculture Organization of the United Nations, “Agricultural production statistics 2010–2023,” 2024. [En línea]. Disponible en: https://www.fao.org/statistics/highlights-archive/highlights-detail/agricultural-production-statistics-2010-2023/en. [Consultado: 29-ago-2026]."
+    },
+    {
+      "index": 140,
+      "style": "Normal",
+      "text": "[2] A. Goldstein, L. Fink and G. Ravid, “A cloud-based framework for agricultural data integration: A top-down-bottom-up approach,” IEEE Access, vol. 10, pp. 88527–88537, 2022, doi: 10.1109/ACCESS.2022.3198099."
+    },
+    {
+      "index": 141,
+      "style": "Normal",
+      "text": "[3] B. Almadani and S. M. Mostafa, “IIoT based multimodal communication model for agriculture and agro-industries,” IEEE Access, vol. 9, pp. 10070–10088, 2021, doi: 10.1109/ACCESS.2021.3050391."
+    },
+    {
+      "index": 142,
+      "style": "Normal",
+      "text": "[4] J. M. Vadillo, C. Campillo, V. González and H. Prieto, “Assessing nitrogen fertilization in processing pepper: Critical nitrogen curve, yield response, and crop development,” Horticulturae, vol. 10, no. 11, art. no. 1141, 2024, doi: 10.3390/horticulturae10111141."
+    },
+    {
+      "index": 143,
+      "style": "Normal",
+      "text": "[5] Y. Cui, S. Li, Y. Wang, K. Sun, H. Li and W. Zhang, “Effects of phosphorus application rates and methods on the yield, phosphorus uptake and utilization of pepper,” Journal of Plant Nutrition and Fertilizers, vol. 29, no. 12, pp. 2322–2331, 2023, doi: 10.11674/zwyf.2023205."
+    },
+    {
+      "index": 144,
+      "style": "Normal",
+      "text": "[6] K. M. Hou, X. Diao, H. Shi, H. Ding, H. Zhou and C. de Vaulx, “Trends and challenges in AIoT/IIoT/IoT implementation,” Sensors, vol. 23, no. 11, art. no. 5074, 2023, doi: 10.3390/s23115074."
+    },
+    {
+      "index": 145,
+      "style": "Normal",
+      "text": "[7] S. K. Mishra and A. Sarkar, “Service-oriented architecture for Internet of Things: A semantic approach,” Journal of King Saud University—Computer and Information Sciences, vol. 34, no. 10, pp. 8765–8776, 2022, doi: 10.1016/j.jksuci.2021.09.024."
+    },
+    {
+      "index": 146,
+      "style": "Normal",
+      "text": "[8] R. P. Pontarolli, J. A. Bigheti, L. B. R. de Sá and E. P. Godoy, “Microservice-oriented architecture for Industry 4.0,” Eng, vol. 4, no. 2, pp. 1179–1197, 2023, doi: 10.3390/eng4020069."
+    },
+    {
+      "index": 147,
+      "style": "Normal",
+      "text": "[9] N. Nikolov, Y. D. Dessalk, A. Q. Khan, A. Soylu, M. Matskin, A. H. Payberah and D. Roman, “Conceptualization and scalable execution of big data workflows using domain-specific languages and software containers,” Internet of Things, vol. 16, art. no. 100440, 2021, doi: 10.1016/j.iot.2021.100440."
+    },
+    {
+      "index": 148,
+      "style": "Normal",
+      "text": "[10] E. Symeonaki, K. G. Arvanitis, D. Piromalis, D. Tseles and A. T. Balafoutis, “Ontology-based IoT middleware approach for smart livestock farming toward Agriculture 4.0: A case study for controlling thermal environment in a pig facility,” Agronomy, vol. 12, no. 3, art. no. 750, 2022, doi: 10.3390/agronomy12030750."
+    },
+    {
+      "index": 149,
+      "style": "Normal",
+      "text": "[11] B. Harel, Y. Parmet and Y. Edan, “Maturity classification of sweet peppers using image datasets acquired in different times,” Computers in Industry, vol. 121, art. no. 103274, 2020, doi: 10.1016/j.compind.2020.103274."
+    },
+    {
+      "index": 150,
+      "style": "Normal",
+      "text": "[12] J. Muñoz-Postigo, E. M. Valero, M. A. Martínez-Domingo, F. J. Lara, J. L. Nieves, J. Romero and J. Hernández-Andrés, “Band selection pipeline for maturity stage classification in bell peppers: From full spectrum to simulated camera data,” Journal of Food Engineering, vol. 365, art. no. 111824, 2024, doi: 10.1016/j.jfoodeng.2023.111824."
+    },
+    {
+      "index": 151,
+      "style": "Normal",
+      "text": "[13] H. S. Bhaskaran, M. Gordon and S. Neethirajan, “Development of a cloud-based IoT system for livestock health monitoring using AWS and Python,” Smart Agricultural Technology, vol. 9, art. no. 100524, 2024, doi: 10.1016/j.atech.2024.100524."
+    },
+    {
+      "index": 152,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 153,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 154,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 155,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 156,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 157,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 158,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 159,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 160,
+      "style": "Normal",
+      "text": ""
+    }
+  ],
+  "tables": [
+    {
+      "table": 1,
+      "rows": [
+        {
+          "row": 1,
+          "cells": [
+            "PREGUNTA GENERAL",
+            "OBJETIVO GENERAL",
+            "HIPÓTESIS GENERAL",
+            "VARIABLES"
+          ]
+        },
+        {
+          "row": 2,
+          "cells": [
+            "¿En qué medida la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha?",
+            "Determinar si la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha.",
+            "La implementación de un sistema IoT y machine learning mejorará significativamente el monitoreo de las condiciones del suelo y el momento de cosecha.\n",
+            "VI: Sistema IoT \nDimensiones:\nD1: Medición de nitrógeno\nD2: Medición de fósforo\nD3: Medición de potasio\nV2: Machine learning\nD1: Recopilación y preprocesamiento de imágenes\nD2: Entrenamiento y validación del modelo\nD3: Aplicación del modelo para la clasificación de madurez\nV3: Momento de cosecha.\nD1: Estado de madurez visual del pimiento"
+          ]
+        }
+      ]
+    },
+    {
+      "table": 2,
+      "rows": [
+        {
+          "row": 1,
+          "cells": [
+            "PROBLEMAS ESPECÍFICOS",
+            "OBJETIVOS ESPECÍFICOS",
+            "HIPÓTESIS ESPECÍFICAS"
+          ]
+        },
+        {
+          "row": 2,
+          "cells": [
+            "PE1: ¿En qué medida la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo?\n",
+            "OE1: Determinar si la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo.",
+            "HE1: La implementación de un sistema IoT optimiza el monitoreo de las condiciones del suelo."
+          ]
+        },
+        {
+          "row": 3,
+          "cells": [
+            "PE2: ¿En qué medida la implementación de learning favorece el monitoreo de las condiciones del suelo?",
+            "OE2: Evaluar si la implementación de machine learning favorece el monitoreo de las condiciones del suelo.",
+            "HE2: La implementación de machine learning favorece el monitoreo de las condiciones del suelo."
+          ]
+        },
+        {
+          "row": 4,
+          "cells": [
+            "PE3: ¿En qué medida la implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha?",
+            "OE3: Analizar si la implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha.",
+            "HE3: La implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha."
+          ]
+        },
+        {
+          "row": 5,
+          "cells": [
+            "PE4: ¿En qué medida la implementación de machine learning potencia el monitoreo en el momento de cosecha?",
+            "OE4: Establecer si la implementación de machine learning potencia el monitoreo en el momento de cosecha.",
+            "HE4: La implementación de machine learning potencia el monitoreo en el momento de cosecha."
+          ]
+        }
+      ]
+    }
+  ],
+  "package": {
+    "comments": false,
+    "tracked_insertions": 57,
+    "tracked_deletions": 0,
+    "footnotes": true,
+    "endnotes": true,
+    "tracked_insertion_details": [],
+    "extended_properties": {
+      "Template": "Normal",
+      "TotalTime": "3",
+      "Pages": "20",
+      "Words": "2964",
+      "Characters": "16306",
+      "Application": "Microsoft Office Word",
+      "DocSecurity": "0",
+      "Lines": "135",
+      "Paragraphs": "38",
+      "ScaleCrop": "false",
+      "HeadingPairs": null,
+      "TitlesOfParts": null,
+      "Company": null,
+      "LinksUpToDate": "false",
+      "CharactersWithSpaces": "19232",
+      "SharedDoc": "false",
+      "HyperlinksChanged": "false",
+      "AppVersion": "16.0000"
+    }
+  }
+}

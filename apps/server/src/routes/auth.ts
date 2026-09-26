@@ -14,6 +14,25 @@ export function authRoutes(services: Services) {
       }
     });
 
+    app.post<{
+      Body: {
+        usuario: string;
+        password: string;
+        nombres: string;
+        apellidos: string;
+        pin?: string;
+        telefonoWhatsapp?: string | null;
+        adminUsuario?: string;
+        adminPassword?: string;
+      };
+    }>("/api/auth/register", async (request, reply) => {
+      try {
+        return await services.identity.registerUser(request.body);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
     app.post<{ Body: { pin: string } }>("/api/auth/pin", async (request, reply) => {
       try {
         const result = await services.identity.switchByPin(request.body.pin);

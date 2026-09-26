@@ -9,10 +9,14 @@
   },
   "dependencies": {
     "@casacarlos/contracts": "workspace:*",
-    "react": "^19.0.0"
+    "fireworks-js": "^2.10.8",
+    "lottie-web": "^5.13.0",
+    "react": "^19.0.0",
+    "three": "^0.186.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.2",
+    "@types/three": "^0.186.0",
     "typescript": "^5.9.0"
   }
 }

@@ -13,7 +13,7 @@ import type {
   StayWithCustomer,
 } from "@casacarlos/contracts";
 import { MOTIVOS_NOTA_CREDITO, MOTIVOS_NOTA_DEBITO } from "@casacarlos/contracts";
-import { cents, format } from "@casacarlos/money";
+import { cents, format, splitIncludedIgv } from "@casacarlos/money";
 import { IconPrinter, STATUS_STYLE } from "@casacarlos/ui";
 import { api, ApiError, getToken } from "../api.js";
 import { formatDuration, useCountdown } from "../hooks/useCountdown.js";
@@ -184,6 +184,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
    * nota de débito (o dejar solo en el comprobante interno).
    */
   const noFacturadoCentimos = sale && comprobante?.estadoSunat === "ACEPTADO" ? sale.totalCentimos - cubiertoCentimos : 0;
+  const impuestos = sale ? splitIncludedIgv(cents(sale.totalCentimos)) : null;
 
   const imprimirBorrador = () => {
     if (!sale) return;
@@ -262,6 +263,12 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                 ))}
               </div>
               <div className="border-t border-line pt-2">
+                {impuestos && (
+                  <>
+                    <Row label="Valor de venta" value={format(impuestos.valorVenta)} />
+                    <Row label="IGV (18%)" value={format(impuestos.igv)} tone="text-brand" />
+                  </>
+                )}
                 <Row label="Total" value={format(cents(sale.totalCentimos))} />
                 <Row label="Pagado" value={format(cents(sale.pagadoCentimos))} />
                 <Row

@@ -1,19 +1,20 @@
 import type { FastifyInstance } from "fastify";
 import type { ProductState } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
-import { requireAdmin, requireAuth } from "../auth.js";
+import { requireAdmin, requireAnyPermission, requirePermission } from "../auth.js";
 
 export function inventoryRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requireAnyPermission(services.identity, ["INVENTORY_MANAGE", "SALES_MANAGE", "DASHBOARD_VIEW"]) };
     const admin = { preHandler: requireAdmin(services.identity) };
+    const categories = { preHandler: requirePermission(services.identity, "CATEGORIES_MANAGE") };
 
     app.get("/api/inventory/products", auth, async () => services.inventory.listProducts());
     app.get("/api/inventory/low-stock", auth, async () => services.inventory.listLowStock());
 
     app.get("/api/inventory/categories", auth, async () => services.inventory.listCategories());
 
-    app.post<{ Body: { nombre: string; descripcion?: string | null } }>("/api/inventory/categories", admin, async (request, reply) => {
+    app.post<{ Body: { nombre: string; descripcion?: string | null } }>("/api/inventory/categories", categories, async (request, reply) => {
       try {
         return await services.inventory.createCategory(request.body);
       } catch (err) {
@@ -23,7 +24,7 @@ export function inventoryRoutes(services: Services) {
 
     app.patch<{ Params: { id: string }; Body: { nombre?: string; descripcion?: string | null; activo?: boolean } }>(
       "/api/inventory/categories/:id",
-      admin,
+      categories,
       async (request, reply) => {
         try {
           return await services.inventory.updateCategory(request.params.id, request.body);
@@ -33,7 +34,7 @@ export function inventoryRoutes(services: Services) {
       },
     );
 
-    app.delete<{ Params: { id: string } }>("/api/inventory/categories/:id", admin, async (request, reply) => {
+    app.delete<{ Params: { id: string } }>("/api/inventory/categories/:id", categories, async (request, reply) => {
       try {
         await services.inventory.deleteCategory(request.params.id);
         return reply.code(204).send();

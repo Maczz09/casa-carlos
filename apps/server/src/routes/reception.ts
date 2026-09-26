@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { cents, format } from "@casacarlos/money";
 import type { Services } from "../index.js";
-import { requireAuth } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 /**
  * Post-checkin housekeeping actions the reception screen triggers directly.
@@ -10,7 +10,7 @@ import { requireAuth } from "../auth.js";
  */
 export function receptionRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requirePermission(services.identity, "SALES_MANAGE") };
 
     app.post<{ Params: { stayId: string } }>("/api/reception/check-out/:stayId", auth, async (request, reply) => {
       const { stayId } = request.params;

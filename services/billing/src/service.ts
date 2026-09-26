@@ -35,6 +35,7 @@ export class BillingService implements BillingPort {
     private readonly sunatClient: SunatClient,
     private readonly emisor: EmisorInfo,
     private readonly cert: CertificateMaterial | null,
+    private readonly logoProvider: () => Uint8Array | null,
   ) {}
 
   async issueBoleta(ventaId: string, usuarioId: string): Promise<Comprobante> {
@@ -140,7 +141,7 @@ export class BillingService implements BillingPort {
   async getPdf(id: string): Promise<Uint8Array | null> {
     const comprobante = await this.repo.getComprobante(id);
     if (!comprobante) return null;
-    return generateComprobantePdf(comprobante, this.emisor);
+    return generateComprobantePdf(comprobante, this.emisor, this.logoProvider());
   }
 
   async voidComprobante(comprobanteId: string, motivo: string, usuarioId: string): Promise<ComunicacionBaja> {

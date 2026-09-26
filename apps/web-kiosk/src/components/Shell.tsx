@@ -11,8 +11,8 @@ interface Props {
 /** Consistent chrome for every non-idle screen: a slim header, generous body, nothing else competing for attention. */
 export function Shell({ title, step, onBack, children }: Props) {
   return (
-    <div className="animate-fade-up flex h-screen flex-col bg-bg">
-      <header className="flex items-center gap-4 px-10 py-6">
+    <div className="animate-fade-up flex min-h-[100dvh] flex-col bg-bg">
+      <header className="border-b border-line/70 bg-surface/70 px-10 py-5 backdrop-blur"><div className="mx-auto flex w-full max-w-6xl items-center gap-4">
         {onBack ? (
           <button
             onClick={onBack}
@@ -28,8 +28,8 @@ export function Shell({ title, step, onBack, children }: Props) {
           {title && <h1 className="font-serif text-2xl text-ink">{title}</h1>}
         </div>
         <div className="h-14 w-14" />
-      </header>
-      <main className="flex min-h-0 flex-1 flex-col overflow-y-auto px-10 pb-10">{children}</main>
+      </div></header>
+      <main className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto px-10 pb-10 pt-6">{children}</main>
     </div>
   );
 }

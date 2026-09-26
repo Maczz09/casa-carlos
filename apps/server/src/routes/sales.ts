@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import type { ChargeCode } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
-import { requireAuth } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 export function salesRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requirePermission(services.identity, "SALES_MANAGE") };
 
     app.get("/api/sales/open", auth, async () => services.sales.listOpenSales());
 

@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import type { CreateComprobantePagoInput, IssueNotaInput } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
-import { requireAuth } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 export function billingRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requirePermission(services.identity, "BILLING_MANAGE") };
 
     app.post<{ Body: { ventaId: string } }>("/api/billing/boleta", auth, async (request, reply) => {
       try {

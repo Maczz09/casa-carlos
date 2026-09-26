@@ -76,5 +76,8 @@ export const CashSummarySchema = z.object({
   ingresosManualesCentimos: z.number().int(),
   egresosManualesCentimos: z.number().int(),
   vueltosCentimos: z.number().int(),
+  ventasBrutasCentimos: z.number().int(),
+  valorVentaCentimos: z.number().int(),
+  igvCentimos: z.number().int(),
 });
 export type CashSummary = z.infer<typeof CashSummarySchema>;

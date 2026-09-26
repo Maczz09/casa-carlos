@@ -1,13 +1,14 @@
 import type { FastifyInstance } from "fastify";
 import type { CreateCollectionAccountInput, PaymentDetailInput, UpdateCollectionAccountInput } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
-import { requireAdmin, requireAuth } from "../auth.js";
+import { requireAnyPermission, requirePermission } from "../auth.js";
 import type { StoredImage } from "../image-storage.js";
 
 export function paymentsRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
-    const admin = { preHandler: requireAdmin(services.identity) };
+    const auth = { preHandler: requirePermission(services.identity, "SALES_MANAGE") };
+    const viewAccounts = { preHandler: requireAnyPermission(services.identity, ["SALES_MANAGE", "SETTINGS_MANAGE"]) };
+    const admin = { preHandler: requirePermission(services.identity, "SETTINGS_MANAGE") };
 
     app.post<{ Body: { saleId: string; detalles: PaymentDetailInput[] } }>("/api/payments", auth, async (request, reply) => {
       try {
@@ -49,8 +50,8 @@ export function paymentsRoutes(services: Services) {
 
     // Recepción los lee para saber a qué cuenta le está entrando la plata
     // mientras cobra; solo un administrador puede cambiarlos.
-    app.get("/api/payments/collection-accounts", auth, async (request) => {
-      return request.user?.rol === "ADMIN" ? services.payments.listAllCollectionAccounts() : services.payments.listCollectionAccounts();
+    app.get("/api/payments/collection-accounts", viewAccounts, async (request) => {
+      return request.user?.permisos.includes("SETTINGS_MANAGE") ? services.payments.listAllCollectionAccounts() : services.payments.listCollectionAccounts();
     });
 
     app.post<{ Body: CreateCollectionAccountInput }>("/api/payments/collection-accounts", admin, async (request, reply) => {

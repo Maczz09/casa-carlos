@@ -124,6 +124,9 @@ html {
 body {
   background-color: var(--c-bg);
   color: var(--c-ink);
+  background-image:
+    radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--c-brand) 9%, transparent), transparent 32rem),
+    radial-gradient(circle at 90% 100%, color-mix(in srgb, #d6a96c 10%, transparent), transparent 36rem);
   overscroll-behavior: none;
   transition: background-color 0.25s ease, color 0.25s ease;
 }
@@ -180,6 +183,56 @@ textarea {
 .stagger > * {
   animation: cc-fade-up 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+/* Escena de bienvenida: las órbitas CSS mantienen el movimiento visible en
+   equipos sin WebGL; el canvas Three.js aporta detalle en los que sí lo tienen. */
+.kiosk-webgl-atmosphere {
+  opacity: 0.9;
+}
+.kiosk-orbit {
+  position: absolute;
+  border: 1px solid color-mix(in srgb, var(--c-brand) 30%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 0 60px color-mix(in srgb, var(--c-brand) 9%, transparent);
+  transform-origin: center;
+}
+.kiosk-orbit-one {
+  width: min(48vw, 640px);
+  height: min(26vw, 330px);
+  left: 9%;
+  top: 10%;
+  animation: kiosk-orbit 16s linear infinite;
+}
+.kiosk-orbit-two {
+  width: min(36vw, 500px);
+  height: min(18vw, 240px);
+  right: 8%;
+  bottom: 11%;
+  border-color: color-mix(in srgb, #d6a96c 44%, transparent);
+  animation: kiosk-orbit 12s linear infinite reverse;
+}
+.kiosk-spark {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--c-brand);
+  box-shadow: 0 0 0 7px color-mix(in srgb, var(--c-brand) 10%, transparent), 0 0 30px color-mix(in srgb, var(--c-brand) 52%, transparent);
+  animation: kiosk-float 4.6s ease-in-out infinite;
+}
+.kiosk-spark-one { left: 24%; top: 23%; }
+.kiosk-spark-two { right: 23%; top: 26%; animation-delay: -1.4s; background: #d6a96c; }
+.kiosk-spark-three { right: 38%; bottom: 19%; animation-delay: -2.7s; }
+
+@keyframes kiosk-orbit {
+  from { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.035); }
+  to { transform: rotate(360deg) scale(1); }
+}
+@keyframes kiosk-float {
+  0%, 100% { transform: translateY(0) scale(0.82); opacity: 0.45; }
+  50% { transform: translateY(-22px) scale(1.14); opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

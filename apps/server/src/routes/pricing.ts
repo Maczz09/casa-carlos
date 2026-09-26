@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
-import { requireAuth } from "../auth.js";
+import { requireAnyPermission } from "../auth.js";
 
 export function pricingRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requireAnyPermission(services.identity, ["SALES_MANAGE", "RESERVATIONS_MANAGE", "ROOMS_MANAGE"]) };
 
     app.get("/api/pricing/modalities", auth, async () => services.pricing.listModalities());
 

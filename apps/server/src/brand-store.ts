@@ -52,6 +52,17 @@ export class BrandStore {
     };
   }
 
+  /** Logo listo para PDFKit. PDFKit admite PNG/JPEG; WebP sigue disponible
+   * para la interfaz, pero se omite en el comprobante para no romperlo. */
+  readPdfLogo(): Buffer | null {
+    const file = this.readFile();
+    const logo = this.validLogo(file);
+    if (!logo) return null;
+    const bytes = readFileSync(resolve(this.images.root, logo));
+    const detected = detectImage(bytes);
+    return detected?.mimeType === "image/png" || detected?.mimeType === "image/jpeg" ? bytes : null;
+  }
+
   setNombre(nombre: string, lema: string | null): Brand {
     const limpio = nombre.trim();
     if (limpio.length === 0) throw new Error("El nombre del hotel no puede quedar vacío.");

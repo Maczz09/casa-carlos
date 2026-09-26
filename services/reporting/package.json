@@ -10,6 +10,7 @@
   "dependencies": {
     "@casacarlos/contracts": "workspace:*",
     "@casacarlos/db": "workspace:*",
+    "@casacarlos/money": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

@@ -1,15 +1,17 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
-import { requireAuth } from "../auth.js";
+import { requireAnyPermission, requirePermission } from "../auth.js";
 
 export function roomsRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requireAnyPermission(services.identity, ["BOARD_VIEW", "SALES_MANAGE", "RESERVATIONS_MANAGE", "ROOMS_MANAGE"]) };
+    const manage = { preHandler: requirePermission(services.identity, "ROOMS_MANAGE") };
+    const operate = { preHandler: requireAnyPermission(services.identity, ["BOARD_VIEW", "SALES_MANAGE"]) };
 
     app.get("/api/rooms/board", auth, async () => services.rooms.getBoard(false));
 
     app.get("/api/rooms/floors", auth, async () => services.rooms.listFloors());
-    app.post<{ Body: { numero: number; nombre: string; orden: number } }>("/api/rooms/floors", auth, async (request, reply) => {
+    app.post<{ Body: { numero: number; nombre: string; orden: number } }>("/api/rooms/floors", manage, async (request, reply) => {
       try {
         return await services.rooms.createFloor(request.body);
       } catch (err) {
@@ -18,7 +20,7 @@ export function roomsRoutes(services: Services) {
     });
 
     app.get("/api/rooms/attributes", auth, async () => services.rooms.listAttributes());
-    app.post<{ Body: { nombre: string } }>("/api/rooms/attributes", auth, async (request, reply) => {
+    app.post<{ Body: { nombre: string } }>("/api/rooms/attributes", manage, async (request, reply) => {
       try {
         return await services.rooms.createAttribute(request.body.nombre);
       } catch (err) {
@@ -30,7 +32,7 @@ export function roomsRoutes(services: Services) {
 
     app.post<{ Body: { nombre: string; descripcion?: string | null; camas?: number; ventiladores?: number; atributoIds?: string[] } }>(
       "/api/rooms/categories",
-      auth,
+      manage,
       async (request, reply) => {
         try {
           return await services.rooms.createCategory(request.body);
@@ -43,7 +45,7 @@ export function roomsRoutes(services: Services) {
     app.patch<{
       Params: { id: string };
       Body: { nombre?: string; descripcion?: string | null; camas?: number; ventiladores?: number; atributoIds?: string[]; activo?: boolean };
-    }>("/api/rooms/categories/:id", auth, async (request, reply) => {
+    }>("/api/rooms/categories/:id", manage, async (request, reply) => {
       try {
         return await services.rooms.updateCategory(request.params.id, request.body);
       } catch (err) {
@@ -51,7 +53,7 @@ export function roomsRoutes(services: Services) {
       }
     });
 
-    app.delete<{ Params: { id: string } }>("/api/rooms/categories/:id", auth, async (request, reply) => {
+    app.delete<{ Params: { id: string } }>("/api/rooms/categories/:id", manage, async (request, reply) => {
       try {
         await services.rooms.deleteCategory(request.params.id);
         return reply.code(204).send();
@@ -65,7 +67,7 @@ export function roomsRoutes(services: Services) {
 
     app.post<{ Body: { numero: string; pisoId: string; categoriaId: string; descripcion?: string | null; incluye?: string | null } }>(
       "/api/rooms",
-      auth,
+      manage,
       async (request, reply) => {
         try {
           return await services.rooms.createRoom(request.body);
@@ -78,7 +80,7 @@ export function roomsRoutes(services: Services) {
     app.patch<{
       Params: { id: string };
       Body: { numero?: string; pisoId?: string; categoriaId?: string; descripcion?: string | null; incluye?: string | null; activo?: boolean };
-    }>("/api/rooms/:id", auth, async (request, reply) => {
+    }>("/api/rooms/:id", manage, async (request, reply) => {
       try {
         return await services.rooms.updateRoom(request.params.id, request.body);
       } catch (err) {
@@ -86,7 +88,7 @@ export function roomsRoutes(services: Services) {
       }
     });
 
-    app.delete<{ Params: { id: string } }>("/api/rooms/:id", auth, async (request, reply) => {
+    app.delete<{ Params: { id: string } }>("/api/rooms/:id", manage, async (request, reply) => {
       try {
         await services.rooms.deleteRoom(request.params.id);
         return reply.code(204).send();
@@ -95,7 +97,7 @@ export function roomsRoutes(services: Services) {
       }
     });
 
-    app.post<{ Params: { id: string }; Body: { minutes?: number } }>("/api/rooms/:id/cleaning", auth, async (request, reply) => {
+    app.post<{ Params: { id: string }; Body: { minutes?: number } }>("/api/rooms/:id/cleaning", operate, async (request, reply) => {
       try {
         return await services.rooms.markCleaning(request.params.id, request.user!.id, request.body?.minutes);
       } catch (err) {
@@ -103,7 +105,7 @@ export function roomsRoutes(services: Services) {
       }
     });
 
-    app.post<{ Params: { id: string } }>("/api/rooms/:id/cleaning/finish", auth, async (request, reply) => {
+    app.post<{ Params: { id: string } }>("/api/rooms/:id/cleaning/finish", operate, async (request, reply) => {
       try {
         return await services.rooms.finishCleaning(request.params.id);
       } catch (err) {
@@ -111,7 +113,7 @@ export function roomsRoutes(services: Services) {
       }
     });
 
-    app.post<{ Params: { id: string }; Body: { motivo: string } }>("/api/rooms/:id/out-of-service", auth, async (request, reply) => {
+    app.post<{ Params: { id: string }; Body: { motivo: string } }>("/api/rooms/:id/out-of-service", manage, async (request, reply) => {
       try {
         return await services.rooms.setOutOfService(request.params.id, request.body.motivo, request.user!.id);
       } catch (err) {
@@ -119,7 +121,7 @@ export function roomsRoutes(services: Services) {
       }
     });
 
-    app.post<{ Params: { id: string } }>("/api/rooms/:id/return-to-service", auth, async (request, reply) => {
+    app.post<{ Params: { id: string } }>("/api/rooms/:id/return-to-service", manage, async (request, reply) => {
       try {
         return await services.rooms.returnToService(request.params.id, request.user!.id);
       } catch (err) {

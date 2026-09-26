@@ -1,4 +1,5 @@
 import type { Customer, Stay, StayWithCustomer } from "../entities/stays.js";
+import type { DateRange } from "../entities/common.js";
 
 export interface CustomerInput {
   nombres: string;
@@ -46,6 +47,7 @@ export interface StaysPort {
   getStay(id: string): Promise<StayWithCustomer>;
   getActiveStay(roomId: string): Promise<StayWithCustomer | null>;
   listActiveStays(): Promise<StayWithCustomer[]>;
+  listStays(range: DateRange): Promise<StayWithCustomer[]>;
 
   findOrCreateCustomer(input: CustomerInput): Promise<Customer>;
 

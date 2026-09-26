@@ -1,10 +1,10 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
-import { requireAuth } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 export function kioskReceptionRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requirePermission(services.identity, "SALES_MANAGE") };
 
     app.post<{ Body: { modalidadId: string; bloques?: number; noches?: number } }>(
       "/api/reception/kiosk/start",

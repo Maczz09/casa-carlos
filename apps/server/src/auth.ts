@@ -1,5 +1,5 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import type { IdentityPort, User } from "@casacarlos/contracts";
+import type { AppPermission, IdentityPort, User } from "@casacarlos/contracts";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -35,6 +35,28 @@ export function requireAdmin(identity: IdentityPort) {
     if (reply.sent) return;
     if (request.user?.rol !== "ADMIN") {
       await reply.code(403).send({ error: "Solo un administrador puede acceder a esto." });
+    }
+  };
+}
+
+export function requirePermission(identity: IdentityPort, permission: AppPermission) {
+  const auth = requireAuth(identity);
+  return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    await auth(request, reply);
+    if (reply.sent) return;
+    if (!request.user?.permisos.includes(permission)) {
+      await reply.code(403).send({ error: "Tu usuario no tiene acceso a este módulo." });
+    }
+  };
+}
+
+export function requireAnyPermission(identity: IdentityPort, permissions: readonly AppPermission[]) {
+  const auth = requireAuth(identity);
+  return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    await auth(request, reply);
+    if (reply.sent) return;
+    if (!permissions.some((permission) => request.user?.permisos.includes(permission))) {
+      await reply.code(403).send({ error: "Tu usuario no tiene acceso a esta operación." });
     }
   };
 }

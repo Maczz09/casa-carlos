@@ -16,6 +16,9 @@ export function useTheme() {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    // FullCalendar v7 y otros controles de terceros usan esta convención.
+    document.documentElement.dataset.colorScheme = theme;
+    document.documentElement.style.colorScheme = theme;
     localStorage.setItem(KEY, theme);
   }, [theme]);
 

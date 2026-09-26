@@ -1,7 +1,7 @@
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, type SQL } from "drizzle-orm";
 import type { Db } from "@casacarlos/db";
 import { schema } from "@casacarlos/db";
-import type { Arqueo, CashMovement, Denominaciones, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import type { Arqueo, CashMovement, CashMovementFilter, Denominaciones, Shift, ShiftTemplate } from "@casacarlos/contracts";
 
 type TemplateRow = typeof schema.cashboxPlantillasTurno.$inferSelect;
 type ShiftRow = typeof schema.cashboxTurnos.$inferSelect;
@@ -110,7 +110,24 @@ export class CashboxRepo {
   }
 
   async listMovementsForShift(turnoId: string): Promise<CashMovement[]> {
-    const rows = await this.db.select().from(schema.cashboxMovimientos).where(eq(schema.cashboxMovimientos.turnoId, turnoId)).all();
+    const rows = await this.db
+      .select()
+      .from(schema.cashboxMovimientos)
+      .where(eq(schema.cashboxMovimientos.turnoId, turnoId))
+      .orderBy(desc(schema.cashboxMovimientos.ocurridoEn))
+      .all();
+    return rows.map(toMovement);
+  }
+
+  async listAllMovements(filter: CashMovementFilter = {}): Promise<CashMovement[]> {
+    const conditions: SQL[] = [];
+    if (filter.desde) conditions.push(gte(schema.cashboxMovimientos.ocurridoEn, filter.desde));
+    if (filter.hasta) conditions.push(lte(schema.cashboxMovimientos.ocurridoEn, filter.hasta));
+    if (filter.tipo) conditions.push(eq(schema.cashboxMovimientos.tipo, filter.tipo));
+    if (filter.metodo) conditions.push(eq(schema.cashboxMovimientos.metodo, filter.metodo));
+    const rows = conditions.length
+      ? await this.db.select().from(schema.cashboxMovimientos).where(and(...conditions)).orderBy(desc(schema.cashboxMovimientos.ocurridoEn)).all()
+      : await this.db.select().from(schema.cashboxMovimientos).orderBy(desc(schema.cashboxMovimientos.ocurridoEn)).all();
     return rows.map(toMovement);
   }
 

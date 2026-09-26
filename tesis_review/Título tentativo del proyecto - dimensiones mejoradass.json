@@ -1,0 +1,125 @@
+{
+  "path": "C:\\Users\\maxmo\\Downloads\\TESIS_2\\Título tentativo del proyecto - dimensiones mejoradass.docx",
+  "paragraph_count": 4,
+  "table_count": 2,
+  "paragraphs": [
+    {
+      "index": 1,
+      "style": "Normal",
+      "text": "Título tentativo del proyecto"
+    },
+    {
+      "index": 2,
+      "style": "Normal",
+      "text": "Sistema IoT para el monitoreo de condiciones del suelo y momento de cosecha."
+    },
+    {
+      "index": 3,
+      "style": "Normal",
+      "text": ""
+    },
+    {
+      "index": 4,
+      "style": "Normal",
+      "text": ""
+    }
+  ],
+  "tables": [
+    {
+      "table": 1,
+      "rows": [
+        {
+          "row": 1,
+          "cells": [
+            "PREGUNTA GENERAL",
+            "OBJETIVO GENERAL",
+            "HIPÓTESIS GENERAL",
+            "VARIABLES"
+          ]
+        },
+        {
+          "row": 2,
+          "cells": [
+            "¿En qué medida la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha?",
+            "Determinar si la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha.",
+            "La implementación de un sistema IoT y machine learning mejorará significativamente el monitoreo de las condiciones del suelo y el momento de cosecha.\n",
+            "VI: Sistema IoT \nDimensiones:\nD1: Medición de nitrógeno\nD2: Medición de fósforo\nD3: Medición de potasio\nV2: Machine learning\nD1: Recopilación y preprocesamiento de imágenes\nD2: Entrenamiento y validación del modelo\nD3: Aplicación del modelo para la clasificación de madurez\nV3: Momento de cosecha.\nD1: Estado de madurez visual del pimiento"
+          ]
+        }
+      ]
+    },
+    {
+      "table": 2,
+      "rows": [
+        {
+          "row": 1,
+          "cells": [
+            "PROBLEMAS ESPECÍFICOS",
+            "OBJETIVOS ESPECÍFICOS",
+            "HIPÓTESIS ESPECÍFICAS"
+          ]
+        },
+        {
+          "row": 2,
+          "cells": [
+            "PE1: ¿En qué medida la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo?\n",
+            "OE1: Determinar si la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo.",
+            "HE1: La implementación de un sistema IoT optimiza el monitoreo de las condiciones del suelo."
+          ]
+        },
+        {
+          "row": 3,
+          "cells": [
+            "PE2: ¿En qué medida la implementación de learning favorece el monitoreo de las condiciones del suelo?",
+            "OE2: Evaluar si la implementación de machine learning favorece el monitoreo de las condiciones del suelo.",
+            "HE2: La implementación de machine learning favorece el monitoreo de las condiciones del suelo."
+          ]
+        },
+        {
+          "row": 4,
+          "cells": [
+            "PE3: ¿En qué medida la implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha?",
+            "OE3: Analizar si la implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha.",
+            "HE3: La implementación de un sistema IoT incrementa la eficiencia del monitoreo en el momento de cosecha."
+          ]
+        },
+        {
+          "row": 5,
+          "cells": [
+            "PE4: ¿En qué medida la implementación de machine learning potencia el monitoreo en el momento de cosecha?",
+            "OE4: Establecer si la implementación de machine learning potencia el monitoreo en el momento de cosecha.",
+            "HE4: La implementación de machine learning potencia el monitoreo en el momento de cosecha."
+          ]
+        }
+      ]
+    }
+  ],
+  "package": {
+    "comments": false,
+    "tracked_insertions": 0,
+    "tracked_deletions": 0,
+    "footnotes": false,
+    "endnotes": false,
+    "tracked_insertion_details": [],
+    "extended_properties": {
+      "Template": "Normal",
+      "TotalTime": "287",
+      "Pages": "2",
+      "Words": "350",
+      "Characters": "1927",
+      "Application": "Microsoft Office Word",
+      "DocSecurity": "0",
+      "Lines": "16",
+      "Paragraphs": "4",
+      "ScaleCrop": "false",
+      "HeadingPairs": null,
+      "TitlesOfParts": null,
+      "Company": null,
+      "LinksUpToDate": "false",
+      "CharactersWithSpaces": "2273",
+      "SharedDoc": "false",
+      "HyperlinksChanged": "false",
+      "AppVersion": "16.0000"
+    }
+  }
+}

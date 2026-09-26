@@ -7,6 +7,9 @@ export type Cents = number & { readonly __brand: "Cents" };
 
 export const ZERO = 0 as Cents;
 
+/** IGV vigente para los servicios y productos gravados del hospedaje. */
+export const IGV_RATE = 0.18;
+
 export function cents(value: number): Cents {
   if (!Number.isInteger(value)) {
     throw new TypeError(`cents() requires an integer, got ${value}`);
@@ -101,4 +104,21 @@ export function splitEven(total: Cents, parts: number): Cents[] {
 /** True if a hybrid payment's detail amounts sum exactly to the sale total. */
 export function sumEquals(detailAmounts: readonly Cents[], total: Cents): boolean {
   return equal(sum(detailAmounts), total);
+}
+
+export interface IncludedIgvBreakdown {
+  valorVenta: Cents;
+  igv: Cents;
+  total: Cents;
+}
+
+/**
+ * Desglosa un precio que YA incluye IGV. El impuesto absorbe el posible
+ * céntimo de redondeo, por lo que `valorVenta + igv === total` siempre.
+ * Esta es la única fórmula que deben usar caja, tickets, vistas y SUNAT.
+ */
+export function splitIncludedIgv(total: Cents): IncludedIgvBreakdown {
+  const valorVenta = cents(Math.round(total / (1 + IGV_RATE)));
+  const igv = cents(total - valorVenta);
+  return { valorVenta, igv, total };
 }

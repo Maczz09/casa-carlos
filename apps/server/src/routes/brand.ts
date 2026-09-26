@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
-import { requireAdmin } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 /**
  * Nombre y logo del hotel. El GET es público a propósito: lo consume el kiosco
@@ -10,7 +10,7 @@ import { requireAdmin } from "../auth.js";
  */
 export function brandRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const admin = { preHandler: requireAdmin(services.identity) };
+    const admin = { preHandler: requirePermission(services.identity, "SETTINGS_MANAGE") };
 
     app.get("/api/brand", async () => services.brand.read());
 

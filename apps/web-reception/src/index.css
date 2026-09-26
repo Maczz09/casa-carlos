@@ -163,9 +163,106 @@ html {
 body {
   background-color: var(--c-bg);
   color: var(--c-ink);
+  background-image:
+    radial-gradient(circle at 78% -12%, color-mix(in srgb, var(--c-brand) 9%, transparent), transparent 34rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--c-surface) 42%, transparent), transparent 18rem);
+  background-attachment: fixed;
   /* El cambio de tema se anima en el body y no en `*` a propósito: animar
      todos los elementos hace que el hover de cada botón arrastre 200ms. */
   transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+.app-sidebar {
+  background-image: linear-gradient(180deg, color-mix(in srgb, var(--c-brand) 4%, var(--c-surface)), var(--c-surface) 38%);
+}
+
+.app-topbar {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--c-line) 80%, transparent), 0 8px 30px -26px rgb(15 27 51 / 45%);
+}
+
+/* OverlayScrollbars: barras finas, visibles al usarlas y coherentes con cada tema. */
+.os-theme-casacarlos {
+  --os-size: 8px;
+  --os-padding-perpendicular: 2px;
+  --os-handle-bg: color-mix(in srgb, var(--c-muted) 34%, transparent);
+  --os-handle-bg-hover: color-mix(in srgb, var(--c-brand) 58%, transparent);
+  --os-handle-border-radius: 999px;
+}
+
+/* FullCalendar integrado al sistema de diseño, sin su aspecto genérico por defecto. */
+.reservation-calendar .fc {
+  --fc-border-color: var(--c-line-soft);
+  --fc-page-bg-color: var(--c-surface);
+  --fc-neutral-bg-color: var(--c-inset);
+  --fc-list-event-hover-bg-color: var(--c-inset);
+  --fc-today-bg-color: color-mix(in srgb, var(--c-brand) 9%, transparent);
+  color: var(--c-ink);
+  font-family: var(--font-sans);
+}
+.reservation-calendar .fc .fc-toolbar-title {
+  font-size: 1.1rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.reservation-calendar .fc .fc-button {
+  border: 1px solid var(--c-line);
+  border-radius: 10px;
+  background: var(--c-inset);
+  color: var(--c-ink);
+  box-shadow: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.reservation-calendar .fc .fc-button:hover,
+.reservation-calendar .fc .fc-button-primary:not(:disabled).fc-button-active {
+  border-color: var(--c-brand);
+  background: var(--c-brand);
+  color: var(--c-brand-ink);
+}
+.reservation-calendar .fc .fc-col-header-cell-cushion,
+.reservation-calendar .fc .fc-daygrid-day-number {
+  color: var(--c-muted);
+  font-size: 0.75rem;
+}
+.reservation-calendar .fc .fc-event {
+  border-radius: 7px;
+  padding: 2px 4px;
+  box-shadow: 0 4px 12px -8px rgb(15 27 51 / 55%);
+}
+
+/* Shepherd: tour con el mismo lenguaje visual que el panel. */
+.shepherd-element.cc-shepherd {
+  max-width: 340px;
+  border: 1px solid var(--c-line);
+  border-radius: 16px;
+  background: var(--c-surface);
+  color: var(--c-ink);
+  box-shadow: var(--shadow-pop);
+}
+.shepherd-element.cc-shepherd .shepherd-header,
+.shepherd-element.cc-shepherd .shepherd-content {
+  background: var(--c-surface);
+}
+.cc-shepherd .shepherd-title {
+  color: var(--c-ink);
+  font-size: 0.95rem;
+}
+.cc-shepherd .shepherd-text {
+  color: var(--c-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+.cc-shepherd .shepherd-button {
+  border-radius: 9px;
+  background: var(--c-brand);
+  color: var(--c-brand-ink);
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+.cc-shepherd .shepherd-button.shepherd-button-secondary {
+  background: var(--c-inset);
+  color: var(--c-muted);
 }
 
 ::selection {
@@ -322,6 +419,18 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .reservation-calendar .fc .fc-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .reservation-calendar .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
   }
 }
 

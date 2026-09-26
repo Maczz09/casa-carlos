@@ -12,9 +12,22 @@
     "@casacarlos/contracts": "workspace:*",
     "@casacarlos/money": "workspace:*",
     "@casacarlos/ui": "workspace:*",
+    "@fortune-sheet/react": "^1.0.4",
+    "@fullcalendar/react": "^7.1.0",
+    "@tauri-apps/plugin-notification": "^2",
+    "chart.js": "^4.5.1",
+    "jspdf": "^4.2.1",
+    "overlayscrollbars": "^2.16.0",
+    "overlayscrollbars-react": "^0.5.6",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-chartjs-2": "^5.3.1",
+    "react-dom": "^19.0.0",
+    "recharts": "^3.10.1",
+    "regenerator-runtime": "^0.14.1",
+    "shepherd.js": "^15.3.0",
+    "temporal-polyfill": "^1.0.5",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",

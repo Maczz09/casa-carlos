@@ -1,4 +1,5 @@
 import type { Brand } from "@casacarlos/contracts";
+import { KioskAmbient } from "./KioskAmbient.js";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -10,7 +11,9 @@ function greeting(): string {
 /** What's on screen until a receptionist starts a session — no call to action, since the guest never initiates. */
 export function IdleScreen({ brand }: { brand: Brand }) {
   return (
-    <div className="animate-fade flex h-screen flex-col items-center justify-center bg-bg px-10 text-center">
+    <div className="animate-fade relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-bg px-10 text-center">
+      <KioskAmbient />
+      <div className="relative z-10 flex flex-col items-center">
       {brand.logoUrl && (
         <img src={brand.logoUrl} alt="" className="animate-pop mb-6 h-28 max-w-[16rem] object-contain" />
       )}
@@ -22,6 +25,7 @@ export function IdleScreen({ brand }: { brand: Brand }) {
       <p className="animate-fade-up mt-8 max-w-md text-lg text-muted" style={{ animationDelay: "220ms" }}>
         Un momento — recepción está preparando tu registro.
       </p>
+      </div>
     </div>
   );
 }

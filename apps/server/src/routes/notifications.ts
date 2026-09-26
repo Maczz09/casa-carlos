@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
 import type { CreateRecipientInput, NotificationState, UpdateRecipientInput } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
-import { requireAdmin } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 export function notificationsRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const admin = { preHandler: requireAdmin(services.identity) };
+    const admin = { preHandler: requirePermission(services.identity, "NOTIFICATIONS_MANAGE") };
 
     app.get("/api/notifications/recipients", admin, async () => services.notifications.listRecipients());
 

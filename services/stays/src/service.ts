@@ -207,6 +207,12 @@ export class StaysService implements StaysPort {
     return Promise.all(active.map((s) => this.repo.withCustomer(s)));
   }
 
+  async listStays(range: { desde: string; hasta: string }): Promise<StayWithCustomer[]> {
+    if (range.desde > range.hasta) throw new Error("La fecha inicial no puede ser posterior a la final.");
+    const stays = await this.repo.listOverlapping(range.desde, range.hasta);
+    return Promise.all(stays.map((stay) => this.repo.withCustomer(stay)));
+  }
+
   async runTimers(now: Date): Promise<{ toleranceStarted: string[]; overstayed: string[] }> {
     const toleranceStarted: string[] = [];
     const overstayed: string[] = [];

@@ -1,5 +1,5 @@
 import type { ComprobantePago, SaleWithLines } from "@casacarlos/contracts";
-import { cents, format } from "@casacarlos/money";
+import { cents, format, splitIncludedIgv } from "@casacarlos/money";
 import { api, getToken } from "../api.js";
 import { getBrand } from "../hooks/useBrand.js";
 
@@ -34,6 +34,7 @@ function escapeHtml(value: string): string {
 function buildDraftReceiptHtml(draft: DraftReceipt): string {
   const { sale, tipo, receptorRuc, receptorRazonSocial, fecha, cuarto } = draft;
   const brand = getBrand();
+  const impuestos = splitIncludedIgv(cents(sale.totalCentimos));
   // La ventana de impresión se escribe sobre about:blank, así que una ruta
   // relativa al logo no resolvería: se arma absoluta contra este mismo servidor.
   const logo = brand.logoUrl ? `<img class="logo" src="${escapeHtml(window.location.origin + brand.logoUrl)}" alt="">` : "";
@@ -69,6 +70,7 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   td { padding: 0; vertical-align: top; }
   td:last-child { text-align: right; white-space: nowrap; }
   .center { text-align: center; }
+  .tax td { padding-top: .8mm; }
   .total { text-align: right; font-size: 13px; font-weight: 700; }
 </style>
 </head>
@@ -86,6 +88,10 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   <hr>
   <table><tbody>${lineas}</tbody></table>
   <hr>
+  <table class="tax"><tbody>
+    <tr><td>OP. GRAVADA</td><td>${format(impuestos.valorVenta)}</td></tr>
+    <tr><td>IGV (18%)</td><td>${format(impuestos.igv)}</td></tr>
+  </tbody></table>
   <p class="total">TOTAL ${format(cents(sale.totalCentimos))}</p>
   <hr>
   <p class="center">${tipo === "BOLETA" ? "BOLETA DE VENTA" : "FACTURA"}</p>

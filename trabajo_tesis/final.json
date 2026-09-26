@@ -1,0 +1,3201 @@
+{
+  "path": "D:\\Hoteles\\Casa Carlos\\Resultados\\Formato Proyecto - Capítulo I desarrollado.docx",
+  "paragraphs": [
+    {
+      "location": "body/p[0]",
+      "style": "Heading 1",
+      "text": "CARÁTULA",
+      "runs": [
+        {
+          "text": "CARÁTULA",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[1]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[2]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[3]",
+      "style": "Normal",
+      "text": "Facultad de xxxxx",
+      "runs": [
+        {
+          "text": "Facultad de ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "xxxxx",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[4]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[5]",
+      "style": "Normal",
+      "text": "Carrera de xxxxxx",
+      "runs": [
+        {
+          "text": "Carrera ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "de xxxxxx",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[6]",
+      "style": "Normal",
+      "text": "Taller de Investigación",
+      "runs": [
+        {
+          "text": "Taller de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[7]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[8]",
+      "style": "Normal",
+      "text": "PROYECTO",
+      "runs": [
+        {
+          "text": "PROYECTO",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[9]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[10]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[11]",
+      "style": "Normal",
+      "text": "Apellidos , nombres (ORCID:XXXXXXXX) ",
+      "runs": [
+        {
+          "text": "Apellidos ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ", ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "nombres ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "(ORCID:",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "XXXXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ")",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[12]",
+      "style": "Normal",
+      "text": "Apellidos , nombres (ORCID:XXXXXXXX) ",
+      "runs": [
+        {
+          "text": "Apellidos ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ", ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "nombres ",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "(ORCID:",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "XXXXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ")",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[13]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[14]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[15]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[16]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[17]",
+      "style": "Normal",
+      "text": "Docente: Apellidos, nombres (ORCID: XXXXXXX)",
+      "runs": [
+        {
+          "text": "Docente",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ": ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Apellidos, nombres",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " (ORCID",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ": XXXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ")",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[18]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[19]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[20]",
+      "style": "Normal",
+      "text": "Ica, Perú",
+      "runs": [
+        {
+          "text": "Ica, Perú",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[21]",
+      "style": "Normal",
+      "text": "XXXXXX, 202_",
+      "runs": [
+        {
+          "text": "XXXXXX",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ", 202",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "_",
+          "bold": null,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[22]",
+      "style": "Heading 1",
+      "text": "REPORTE DE SIMILITUD",
+      "runs": [
+        {
+          "text": "REPORTE DE SIMILITUD",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[23]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[24]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[25]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[26]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[27]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[28]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[29]",
+      "style": "Heading 1",
+      "text": "DEDICATORIA",
+      "runs": [
+        {
+          "text": "DEDICATORIA",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[30]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[31]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[32]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[33]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[34]",
+      "style": "Heading 1",
+      "text": "AGRADECIMIENTO",
+      "runs": [
+        {
+          "text": "AGRADECIMIENTO",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[35]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[36]",
+      "style": "TOC Heading",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[37]",
+      "style": "Heading 1",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[38]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[39]",
+      "style": "Heading 1",
+      "text": "ÍNDICE DE TABLAS",
+      "runs": [
+        {
+          "text": "ÍNDICE DE TABLAS",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[40]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[41]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[42]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[43]",
+      "style": "Heading 1",
+      "text": "ÍNDICE DE FIGURAS",
+      "runs": [
+        {
+          "text": "ÍNDICE DE FIGURAS",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[44]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[45]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[46]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[47]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 1",
+      "runs": [
+        {
+          "text": "CAPÍTULO 1",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[48]",
+      "style": "Heading 1",
+      "text": "PROBLEMA DE INVESTIGACIÓN",
+      "runs": [
+        {
+          "text": "PROBLEMA DE INVESTIGACIÓN",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[49]",
+      "style": "Heading 2",
+      "text": "Descripción del Problema",
+      "runs": [
+        {
+          "text": "Descripción del Problema",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[50]",
+      "style": "Normal",
+      "text": "Datos de delimitación pendientes: cultivo y variedad [POR DEFINIR], unidad agrícola y ubicación exacta [POR DEFINIR], y campaña o periodo de evaluación [POR DEFINIR]. Estos datos deben completarse antes de aprobar la versión final del proyecto.",
+      "runs": [
+        {
+          "text": "Datos de delimitación pendientes: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "cultivo y variedad [POR DEFINIR], unidad agrícola y ubicación exacta [POR DEFINIR], y campaña o periodo de evaluación [POR DEFINIR]. Estos datos deben completarse antes de aprobar la versión final del proyecto.",
+          "bold": true,
+          "italic": true,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[51]",
+      "style": "Normal",
+      "text": "La producción agrícola depende de la capacidad de conocer, con oportunidad y precisión, el estado del suelo y la evolución del cultivo. A escala mundial, el suelo sostiene aproximadamente el 95 % de los alimentos, pero cerca del 33 % de los suelos ya se encuentra degradado. Esta situación se relaciona con pérdidas de materia orgánica y biodiversidad, desequilibrios de nutrientes y erosión, factores que reducen la productividad y aumentan la vulnerabilidad de los sistemas agrícolas (Organización de las Naciones Unidas para la Alimentación y la Agricultura [FAO], 2025). Por ello, monitorear variables edáficas ya no constituye solo una actividad técnica complementaria, sino una condición para tomar decisiones agrícolas sostenibles y oportunas.",
+      "runs": [
+        {
+          "text": "La producción agrícola depende de la capacidad de conocer, con oportunidad y precisión, el estado del suelo y la evolución del cultivo. A escala mundial, el suelo sostiene aproximadamente el 95 % de los alimentos, pero cerca del 33 % de los suelos ya se encuentra degradado. Esta situación se relaciona con pérdidas de materia orgánica y biodiversidad, desequilibrios de nutrientes y erosión, factores que reducen la productividad y aumentan la vulnerabilidad de los sistemas agrícolas (Organización de las Nacio",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "nes Unidas para la Alimentación y la Agricultura [FAO], 2025). Por ello, monitorear variables edáficas ya no constituye solo una actividad técnica complementaria, sino una condición para tomar decisiones agrícolas sostenibles y oportunas.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[52]",
+      "style": "Normal",
+      "text": "El problema adquiere mayor relevancia por la presión sobre el agua y los insumos. La agricultura concentra más del 70 % de las extracciones mundiales de agua dulce, de modo que una decisión tardía o basada únicamente en observaciones ocasionales puede ocasionar riego ineficiente, fertilización imprecisa y costos innecesarios (FAO, 2020). En la práctica convencional, el productor suele depender de inspecciones manuales, muestreos aislados o análisis de laboratorio que, aunque necesarios como referencia, no siempre ofrecen continuidad temporal. La ausencia de datos frecuentes dificulta identificar cambios en el suelo, comparar tendencias y responder antes de que el estrés del cultivo se vuelva visible.",
+      "runs": [
+        {
+          "text": "El problema adquiere mayor relevancia por la presión sobre el agua y los insumos. La agricultura concentra más del 70 % de las extracciones mundiales de agua dulce, de modo que una decisión tardía o basada ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "únicamente en observaciones ocasionales puede ocasionar riego ineficiente, fertilización imprecisa y costos innecesarios (FAO, 2020). En la práctica convencional, el productor suele depender de inspecciones manuales, muestreos aislados o análisis de laboratorio que, aunque necesarios como referencia, no siempre ofrecen continuidad temporal. La ausencia de datos frecuentes dificulta identificar cambios en el suelo, comparar tendencias y responder antes de que el estrés del cultivo se vuelva visible.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[53]",
+      "style": "Normal",
+      "text": "En el Perú persiste una brecha de tecnificación. La Encuesta Nacional Agropecuaria 2023 informó que solo el 15,8 % de la superficie agrícola empleaba riego tecnificado (Instituto Nacional de Estadística e Informática [INEI], 2024). En Ica, el contexto es especialmente sensible porque la agricultura y la agroexportación dependen de una gestión eficiente del agua subterránea; la Autoridad Nacional del Agua ha señalado la necesidad de recargar y gestionar sosteniblemente los acuíferos para atender a la población y a las actividades agrícolas (Autoridad Nacional del Agua [ANA], 2024). En este escenario, disponer de información continua sobre el suelo puede apoyar decisiones de manejo más responsables, aunque la tecnología no sustituye el análisis agronómico ni la validación de laboratorio.",
+      "runs": [
+        {
+          "text": "En el Perú persiste una brecha de tecnificación. La Encuesta Nacional Agropecuaria 2023 informó que solo el 15,8 % de la superficie agrícola empleaba riego tecnificado (Instituto Nacional de Estadística e Informática [INEI], 2024). En Ica, el contexto es especialmente sensible porque la agricultura y la agroexportación dependen de una gestión eficiente del agua subterránea; la Autoridad Nacional del Agua ha señalado la necesidad de recargar y gestionar sosteniblemente los acuíferos para atender a la poblaci",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "ón y a las actividades agrícolas (Autoridad Nacional del Agua [ANA], 2024). En este escenario, disponer de información continua sobre el suelo puede apoyar decisiones de manejo más ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "responsables, aunque la tecnología no sustituye el análisis agronómico ni la validación de laboratorio.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[54]",
+      "style": "Normal",
+      "text": "Los sistemas basados en Internet de las cosas (IoT) ofrecen una alternativa al integrar sensores, un microcontrolador, conectividad, almacenamiento y una interfaz de consulta. Esta arquitectura permite capturar y transmitir lecturas con una frecuencia definida, conservar el historial y emitir alertas cuando los valores se apartan de rangos establecidos. Postolache et al. (2023) explican que los sistemas IoT para evaluación de nutrientes pueden combinar mediciones de humedad, pH, nitrógeno, fósforo y potasio con variables ambientales, pero también enfrentan variabilidad espacial, diferencias entre tipos de suelo, mantenimiento y conectividad. En consecuencia, el valor del sistema no depende solo de “conectar sensores”, sino de asegurar calibración, trazabilidad, continuidad de los datos y una visualización comprensible.",
+      "runs": [
+        {
+          "text": "Los sistemas basados en Internet de las cosas (IoT) ofrecen una alternativa al integrar sensores, un microcontrolador, conectividad, almacenamiento y una interfaz de consulta. Esta arquitectura permite capturar y transmitir lecturas con una frecuencia definida, conservar el historial y emitir alertas cuando los valores se apartan de rangos establecidos. Postolache et al. (2023) explican que los sistemas IoT para evaluación de nutrientes pueden combinar mediciones de humedad, pH, nitrógeno, fósforo y potasio",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " con variables ambientales, pero también enfrentan variabilidad espacial, diferencias entre tipos de suelo, mantenimiento y conectividad. En consecuencia, el valor del sistema no depende solo de “conectar sensores”, sino de asegurar calibración, trazabilidad, continuidad de los datos y una visualización comprensible.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[55]",
+      "style": "Normal",
+      "text": "El machine learning puede complementar el monitoreo al reconocer patrones en los datos históricos y producir clasificaciones o estimaciones. Un sistema IoT habilitado con aprendizaje automático puede analizar humedad, temperatura, condiciones ambientales y niveles de nutrientes para generar recomendaciones agrícolas (Islam et al., 2023). Sin embargo, la estimación del momento de cosecha exige definir primero el cultivo, la variedad y un criterio agronómico de madurez que funcione como etiqueta o valor de referencia. La literatura sobre madurez pre-cosecha indica que los modelos suelen requerir fusión de sensores e indicadores específicos, como color, firmeza, contenido de azúcares, acidez o información espectral; por tanto, los datos de N, P y K por sí solos no garantizan una predicción válida del momento de cosecha (Islam et al., 2024).",
+      "runs": [
+        {
+          "text": "El machine learning puede complementar el monitoreo al reconocer patrones en los datos históricos y producir clasificaciones o estimaciones. Un sistema IoT habilitado con aprendizaje automático puede analizar humedad, temperatura, condiciones ambientales y niveles de nutrientes para generar recomendaciones agrícolas (Islam et al., 2023). Sin embargo, la estimación del momento de cosecha exige definir primero el cultivo, la variedad y un criterio agronómico de madurez que funcione como etiqueta o valor de re",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "ferencia. La literatura sobre madurez pre-cosecha indica que los modelos suelen requerir fusión de sensores e indicadores específicos, como color, firmeza, contenido de azúcares, acidez o información espectral; por tanto, los datos de N, P y K por sí solos no garantizan una predicción válida del momento de cosecha (Islam et al., 2024).",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[56]",
+      "style": "Normal",
+      "text": "También existe un riesgo técnico que debe formar parte del problema de investigación: la confiabilidad de los sensores NPK de bajo costo. Baldi et al. (2026) evaluaron sondas comerciales en suelos franco-arcillosos y arenosos y no hallaron correlaciones significativas entre sus lecturas de N, P y K y los análisis químicos de referencia. El hallazgo no invalida todo desarrollo IoT, pero obliga a que el proyecto incluya calibración, comparación con un método de referencia, control de humedad y temperatura, y métricas de error. Sin estas verificaciones, el sistema podría transmitir datos en tiempo real que no representen adecuadamente la condición real del suelo.",
+      "runs": [
+        {
+          "text": "También existe un riesgo técnico que debe formar parte del problema de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "investigación: la confiabilidad de los sensores NPK de bajo costo. Baldi et al. (2026) evaluaron sondas comerciales en suelos franco-arcillosos y arenosos y no hallaron correlaciones significativas entre sus lecturas de N, P y K y los análisis químicos de referencia. El hallazgo no invalida todo desarrollo IoT, pero obliga a que el proyecto incluya calibración, comparación con un método de referencia, control de humedad y temperatura, y métricas de error. Sin estas verificaciones, el sistema podría transmit",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "ir datos en tiempo real que no representen adecuadamente la condición real del suelo.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[57]",
+      "style": "Normal",
+      "text": "En la unidad agrícola [POR DEFINIR] no se cuenta, según el planteamiento disponible, con una solución integrada y validada que registre de forma continua las condiciones del suelo y utilice esos datos para apoyar la estimación del momento de cosecha del cultivo [POR DEFINIR]. Esta carencia limita la disponibilidad de información oportuna, dificulta comparar el comportamiento del suelo durante la campaña y mantiene decisiones sujetas a observaciones discontinuas. Por ello, la investigación propone implementar un sistema IoT con machine learning y evaluar, mediante indicadores verificables, en qué medida mejora el monitoreo de las condiciones del suelo y el apoyo a la determinación del momento de cosecha. La evaluación deberá comparar el proceso actual con el sistema propuesto y reportar exactitud de sensores, disponibilidad y latencia de datos, desempeño del modelo y utilidad de las alertas.",
+      "runs": [
+        {
+          "text": "En la unidad agrícola [POR DEFINIR] no se cuenta, según el planteamiento disponible, con una solución integrada y validada que registre de forma continua las condiciones del suelo y utilice esos datos para apoyar la estimación del momento de cosecha del cultivo [POR DEFINIR]. Esta carencia limita la disponibilidad de información oportuna, dificulta comparar el comportamiento del suelo durante la campaña y mantiene ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "decisiones sujetas a observaciones discontinuas. Por ello, la investigación propone implementar un sistema IoT con machine learning y evaluar, mediante indicadores verificables, en qué medida mejora el monitoreo de las condiciones del suelo y el apoyo a la determinación del momento de cosecha. La evaluación deberá comparar el proceso actual con el sistema propuesto y reportar exactitud de sensores, disponibilidad y latencia de datos, desempeño del modelo y utilidad de las alertas.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[58]",
+      "style": "Heading 2",
+      "text": "Formulación del Problema",
+      "runs": [
+        {
+          "text": "Formulación del Problema",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[59]",
+      "style": "Heading 3",
+      "text": "Pregunta General",
+      "runs": [
+        {
+          "text": "Pregunta General",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[60]",
+      "style": "Normal",
+      "text": "PG: ¿En qué medida la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha?",
+      "runs": [
+        {
+          "text": "PG: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "¿En qué medida la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha?",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[61]",
+      "style": "Heading 3",
+      "text": "Preguntas Específicas",
+      "runs": [
+        {
+          "text": "Preguntas Específicas",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[62]",
+      "style": "Normal",
+      "text": "PE1: ¿En qué medida la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo?",
+      "runs": [
+        {
+          "text": "PE1: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "¿En qué medida la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo?",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[63]",
+      "style": "Normal",
+      "text": "PE2: ¿En qué medida la implementación de machine learning mejora el monitoreo de las condiciones del suelo?",
+      "runs": [
+        {
+          "text": "PE2: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "¿En qué medida la implementación de machine learning mejora el monitoreo de las condiciones del suelo?",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[64]",
+      "style": "Normal",
+      "text": "PE3: ¿En qué medida la implementación de un sistema IoT mejora el monitoreo en el momento de cosecha?",
+      "runs": [
+        {
+          "text": "PE3: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "¿En qué medida la implementación de un sistema IoT mejora el monitoreo en el momento de cosecha?",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[65]",
+      "style": "Normal",
+      "text": "PE4: ¿En qué medida la implementación de machine learning mejora el monitoreo en el momento de cosecha?",
+      "runs": [
+        {
+          "text": "PE4: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "¿En qué medida la implementación de machine learning mejora el monitoreo en el momento de cosecha?",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[66]",
+      "style": "Heading 2",
+      "text": "Objetivo de la Investigación",
+      "runs": [
+        {
+          "text": "Objetivo de la Investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[67]",
+      "style": "Heading 3",
+      "text": "Objetivo General ",
+      "runs": [
+        {
+          "text": "Objetivo General",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[68]",
+      "style": "Normal",
+      "text": "OG: Determinar si la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha.",
+      "runs": [
+        {
+          "text": "OG: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Determinar si la implementación de un sistema IoT y machine learning mejora el monitoreo de las condiciones del suelo y el momento de cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[69]",
+      "style": "Heading 3",
+      "text": "Objetivos Específicos",
+      "runs": [
+        {
+          "text": "Objetivos Específicos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[70]",
+      "style": "Normal",
+      "text": "OE1: Evaluar si la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo.",
+      "runs": [
+        {
+          "text": "OE1: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Evaluar si la implementación de un sistema IoT mejora el monitoreo de las condiciones del suelo.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[71]",
+      "style": "Normal",
+      "text": "OE2: Analizar si la implementación de machine learning mejora el monitoreo de las condiciones del suelo.",
+      "runs": [
+        {
+          "text": "OE2: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Analizar si la implementación de machine learning mejora el monitoreo de las condiciones del ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "suelo.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[72]",
+      "style": "Normal",
+      "text": "OE3: Establecer si la implementación de un sistema IoT mejora el monitoreo en el momento de cosecha.",
+      "runs": [
+        {
+          "text": "OE3: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Establecer si la implementación de un sistema IoT mejora el monitoreo en el momento de cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[73]",
+      "style": "Normal",
+      "text": "OE4: Comprobar si la implementación de machine learning mejora el monitoreo en el momento de cosecha.",
+      "runs": [
+        {
+          "text": "OE4: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Comprobar si la implementación de machine learning mejora el monitoreo en el momento de cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[74]",
+      "style": "Heading 2",
+      "text": "Hipótesis",
+      "runs": [
+        {
+          "text": "Hipótesis",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[75]",
+      "style": "Heading 3",
+      "text": "Hipótesis General",
+      "runs": [
+        {
+          "text": "Hipótesis General",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[76]",
+      "style": "Normal",
+      "text": "HG: La implementación de un sistema IoT y machine learning mejorará significativamente el monitoreo de las condiciones del suelo y el momento de cosecha.",
+      "runs": [
+        {
+          "text": "HG: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "La implementación de un sistema IoT y machine learning mejorará significativamente el monitoreo de las condiciones del suelo y el momento de cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[77]",
+      "style": "Heading 3",
+      "text": "Hipótesis Específicas",
+      "runs": [
+        {
+          "text": "Hipótesis Específicas",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[78]",
+      "style": "Normal",
+      "text": "HE1: La implementación de un sistema IoT optimizará significativamente el monitoreo de las condiciones del suelo.",
+      "runs": [
+        {
+          "text": "HE1: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "La implementación de un sistema IoT optimizará significativamente el monitoreo de las condiciones del suelo.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[79]",
+      "style": "Normal",
+      "text": "HE2: La implementación de machine learning potenciará significativamente el monitoreo de las condiciones del suelo.",
+      "runs": [
+        {
+          "text": "HE2: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "La implementación de machine learning potenciará significativamente el monitoreo de las condiciones del suelo.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[80]",
+      "style": "Normal",
+      "text": "HE3: La implementación de un sistema IoT fortalecerá significativamente el monitoreo en el momento de cosecha.",
+      "runs": [
+        {
+          "text": "HE3: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "La implementación de un sistema IoT fortalecerá significativamente el monitoreo en el momento de cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[81]",
+      "style": "Normal",
+      "text": "HE4: La implementación de machine learning perfeccionará significativamente el monitoreo en el momento de cosecha.",
+      "runs": [
+        {
+          "text": "HE4: ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "La implementación de machine learning perfeccionará significativamente el monitoreo en el momento de cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[82]",
+      "style": "Heading 2",
+      "text": "Justificación e Importancia",
+      "runs": [
+        {
+          "text": "Justificación e Importancia",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[83]",
+      "style": "Normal",
+      "text": "Justificación práctica. La investigación busca reducir la dependencia de observaciones aisladas mediante datos continuos y alertas oportunas. Un productor o responsable técnico podrá consultar el historial de las variables del suelo, identificar desviaciones y documentar las condiciones que acompañan el desarrollo del cultivo. Esta trazabilidad puede mejorar la oportunidad de las decisiones y disminuir el tiempo destinado a recopilar manualmente información dispersa.",
+      "runs": [
+        {
+          "text": "Justificación práctica. ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "La investigación busca reducir la dependencia de observaciones aisladas mediante datos continuos y alertas oportunas. Un productor o responsable técnico podrá consultar el historial de las variables del suelo, identificar desviaciones y documentar las condiciones que acompañan el desarrollo del cultivo. Esta trazabilidad puede mejorar la oportunidad de las decisiones y disminuir el tiempo destinado a recopilar manualmente información dispersa.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[84]",
+      "style": "Normal",
+      "text": "Justificación tecnológica. El proyecto integrará sensores, adquisición de datos, comunicación, almacenamiento, procesamiento mediante machine learning y una interfaz de consulta en una arquitectura de software verificable. Su importancia no radica únicamente en construir un prototipo, sino en demostrar interoperabilidad, disponibilidad de datos, tolerancia a fallas de conectividad y capacidad de actualización. El diseño podrá servir como base reutilizable para incorporar sensores adicionales o adaptar el modelo a otro cultivo, siempre después de una nueva calibración y validación.",
+      "runs": [
+        {
+          "text": "Justificación tecnológica. ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "El proyecto integrará sensores, adquisición de datos, comunicación, almacenamiento, procesamiento mediante machine learning y una interfaz de consulta en una arquitectura de software verificable. Su importancia no radica únicamente en construir un prototipo, sino en demostrar interoperabilidad, disponibilidad de datos, tolerancia a fallas de conectividad y capacidad de actualización. El diseño podrá servir como base reutilizable para incorporar sensores adicionales o adaptar el modelo a otro cultivo, siempr",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "e después de una nueva calibración y validación.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[85]",
+      "style": "Normal",
+      "text": "Justificación metodológica. La investigación generará un procedimiento de evaluación que confronte las lecturas de los sensores con mediciones de referencia, controle la calidad de los datos y compare el desempeño antes y después de la implementación. Para el componente IoT deberán medirse, como mínimo, error de lectura, porcentaje de datos recibidos, latencia y disponibilidad. Para machine learning se definirán métricas coherentes con la salida: exactitud, precisión, exhaustividad y F1 si se clasifica la madurez; o MAE, RMSE y R² si se estima un valor continuo o los días restantes para la cosecha.",
+      "runs": [
+        {
+          "text": "Justificación metodológica. ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "La investigación generará un procedimiento de evaluación que confronte las lecturas de los sensores con mediciones de referencia, controle la calidad de los datos y compare el desempeño antes y después de la ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "implementación. Para el componente IoT deberán medirse, como mínimo, error de lectura, porcentaje de datos recibidos, latencia y disponibilidad. Para machine learning se definirán métricas coherentes con la salida: exactitud, precisión, exhaustividad y F1 si se clasifica la madurez; o MAE, RMSE y R² si ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "se estima un valor continuo o los días restantes para la cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[86]",
+      "style": "Normal",
+      "text": "Justificación ambiental y económica. Un monitoreo mejor fundamentado puede contribuir al uso racional de agua y fertilizantes, especialmente en un territorio con presión hídrica como Ica. La información no reemplazará la recomendación agronómica, pero puede ayudar a evitar intervenciones por rutina o demasiado tardías. En el plano económico, la anticipación de condiciones desfavorables y una estimación mejor documentada de la cosecha pueden reducir pérdidas, reprocesos y costos de supervisión.",
+      "runs": [
+        {
+          "text": "Justificación ambiental y económica. ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Un monitoreo mejor fundamentado puede contribuir al uso racional de agua y fertilizantes, especialmente en un territorio con presión hídrica como Ica. La información no reemplazará la recomendación agronómica, pero puede ayudar a evitar intervenciones por rutina o demasiado tardías. En el plano económico, la anticipación de condiciones desfavorables y una estimación mejor documentada de la cosecha pueden reducir pérdidas, reprocesos y costos de supervisión.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[87]",
+      "style": "Normal",
+      "text": "Importancia científica y social. El estudio producirá un conjunto de datos local y evidencia sobre el comportamiento real de sensores y modelos en un cultivo y campaña determinados. Esto es relevante porque los resultados de machine learning dependen del contexto, y un modelo entrenado con datos externos no puede asumirse válido en Ica sin pruebas. La documentación del método, sus errores y sus límites facilitará la replicación académica y permitirá comunicar al usuario final el nivel de confianza de cada recomendación.",
+      "runs": [
+        {
+          "text": "Importancia científica y social. ",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "El estudio producirá un conjunto de datos local y evidencia sobre el comportamiento real de sensores y modelos en un cultivo y campaña determinados. Esto es relevante porque los resultados de machine learning dependen del contexto, y un modelo entrenado con datos externos no puede asumirse válido en Ica sin pruebas. La documentación del método, sus errores y sus límites facilitará la replicación académica y permitirá comunicar al usuario final el nivel de confianza de cada recomendación.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[88]",
+      "style": "Heading 2",
+      "text": "Limitaciones",
+      "runs": [
+        {
+          "text": "Limitaciones",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[89]",
+      "style": "Normal",
+      "text": "La principal limitación actual es la falta de delimitación del cultivo, variedad, unidad agrícola y periodo de estudio. Estas decisiones son indispensables porque determinan los rangos agronómicos, la forma de obtener la verdad de terreno y el significado de “momento de cosecha”. Mientras permanezcan pendientes, el capítulo debe considerarse un borrador técnicamente sustentado y no una versión cerrada.",
+      "runs": [
+        {
+          "text": "La principal limitación actual es la falta de delimitación del cultivo, variedad, unidad agrícola y periodo de estudio. Estas decisiones son indispensables porque determinan los rangos agronómicos, la forma de obtener la verdad de terreno y el significado de “momento de cosecha”. Mientras permanezcan pendientes, el capítulo debe considerarse un borrador técnicamente sustentado y no una versión cerrada.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[90]",
+      "style": "Normal",
+      "text": "La exactitud de los sensores, en especial las sondas NPK de bajo costo, puede variar por textura, humedad, temperatura, salinidad, profundidad de instalación, interferencias iónicas y deriva. El estudio no deberá emplear sus lecturas como valores absolutos sin calibrarlas y compararlas con análisis de referencia. Si la validación no alcanza un error aceptable definido previamente, las lecturas solo podrán interpretarse como tendencias relativas.",
+      "runs": [
+        {
+          "text": "La exactitud de los sensores, en especial las sondas NPK de bajo costo, puede ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "variar por textura, humedad, temperatura, salinidad, profundidad de instalación, interferencias iónicas y deriva. El estudio no deberá emplear sus lecturas como valores absolutos sin calibrarlas y compararlas con análisis de referencia. Si la validación no alcanza un error aceptable definido previamente, las lecturas solo podrán interpretarse como tendencias relativas.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[91]",
+      "style": "Normal",
+      "text": "La conectividad y la alimentación eléctrica pueden provocar pérdida o retraso de datos. La arquitectura deberá contemplar almacenamiento local temporal, reintentos de transmisión, marcas de tiempo, identificación de valores faltantes y monitoreo del estado del nodo. La evaluación se limitará a la tecnología de comunicación y cobertura disponible en la unidad agrícola seleccionada.",
+      "runs": [
+        {
+          "text": "La conectividad y la alimentación eléctrica pueden provocar pérdida o retraso de datos. La arquitectura deberá contemplar almacenamiento local temporal, reintentos de transmisión, marcas de tiempo, identificación de valores faltantes y monitoreo del estado ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "del nodo. La evaluación se limitará a la tecnología de comunicación y cobertura disponible en la unidad agrícola seleccionada.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[92]",
+      "style": "Normal",
+      "text": "El desempeño de machine learning dependerá del número y equilibrio de observaciones etiquetadas. Una sola campaña puede no cubrir toda la variabilidad climática, agronómica y fenológica; por ello, los resultados no deberán generalizarse automáticamente a otras variedades, suelos, fundos o estaciones. La separación de datos de entrenamiento, validación y prueba deberá evitar que mediciones cercanas en el tiempo produzcan una estimación artificialmente optimista.",
+      "runs": [
+        {
+          "text": "El desempeño de machine learning dependerá del número y equilibrio de observaciones etiquetadas. Una sola campaña puede no cubrir toda la variabilidad climática, agronómica y fenológica; por ello, los resultados no deberán generalizarse automáticamente a otras variedades, suelos, fundos o estaciones. La separación de datos de entrenamiento, validación y prueba deberá evitar que mediciones cercanas en el tiempo produzcan una estimación artificialmente optimista.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[93]",
+      "style": "Normal",
+      "text": "El momento de cosecha no depende exclusivamente de N, P y K. Según el cultivo, puede requerir humedad, temperatura, grados-día, color, firmeza, sólidos solubles, acidez, imágenes u otros indicadores de madurez. Si el proyecto mantiene únicamente detectores de NPK, deberá presentar el resultado como apoyo al monitoreo y no como determinación agronómica definitiva de la cosecha.",
+      "runs": [
+        {
+          "text": "El momento de cosecha no depende exclusivamente de N, P y K. Según el cultivo, puede requerir humedad, temperatura, grados-día, color, firmeza, sólidos solubles, acidez, imágenes u otros indicadores de madurez. Si el proyecto mantiene únicamente detectores de NPK, deberá presentar el resultado como apoyo al monitoreo y no como determinación agronómica definitiva de la cosecha.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[94]",
+      "style": "Normal",
+      "text": "Finalmente, el alcance estará condicionado por presupuesto, disponibilidad de análisis de laboratorio, acceso al campo, eventos meteorológicos, mantenimiento de sensores y participación del especialista agrónomo. Estas restricciones deberán registrarse durante la ejecución para distinguir entre fallas del prototipo, problemas de datos y factores externos al sistema.",
+      "runs": [
+        {
+          "text": "Finalmente, el alcance estará condicionado por presupuesto, disponibilidad de análisis de laboratorio, acceso al campo, eventos meteorológicos, mantenimiento de sensores y participación del especialista agrónomo. Estas restricciones deberán registrarse durante la ejecución para distinguir entre fallas del prototipo, problemas de datos y factores externos al sistema.",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[95]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 2",
+      "runs": [
+        {
+          "text": "CAPÍTULO 2",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[96]",
+      "style": "Heading 1",
+      "text": "MARCO TEÓRICO",
+      "runs": [
+        {
+          "text": "MARCO TEÓRICO",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[97]",
+      "style": "Heading 2",
+      "text": "Estado del arte",
+      "runs": [
+        {
+          "text": "Estado del arte",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[98]",
+      "style": "Normal (Web)",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[99]",
+      "style": "Heading 2",
+      "text": "Bases Teóricas",
+      "runs": [
+        {
+          "text": "Bases Teóricas",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[100]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[101]",
+      "style": "Heading 2",
+      "text": "Definición de términos",
+      "runs": [
+        {
+          "text": "Definición de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": null
+        },
+        {
+          "text": "términos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[102]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[103]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[104]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 3",
+      "runs": [
+        {
+          "text": "CAPÍTULO 3",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[105]",
+      "style": "Heading 1",
+      "text": "METODOLOGÍA DE LA INVESTIGACIÓN",
+      "runs": [
+        {
+          "text": "METODOLOGÍA DE LA INVESTIGACIÓN",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[106]",
+      "style": "Heading 2",
+      "text": "Método y diseño de la investigación",
+      "runs": [
+        {
+          "text": "Método y diseño de la investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[107]",
+      "style": "Heading 3",
+      "text": "Tipo de investigación",
+      "runs": [
+        {
+          "text": "Tipo de investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[108]",
+      "style": "Heading 3",
+      "text": "Enfoque de investigación",
+      "runs": [
+        {
+          "text": "Enfoque de investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[109]",
+      "style": "Heading 3",
+      "text": "Diseño de investigación ",
+      "runs": [
+        {
+          "text": "Diseño de investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[110]",
+      "style": "Heading 3",
+      "text": "Alcance de la investigación ",
+      "runs": [
+        {
+          "text": "Alcance de la investigación",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[111]",
+      "style": "Heading 2",
+      "text": "Materiales y métodos",
+      "runs": [
+        {
+          "text": "Materiales",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " y m",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "étodos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[112]",
+      "style": "Heading 3",
+      "text": "Método",
+      "runs": [
+        {
+          "text": "Método",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[113]",
+      "style": "Heading 3",
+      "text": "Población",
+      "runs": [
+        {
+          "text": "Población",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[114]",
+      "style": "Heading 3",
+      "text": "Muestra",
+      "runs": [
+        {
+          "text": "Muestra",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[115]",
+      "style": "Heading 3",
+      "text": "Criterios de inclusión",
+      "runs": [
+        {
+          "text": "Criterios de inclusión",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[116]",
+      "style": "Heading 3",
+      "text": "Criterios de exclusión",
+      "runs": [
+        {
+          "text": "Criterios de exclusión",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[117]",
+      "style": "Heading 2",
+      "text": "Técnicas e instrumentos de recolección y procesamiento de datos ",
+      "runs": [
+        {
+          "text": "Técnicas e instrumentos de recolección y procesamiento de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[118]",
+      "style": "Heading 3",
+      "text": "Técnica de recolección de datos ",
+      "runs": [
+        {
+          "text": "Técnica de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[119]",
+      "style": "Heading 3",
+      "text": "Instrumento\t",
+      "runs": [
+        {
+          "text": "Instrumento",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "\t",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[120]",
+      "style": "Heading 3",
+      "text": "Fuentes de recolección de datos ",
+      "runs": [
+        {
+          "text": "Fuentes de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[121]",
+      "style": "Heading 3",
+      "text": "Validez del instrumento ",
+      "runs": [
+        {
+          "text": "Validez del instrumento",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[122]",
+      "style": "Heading 3",
+      "text": "Confiabilidad del instrumento ",
+      "runs": [
+        {
+          "text": "Confiabilidad del instrumento",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[123]",
+      "style": "Heading 3",
+      "text": "Proceso de recolección de datos ",
+      "runs": [
+        {
+          "text": "Proceso de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[124]",
+      "style": "Heading 3",
+      "text": "Procesamiento de datos ",
+      "runs": [
+        {
+          "text": "Procesamiento de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[125]",
+      "style": "Heading 2",
+      "text": " Aspectos éticos",
+      "runs": [
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "Aspectos éticos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[126]",
+      "style": "Heading 1",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[127]",
+      "style": "Heading 1",
+      "text": "CAPÍTULO 4",
+      "runs": [
+        {
+          "text": "CAPÍTULO 4",
+          "bold": true,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[128]",
+      "style": "Normal",
+      "text": "ASPECTOS ADMINISTRATIVOS",
+      "runs": [
+        {
+          "text": "ASPECTOS ADMINISTRATIVOS",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[129]",
+      "style": "Normal (Web)",
+      "text": "el cronograma debe diseñarse específicamente para un ciclo académico de 14 semanas. Se recomienda el uso de un Diagrama de Gantt distribuido de la siguiente manera:",
+      "runs": [
+        {
+          "text": "el cronograma debe diseñarse específicamente para un ciclo académico de 14 semanas. Se recomienda el uso de un ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "Diagrama de Gantt",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " distribuido de la siguiente manera:",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[130]",
+      "style": "Normal (Web)",
+      "text": "Semanas 1-3: Ajuste del planteamiento del problema, objetivos y marco teórico.",
+      "runs": [
+        {
+          "text": "Semanas 1-3:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Ajuste del planteamiento del problema, objetivos y marco teórico",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[131]",
+      "style": "Normal (Web)",
+      "text": "Semanas 4-6: Definición metodológica, validación de instrumentos y obtención del dictamen ético.",
+      "runs": [
+        {
+          "text": "Semanas 4-6:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Definición metodológica, validación de instrumentos y obtención del dictamen ético",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[132]",
+      "style": "Normal (Web)",
+      "text": "Semanas 7-10: Trabajo de campo (recolección de datos) y procesamiento estadístico.",
+      "runs": [
+        {
+          "text": "Semanas 7-10:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Trabajo de campo (recolección de datos) y procesamiento estadístico",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[133]",
+      "style": "Normal (Web)",
+      "text": "Semanas 11-14: Análisis de resultados, redacción de conclusiones y revisión final por el asesor.",
+      "runs": [
+        {
+          "text": "Semanas 11-14:",
+          "bold": true,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": " Análisis de resultados, redacción de conclusiones y revisión final por el asesor",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[134]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[135]",
+      "style": "Normal",
+      "text": "CRONOGRAMA Y PRESUPUESTO",
+      "runs": [
+        {
+          "text": "CRONOGRAMA Y PRESUPUESTO",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[136]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": false,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[137]",
+      "style": "Heading 1",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[138]",
+      "style": "Heading 1",
+      "text": "ANEXOS",
+      "runs": [
+        {
+          "text": "ANEXOS",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[139]",
+      "style": "Heading 2",
+      "text": "Anexo 01: Matriz de Consistencia ",
+      "runs": [
+        {
+          "text": "Anexo 01: Matriz de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "Consistencia",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[140]",
+      "style": "Normal",
+      "text": ".",
+      "runs": [
+        {
+          "text": ".",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Times New Roman",
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[141]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[142]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[143]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[144]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[145]",
+      "style": "Normal",
+      "text": "",
+      "runs": [
+        {
+          "text": "",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[146]",
+      "style": "Heading 2",
+      "text": "Anexo 02: Instrumentos de recolección de datos ",
+      "runs": [
+        {
+          "text": "Anexo 0",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": "2",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": ": Instrumentos de recolección de datos",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        },
+        {
+          "text": " ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[147]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[148]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[149]",
+      "style": "Heading 1",
+      "text": "BIBLIOGRAFÍA",
+      "runs": [
+        {
+          "text": "BIBLIOGRAFÍA",
+          "bold": null,
+          "italic": null,
+          "underline": true,
+          "font": "Arial",
+          "size_pt": 11.0
+        }
+      ]
+    },
+    {
+      "location": "body/p[150]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[151]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[152]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[153]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[154]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[155]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[156]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[157]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[158]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[159]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[160]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "body/p[161]",
+      "style": "Normal",
+      "text": "Autoridad Nacional del Agua. (2024, 21 de mayo). Ica: ANA supervisa recarga del acuífero de Villacuri en el sector del parque Golda Meir. https://www.gob.pe/institucion/ana/noticias/958786-ica-ana-supervisa-recarga-del-acuifero-de-villacuri-en-el-sector-del-parque-golda-meir",
+      "runs": [
+        {
+          "text": "Autoridad Nacional del Agua. (2024, 21 de ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "mayo). Ica: ANA supervisa recarga del acuífero de Villacuri en el sector del parque Golda Meir. https://www.gob.pe/institucion/ana/noticias/958786-ica-ana-supervisa-recarga-del-acuifero-de-villacuri-en-el-sector-del-parque-golda-meir",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[162]",
+      "style": "Normal",
+      "text": "Baldi, E., Quartieri, M., Chiarelli, G., Tassinari, A., Larocca, G. N., Messini, M., & Toselli, M. (2026). Evaluation of the reliability of in situ, real-time probes for precise determination of nitrogen, phosphorus and potassium in agricultural crops. Horticulturae, 12(7), 898. https://doi.org/10.3390/horticulturae12070898",
+      "runs": [
+        {
+          "text": "Baldi, E., Quartieri, M., Chiarelli, G., Tassinari, A., Larocca, G. N., Messini, M., & Toselli, M. (2026). Evaluation of the reliability of in situ, real-time probes for precise determination of nitrogen, phosphorus and potassium in agricultural crops. Horticulturae, 12(7), 898. https://doi.org/10.3390/horticulturae12070898",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[163]",
+      "style": "Normal",
+      "text": "Instituto Nacional de Estadística e Informática. (2024). Productores agropecuarios: Principales resultados de la Encuesta Nacional Agropecuaria 2023. https://proyectos.inei.gob.pe/iinei/srienaho/Descarga/DocumentosMetodologicos/2023-62/05_PUBLICACION_ENA_2023.pdf",
+      "runs": [
+        {
+          "text": "Instituto Nacional de Estadística e Informática. (2024). Productores agropecuarios: Principales resultados de la Encuesta Nacional Agropecuaria 2023. https://proyectos.inei.gob.pe/iinei/srienaho/Descarga/DocumentosMetodologicos/2023-62/05_PUBLICACION_ENA_2023.pdf",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[164]",
+      "style": "Normal",
+      "text": "Islam, M., Bijjahalli, S., Fahey, T., Gardi, A., Sabatini, R., & Lamb, D. W. (2024). Destructive and non-destructive measurement approaches and the application of AI models in precision agriculture: A review. Precision Agriculture, 25, 1127-1180. https://doi.org/10.1007/s11119-024-10112-5",
+      "runs": [
+        {
+          "text": "Islam, M., Bijjahalli, S., Fahey, T., Gardi, A., Sabatini, R., & Lamb, D. W. (2024). Destructive and non-destructive measurement approaches and the application of AI models in precision agriculture: A review. Precision Agriculture, 25, 1127-1180. https://doi.org/10.1007/s11119-024-10112-5",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[165]",
+      "style": "Normal",
+      "text": "Islam, M. R., Oliullah, K., Kabir, M. M., Alom, M., & Mridha, M. F. (2023). Machine learning enabled IoT system for soil nutrients monitoring and crop recommendation. Journal of Agriculture and Food Research, 14, 100880. https://doi.org/10.1016/j.jafr.2023.100880",
+      "runs": [
+        {
+          "text": "Islam, M. R., Oliullah, K., Kabir, M. M., Alom, M., & Mridha, M. F. (2023). Machine learning enabled IoT system for soil nutrients monitoring and crop recommendation. Journal of Agriculture and Food Research, 14, 100880. https://doi.org/10.1016/j.jafr.2023.100880",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[166]",
+      "style": "Normal",
+      "text": "Organización de las Naciones Unidas para la Alimentación y la Agricultura. (2020). The state of food and agriculture 2020: Overcoming water challenges in agriculture. https://www.fao.org/interactive/state-of-food-agriculture/2020/en/",
+      "runs": [
+        {
+          "text": "Organización de las Naciones Unidas para la Alimentación y la Agricultura. (2020). The state of food and agriculture 2020: Overcoming water challenges in agriculture. https://www.fao.org/interactive/state-of-food-agriculture/2020/en/",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[167]",
+      "style": "Normal",
+      "text": "Organización de las Naciones Unidas para la Alimentación y la Agricultura. (2025, 17 de junio). How healthy soils combat climate change and boost food security. https://www.fao.org/gcf/news/news-detail/how-healthy-soils-combat-climate-change-and-boost-food-security/en",
+      "runs": [
+        {
+          "text": "Organización de las Naciones Unidas para la Alimentación y la Agricultura. (2025, 17 de junio). How healthy soils combat climate change and boost food security. https://www.fao.org/gcf/news/news-detail/how-healthy-soils-combat-climate-change-and-boost-food-security/en",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    },
+    {
+      "location": "body/p[168]",
+      "style": "Normal",
+      "text": "Postolache, S., Sebastião, P., Viegas, V., Postolache, O., & Cercas, F. (2023). IoT-based systems for soil nutrients assessment in horticulture. Sensors, 23(1), 403. https://doi.org/10.3390/s23010403",
+      "runs": [
+        {
+          "text": "Postolache, S., Sebastião, P., Viegas, V., Postolache, O., & Cercas, F. (2023). IoT-based systems for soil nutrients assessment in horticulture. Sensors, 23(1), ",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        },
+        {
+          "text": "403. https://doi.org/10.3390/s23010403",
+          "bold": null,
+          "italic": null,
+          "underline": null,
+          "font": null,
+          "size_pt": null
+        }
+      ]
+    }
+  ],
+  "table_paragraphs": [],
+  "headers_footers": [
+    {
+      "location": "section[0]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[0]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[0]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[1]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[1]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[1]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[2]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[2]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[2]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[3]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[3]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[3]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[4]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[4]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[4]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[5]/header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[5]/footer/p[0]",
+      "style": "Footer",
+      "text": "",
+      "runs": []
+    },
+    {
+      "location": "section[5]/first_header/p[0]",
+      "style": "Normal",
+      "text": "",
+      "runs": []
+    }
+  ],
+  "sections": [
+    {
+      "index": 0,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 1,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 2,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 3,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1418,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1701,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 4,
+      "width_twips": 16838,
+      "height_twips": 11906,
+      "top_margin_twips": 1701,
+      "bottom_margin_twips": 1701,
+      "left_margin_twips": 1418,
+      "right_margin_twips": 1418,
+      "start_type": "NEW_PAGE (2)"
+    },
+    {
+      "index": 5,
+      "width_twips": 11906,
+      "height_twips": 16838,
+      "top_margin_twips": 1418,
+      "bottom_margin_twips": 1418,
+      "left_margin_twips": 1701,
+      "right_margin_twips": 1701,
+      "start_type": "NEW_PAGE (2)"
+    }
+  ],
+  "styles": [
+    {
+      "name": "Normal",
+      "font": "Arial",
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Heading 1",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 2",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 3",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 4",
+      "font": null,
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Heading 5",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Heading 6",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": true
+    },
+    {
+      "name": "Heading 7",
+      "font": null,
+      "size_pt": null,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "Heading 8",
+      "font": null,
+      "size_pt": null,
+      "bold": true,
+      "italic": true
+    },
+    {
+      "name": "Heading 9",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": true
+    },
+    {
+      "name": "Title",
+      "font": null,
+      "size_pt": 36.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Subtitle",
+      "font": null,
+      "size_pt": 14.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Quote",
+      "font": null,
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "List Paragraph",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Intense Quote",
+      "font": null,
+      "size_pt": 16.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Caption",
+      "font": null,
+      "size_pt": null,
+      "bold": true,
+      "italic": null
+    },
+    {
+      "name": "No Spacing",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "TOC Heading",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Default",
+      "font": "Arial",
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "toc 1",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "toc 2",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "toc 3",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Header",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Footer",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "table of figures",
+      "font": null,
+      "size_pt": null,
+      "bold": null,
+      "italic": null
+    },
+    {
+      "name": "Normal (Web)",
+      "font": "Times New Roman",
+      "size_pt": 12.0,
+      "bold": null,
+      "italic": null
+    }
+  ],
+  "inline_shapes": 1,
+  "tables": 0,
+  "package_parts": [
+    "[Content_Types].xml",
+    "_rels/.rels",
+    "customXml/_rels/item1.xml.rels",
+    "customXml/item1.xml",
+    "customXml/itemProps1.xml",
+    "docProps/app.xml",
+    "docProps/core.xml",
+    "word/_rels/document.xml.rels",
+    "word/document.xml",
+    "word/endnotes.xml",
+    "word/fontTable.xml",
+    "word/footer1.xml",
+    "word/footer2.xml",
+    "word/footer3.xml",
+    "word/footnotes.xml",
+    "word/media/image1.png",
+    "word/numbering.xml",
+    "word/settings.xml",
+    "word/styles.xml",
+    "word/theme/theme1.xml",
+    "word/webSettings.xml"
+  ]
+}

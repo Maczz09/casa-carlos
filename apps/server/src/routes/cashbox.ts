@@ -1,11 +1,11 @@
 import type { FastifyInstance } from "fastify";
-import type { Denominaciones } from "@casacarlos/contracts";
+import type { CashMovementFilter, CashMovementType, Denominaciones, PaymentMethod } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
-import { requireAuth } from "../auth.js";
+import { requirePermission } from "../auth.js";
 
 export function cashboxRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const auth = { preHandler: requireAuth(services.identity) };
+    const auth = { preHandler: requirePermission(services.identity, "CASHBOX_MANAGE") };
 
     app.get("/api/cashbox/templates", auth, async () => services.cashbox.listShiftTemplates());
 
@@ -65,6 +65,21 @@ export function cashboxRoutes(services: Services) {
     );
 
     app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/movements", auth, async (request) => services.cashbox.listMovements(request.params.id));
+
+    app.get<{
+      Querystring: { desde?: string; hasta?: string; tipo?: CashMovementType; metodo?: PaymentMethod };
+    }>("/api/cashbox/movements", auth, async (request, reply) => {
+      try {
+        const filter: CashMovementFilter = request.query;
+        const movements = await services.cashbox.listAllMovements(filter);
+        const userIds = [...new Set(movements.map((movement) => movement.usuarioId))];
+        const users = await Promise.all(userIds.map((id) => services.identity.getUser(id).catch(() => null)));
+        const names = new Map(users.filter(Boolean).map((user) => [user!.id, `${user!.nombres} ${user!.apellidos}`]));
+        return movements.map((movement) => ({ ...movement, usuarioNombre: names.get(movement.usuarioId) ?? "Usuario no disponible" }));
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
 
     app.post<{ Params: { id: string }; Body: { denominaciones: Denominaciones } }>("/api/cashbox/shifts/:id/arqueo", auth, async (request, reply) => {
       try {

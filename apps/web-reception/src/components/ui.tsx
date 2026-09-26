@@ -63,7 +63,7 @@ export function Card({ className, children, delay }: { className?: string; child
   return (
     <div
       style={delay ? { animationDelay: `${delay}ms` } : undefined}
-      className={cx("animate-fade-up rounded-2xl border border-line bg-surface shadow-[var(--shadow-card)]", className)}
+      className={cx("animate-fade-up rounded-[18px] border border-line bg-surface shadow-[var(--shadow-card)]", className)}
     >
       {children}
     </div>
@@ -103,10 +103,11 @@ export function Section({
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
   return (
-    <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
       <div className="animate-fade-up">
-        <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
-        {subtitle && <p className="mt-1 text-sm text-muted">{subtitle}</p>}
+        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand">Centro de operaciones</p>
+        <h1 className="text-2xl font-semibold tracking-[-0.025em] text-ink">{title}</h1>
+        {subtitle && <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="animate-fade-up flex flex-wrap items-center gap-2">{actions}</div>}
     </div>

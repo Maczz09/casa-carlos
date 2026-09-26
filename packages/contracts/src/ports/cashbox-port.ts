@@ -1,4 +1,5 @@
 import type { Arqueo, CashMovement, CashMovementType, CashSummary, Denominaciones, Shift, ShiftTemplate } from "../entities/cashbox.js";
+import type { PaymentMethod } from "../entities/payments.js";
 import type { DateRange } from "../entities/common.js";
 
 export interface CreateShiftTemplateInput {
@@ -35,6 +36,14 @@ export interface RegistrarArqueoInput {
   usuarioId: string;
 }
 
+export interface CashMovementFilter {
+  /** Instantes ISO inclusivos. Permiten combinar fecha y hora desde la UI. */
+  desde?: string;
+  hasta?: string;
+  tipo?: CashMovementType;
+  metodo?: PaymentMethod;
+}
+
 /**
  * Public surface of `cashbox`. Escucha `payment.accepted` para registrar
  * cada método de pago como movimiento del turno abierto de quien aceptó el
@@ -52,6 +61,7 @@ export interface CashboxPort {
 
   addManualMovement(input: ManualMovementInput): Promise<CashMovement>;
   listMovements(turnoId: string): Promise<CashMovement[]>;
+  listAllMovements(filter?: CashMovementFilter): Promise<CashMovement[]>;
 
   getShiftSummary(turnoId: string): Promise<CashSummary>;
   getRangeSummary(range: DateRange): Promise<CashSummary>;

@@ -13,8 +13,10 @@ import type {
   ProductoRanking,
   ReportingPort,
   VentasPorRecepcionista,
+  SerieTemporalPunto,
 } from "@casacarlos/contracts";
-import { daysBetween, pctChange, previousRange, rangeBounds } from "./domain/period.js";
+import { cents, splitIncludedIgv } from "@casacarlos/money";
+import { daysBetween, pctChange, peruDateParts, previousRange, rangeBounds } from "./domain/period.js";
 import { ReportingRepo } from "./repo.js";
 
 type SalesRow = Awaited<ReturnType<ReportingRepo["salesInRange"]>>[number];
@@ -73,7 +75,24 @@ export class ReportingService implements ReportingPort {
       ingresosPorMetodo: this.byMetodo(paymentDetails),
       cargosExtra: this.byCargo(chargeLines, charges),
       horasPico: this.byHoraPico(stays, startIso, endIso),
+      serieTemporal: this.byDay(actual.sales, range),
     };
+  }
+
+  private byDay(sales: SalesRow[], range: DateRange): SerieTemporalPunto[] {
+    const aggregate = new Map<string, { total: number; count: number }>();
+    for (const sale of sales) {
+      const fecha = peruDateParts(sale.creadoEn).fecha;
+      const entry = aggregate.get(fecha) ?? { total: 0, count: 0 };
+      entry.total += sale.totalCentimos;
+      entry.count += 1;
+      aggregate.set(fecha, entry);
+    }
+    return daysBetween(range).map((fecha) => {
+      const entry = aggregate.get(fecha) ?? { total: 0, count: 0 };
+      const breakdown = splitIncludedIgv(cents(entry.total));
+      return { fecha, ventasCentimos: entry.total, igvCentimos: breakdown.igv, cantidadVentas: entry.count };
+    });
   }
 
   private async loadPeriod(range: DateRange): Promise<PeriodData> {
@@ -90,17 +109,37 @@ export class ReportingService implements ReportingPort {
     const cuartosAlquilados = sales.filter((s) => s.cuartoId !== null).length;
     const ticketPromedioCentimos = cantidadVentas > 0 ? Math.round(ventasCentimos / cantidadVentas) : 0;
 
-    const days = daysBetween(range);
-    let occupiedRoomDays = 0;
-    for (const day of days) {
-      const dayStart = `${day}T00:00:00.000Z`;
-      const dayEnd = `${day}T23:59:59.999Z`;
-      const occupied = new Set(stays.filter((s) => s.bloqueoDesde <= dayEnd && s.bloqueoHasta >= dayStart).map((s) => s.cuartoId));
-      occupiedRoomDays += occupied.size;
+    // El modelo define ocupación en minutos. Contar cualquier alquiler de 3 h
+    // como un día completo inflaba el porcentaje y, si cruzaba medianoche, lo
+    // podía contar dos veces. Se unen los intervalos de cada cuarto para que
+    // tampoco haya doble conteo ante reservas/estadías solapadas.
+    const rangeStart = Date.parse(startIso);
+    const rangeEndExclusive = Date.parse(endIso) + 1;
+    const intervalsByRoom = new Map<string, Array<[number, number]>>();
+    for (const stay of stays) {
+      const start = Math.max(rangeStart, Date.parse(stay.bloqueoDesde));
+      const end = Math.min(rangeEndExclusive, Date.parse(stay.bloqueoHasta));
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) continue;
+      const intervals = intervalsByRoom.get(stay.cuartoId) ?? [];
+      intervals.push([start, end]);
+      intervalsByRoom.set(stay.cuartoId, intervals);
     }
-    // Ocupación a granularidad de día (no de hora): suficiente para un hotel que mezcla
-    // alquiler por horas y por noche, y evita modelar solapamientos parciales dentro del día.
-    const ocupacionPct = rooms.length > 0 ? (occupiedRoomDays / (rooms.length * days.length)) * 100 : 0;
+    let occupiedMs = 0;
+    for (const intervals of intervalsByRoom.values()) {
+      intervals.sort((a, b) => a[0] - b[0]);
+      let [mergedStart, mergedEnd] = intervals[0]!;
+      for (const [start, end] of intervals.slice(1)) {
+        if (start <= mergedEnd) {
+          mergedEnd = Math.max(mergedEnd, end);
+        } else {
+          occupiedMs += mergedEnd - mergedStart;
+          [mergedStart, mergedEnd] = [start, end];
+        }
+      }
+      occupiedMs += mergedEnd - mergedStart;
+    }
+    const capacityMs = rooms.length * Math.max(0, rangeEndExclusive - rangeStart);
+    const ocupacionPct = capacityMs > 0 ? (occupiedMs / capacityMs) * 100 : 0;
 
     return {
       totals: { ventasCentimos, cantidadVentas, cuartosAlquilados, ticketPromedioCentimos, ocupacionPct },
@@ -244,8 +283,8 @@ export class ReportingService implements ReportingPort {
     const buckets = new Map<string, number>();
     for (const s of stays) {
       if (!s.checkinReal || s.checkinReal < startIso || s.checkinReal > endIso) continue;
-      const d = new Date(s.checkinReal);
-      const key = `${d.getUTCDay()}-${d.getUTCHours()}`;
+      const local = peruDateParts(s.checkinReal);
+      const key = `${local.diaSemana}-${local.hora}`;
       buckets.set(key, (buckets.get(key) ?? 0) + 1);
     }
     return [...buckets.entries()]

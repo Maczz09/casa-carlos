@@ -8,6 +8,7 @@ export const identityUsuarios = sqliteTable("identity_usuarios", {
   passwordHash: text("password_hash").notNull(),
   pinHash: text("pin_hash"),
   rol: text("rol", { enum: ["ADMIN", "RECEPCIONISTA"] }).notNull(),
+  permisosJson: text("permisos_json").notNull().default("[]"),
   telefonoWhatsapp: text("telefono_whatsapp"),
   activo: integer("activo", { mode: "boolean" }).notNull().default(true),
   creadoEn: text("creado_en").notNull(),

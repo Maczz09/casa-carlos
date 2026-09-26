@@ -6,7 +6,7 @@ use std::{
     fs::{self, File, OpenOptions},
     io::{Read, Write},
     net::{IpAddr, Ipv4Addr, SocketAddr, TcpStream},
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::{
         Arc,
@@ -123,6 +123,26 @@ fn app_data_dir() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or_else(env::temp_dir)
         .join("HospedajeCarlos")
+}
+
+/** Guarda las exportaciones solicitadas por Recepción en una ubicación que
+ * WebView2 pueda usar siempre. Los enlaces Blob con `download` no muestran
+ * ningún diálogo en algunas instalaciones de Tauri/Windows. */
+#[tauri::command]
+fn save_export_file(filename: String, contents: Vec<u8>) -> Result<String, String> {
+    let safe_name = Path::new(&filename)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .filter(|name| !name.is_empty() && *name != "." && *name != "..")
+        .ok_or_else(|| "El nombre del archivo no es válido.".to_owned())?;
+    let downloads = env::var_os("USERPROFILE")
+        .map(PathBuf::from)
+        .unwrap_or_else(app_data_dir)
+        .join("Downloads");
+    fs::create_dir_all(&downloads).map_err(|error| format!("No se pudo preparar Descargas: {error}"))?;
+    let destination = downloads.join(safe_name);
+    fs::write(&destination, contents).map_err(|error| format!("No se pudo guardar el archivo: {error}"))?;
+    Ok(destination.display().to_string())
 }
 
 fn write_log(message: impl AsRef<str>) {
@@ -342,6 +362,8 @@ fn run() -> Result<(), String> {
     let exit_after = test_exit_after(&args);
     let test_popup = should_test_popup(&args);
     tauri::Builder::default()
+        .plugin(tauri_plugin_notification::init())
+        .invoke_handler(tauri::generate_handler![save_export_file])
         .setup(move |app| {
             app.manage(instance_lock);
             let window = build_main_window(app, mode, server.clone())?;

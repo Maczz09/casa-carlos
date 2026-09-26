@@ -6,8 +6,15 @@ import type { SunatClient } from "./sunat/types.js";
 import { BillingRepo } from "./repo.js";
 import { BillingService } from "./service.js";
 
-export function createBillingService(db: Db, sales: SalesPort, sunatClient: SunatClient, emisor: EmisorInfo, cert: CertificateMaterial | null): BillingPort {
-  return new BillingService(new BillingRepo(db), sales, sunatClient, emisor, cert);
+export function createBillingService(
+  db: Db,
+  sales: SalesPort,
+  sunatClient: SunatClient,
+  emisor: EmisorInfo,
+  cert: CertificateMaterial | null,
+  logoProvider: () => Uint8Array | null = () => null,
+): BillingPort {
+  return new BillingService(new BillingRepo(db), sales, sunatClient, emisor, cert, logoProvider);
 }
 
 /** Debe correr una vez al arrancar el servidor, antes de aceptar requests — ver `BillingRepo.ensureAllCorrelativosSeeded`. */

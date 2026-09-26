@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
-import { requireAdmin } from "../auth.js";
+import { requirePermission } from "../auth.js";
 import { probeSunatCredentials, type UpdateSunatConfigInput } from "../sunat-config.js";
 
 /**
@@ -13,7 +13,7 @@ import { probeSunatCredentials, type UpdateSunatConfigInput } from "../sunat-con
  */
 export function sunatRoutes(services: Services) {
   return async function (app: FastifyInstance) {
-    const admin = { preHandler: requireAdmin(services.identity) };
+    const admin = { preHandler: requirePermission(services.identity, "SETTINGS_MANAGE") };
 
     app.get("/api/sunat/config", admin, async () => services.sunatConfig.read(services.sunatModoActivo));
 
