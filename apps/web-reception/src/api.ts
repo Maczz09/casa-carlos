@@ -172,6 +172,8 @@ export const api = {
   removeKioskProduct: (lineId: string, motivo?: string) =>
     post<KioskSession>("/api/kiosk/remove-product", { lineId, motivo: motivo ?? "Quitado desde recepción" }),
   finishKioskProducts: () => post<KioskSession>("/api/kiosk/finish-products"),
+  setKioskProductsDecision: (wants: boolean) => post<KioskSession>("/api/reception/kiosk/set-wants-products", { wants }),
+  setKioskPaymentMethod: (metodo: string | null) => post<KioskSession>("/api/reception/kiosk/select-payment-method", { metodo }),
 
   activeStays: () => get<StayWithCustomer[]>("/api/stays/active"),
   staysByRange: (range: { desde: string; hasta: string }) => get<StayWithCustomer[]>(`/api/stays?desde=${encodeURIComponent(range.desde)}&hasta=${encodeURIComponent(range.hasta)}`),

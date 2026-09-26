@@ -34,8 +34,11 @@ export const api = {
   selectRoom: (cuartoId: string) => post("/api/kiosk/select-room", { cuartoId }),
   addProduct: (productoId: string) => post<void>("/api/kiosk/add-product", { productoId }),
   finishProducts: () => post("/api/kiosk/finish-products"),
+  setWantsProducts: (wants: boolean) => post("/api/kiosk/set-wants-products", { wants }),
+  selectPaymentMethod: (metodo: string | null) => post("/api/kiosk/select-payment-method", { metodo }),
   proposePayment: (detalles: ProposedPaymentLine[]) => post("/api/kiosk/propose-payment", { detalles }),
   reset: () => post("/api/kiosk/reset"),
 };
+
 
 export { ApiError };

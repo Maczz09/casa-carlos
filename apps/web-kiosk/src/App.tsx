@@ -56,12 +56,19 @@ export default function App() {
     }
 
     if (session.estado === "DATOS_CLIENTE") {
-      return <WaitingScreen title="Un momento" subtitle="Recepción está completando tu registro." />;
+      const roomNumber = floors.flatMap((f) => f.rooms).find((r) => r.room.id === session.cuartoId)?.room.numero;
+      return (
+        <WaitingScreen
+          title="Habitación asignada"
+          subtitle={roomNumber ? `Habitación ${roomNumber}. Recepción está completando tu registro en este momento.` : "Recepción está completando tu registro."}
+        />
+      );
     }
 
     if (session.estado === "SELECCION_PRODUCTOS") {
       return (
         <ProductsScreen
+          session={session}
           products={products}
           totalCentimos={session.totalCentimos ?? 0}
           onCancel={cancel}
@@ -74,6 +81,7 @@ export default function App() {
     if (session.estado === "SELECCION_PAGO") {
       return (
         <PaymentScreen
+          session={session}
           totalCentimos={session.totalCentimos ?? 0}
           collectionAccounts={collectionAccounts}
           busy={busy}
@@ -89,6 +97,7 @@ export default function App() {
         />
       );
     }
+
 
     if (session.estado === "PAGO_PENDIENTE") {
       return <WaitingScreen title="Confirmando tu pago" subtitle="El recepcionista está validando tu pago. Esto toma solo un momento." />;

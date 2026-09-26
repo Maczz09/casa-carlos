@@ -60,6 +60,9 @@ export class KioskStore {
       stayId: null,
       saleId: null,
       totalCentimos: null,
+      lineas: [],
+      wantsProducts: null,
+      metodoPagoSeleccionado: null,
       propuestaPago: null,
       paymentId: null,
       usuarioId,
@@ -103,12 +106,23 @@ export class KioskStore {
         noches: session.noches,
       });
       const sale = await this.sales.openSaleForStay({ stayId: stay.id, usuarioId: session.usuarioId });
+      const saleWithLines = await this.sales.getSale(sale.id);
       return this.commit({
         ...session,
         estado: "SELECCION_PRODUCTOS",
         stayId: stay.id,
         saleId: sale.id,
         totalCentimos: sale.totalCentimos,
+        lineas: saleWithLines.lineas.map((l) => ({
+          id: l.id,
+          tipo: l.tipo,
+          descripcion: l.descripcion,
+          cantidad: l.cantidad,
+          precioUnitarioCentimos: l.precioUnitarioCentimos,
+          subtotalCentimos: l.subtotalCentimos,
+        })),
+        wantsProducts: null,
+        metodoPagoSeleccionado: null,
       });
     } catch (err) {
       return this.commit({ ...session, estado: "SELECCION_CUARTO", cuartoId: null, error: (err as Error).message });
@@ -121,7 +135,20 @@ export class KioskStore {
     if (!session.saleId) throw new Error("Todavía no hay una venta abierta.");
     await this.sales.addProductLine({ saleId: session.saleId, productoId, cantidad, usuarioId: session.usuarioId });
     const sale = await this.sales.getSale(session.saleId);
-    return this.commit({ ...session, totalCentimos: sale.totalCentimos, error: null });
+    return this.commit({
+      ...session,
+      wantsProducts: true,
+      totalCentimos: sale.totalCentimos,
+      lineas: sale.lineas.map((l) => ({
+        id: l.id,
+        tipo: l.tipo,
+        descripcion: l.descripcion,
+        cantidad: l.cantidad,
+        precioUnitarioCentimos: l.precioUnitarioCentimos,
+        subtotalCentimos: l.subtotalCentimos,
+      })),
+      error: null,
+    });
   }
 
   async removeProduct(lineId: string, motivo = "Quitado de la venta"): Promise<KioskSession> {
@@ -129,18 +156,44 @@ export class KioskStore {
     if (!session.saleId) throw new Error("Todavía no hay una venta abierta.");
     await this.sales.cancelLine(session.saleId, lineId, motivo, session.usuarioId);
     const sale = await this.sales.getSale(session.saleId);
-    return this.commit({ ...session, totalCentimos: sale.totalCentimos, error: null });
+    return this.commit({
+      ...session,
+      totalCentimos: sale.totalCentimos,
+      lineas: sale.lineas.map((l) => ({
+        id: l.id,
+        tipo: l.tipo,
+        descripcion: l.descripcion,
+        cantidad: l.cantidad,
+        precioUnitarioCentimos: l.precioUnitarioCentimos,
+        subtotalCentimos: l.subtotalCentimos,
+      })),
+      error: null,
+    });
+  }
+
+  async setWantsProducts(wants: boolean): Promise<KioskSession> {
+    const session = this.mustGet();
+    if (!wants) {
+      return this.finishProducts();
+    }
+    return this.commit({ ...session, wantsProducts: true, error: null });
   }
 
   async finishProducts(): Promise<KioskSession> {
     const session = this.mustGet();
-    return this.commit({ ...session, estado: "SELECCION_PAGO" });
+    return this.commit({ ...session, estado: "SELECCION_PAGO", metodoPagoSeleccionado: "EFECTIVO" });
+  }
+
+  async setPaymentMethod(metodo: string | null): Promise<KioskSession> {
+    const session = this.mustGet();
+    return this.commit({ ...session, metodoPagoSeleccionado: metodo, error: null });
   }
 
   async proposePayment(detalles: ProposedPaymentLine[]): Promise<KioskSession> {
     const session = this.mustGet();
     return this.commit({ ...session, propuestaPago: detalles, estado: "PAGO_PENDIENTE", error: null });
   }
+
 
   async takeControl(actor: "CLIENTE" | "RECEPCION"): Promise<KioskSession> {
     const session = this.mustGet();

@@ -86,8 +86,11 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   useEffect(() => {
     if (session?.estado !== "SELECCION_PRODUCTOS") {
       setWantsProducts(null);
+    } else if (session?.wantsProducts === true) {
+      setWantsProducts(true);
     }
-  }, [session?.estado]);
+  }, [session?.estado, session?.wantsProducts]);
+
 
   useEffect(() => {
     if (session?.estado !== "SELECCION_PRODUCTOS" || !session.saleId) {
@@ -387,10 +390,19 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
                   size="lg"
                   className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold"
                   disabled={busy}
-                  onClick={() => setWantsProducts(true)}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await api.setKioskProductsDecision(true);
+                      setWantsProducts(true);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
                 >
                   Sí, seleccionar productos
                 </Button>
+
               </div>
             </div>
           </Section>

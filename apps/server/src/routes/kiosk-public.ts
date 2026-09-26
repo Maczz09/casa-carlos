@@ -90,5 +90,22 @@ export function kioskPublicRoutes(services: Services) {
         return reply.code(400).send({ error: (err as Error).message });
       }
     });
+
+    app.post<{ Body: { metodo: string | null } }>("/api/kiosk/select-payment-method", async (request, reply) => {
+      try {
+        return await services.kiosk.setPaymentMethod(request.body.metodo ?? null);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post<{ Body: { wants: boolean } }>("/api/kiosk/set-wants-products", async (request, reply) => {
+      try {
+        return await services.kiosk.setWantsProducts(Boolean(request.body.wants));
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
   };
 }
+

@@ -27,6 +27,16 @@ export const ProposedPaymentLineSchema = z.object({
 });
 export type ProposedPaymentLine = z.infer<typeof ProposedPaymentLineSchema>;
 
+export const KioskLineItemSchema = z.object({
+  id: z.string(),
+  tipo: z.string(),
+  descripcion: z.string(),
+  cantidad: z.number(),
+  precioUnitarioCentimos: z.number(),
+  subtotalCentimos: z.number(),
+});
+export type KioskLineItem = z.infer<typeof KioskLineItemSchema>;
+
 /**
  * The one thing both the kiosk terminal and reception look at — see
  * REGLAS-DE-NEGOCIO.md §10. Lives only in server memory, never in SQLite: a
@@ -54,6 +64,13 @@ export const KioskSessionSchema = z.object({
   saleId: z.string().nullable(),
   totalCentimos: z.number().nullable(),
 
+  /** Líneas de la venta en curso (estadía y productos) para visualización en tiempo real en la pantalla del cliente */
+  lineas: z.array(KioskLineItemSchema).optional(),
+  /** Indica si en recepción ya se aceptó agregar productos */
+  wantsProducts: z.boolean().nullable().optional(),
+  /** Método de pago seleccionado en recepción para reflejar en el kiosco (YAPE, PLIN, TRANSFERENCIA, POS_CREDITO, POS_DEBITO, EFECTIVO, etc.) */
+  metodoPagoSeleccionado: z.string().nullable().optional(),
+
   propuestaPago: z.array(ProposedPaymentLineSchema).nullable(),
   paymentId: z.string().nullable(),
 
@@ -63,3 +80,4 @@ export const KioskSessionSchema = z.object({
   actualizadaEn: z.string(),
 });
 export type KioskSession = z.infer<typeof KioskSessionSchema>;
+
