@@ -12,7 +12,7 @@ import type {
   SaleWithLines,
   StayWithCustomer,
 } from "@casacarlos/contracts";
-import { MOTIVOS_NOTA_CREDITO, MOTIVOS_NOTA_DEBITO } from "@casacarlos/contracts";
+import { MOTIVOS_NOTA_CREDITO, MOTIVOS_NOTA_DEBITO, formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format, splitIncludedIgv } from "@casacarlos/money";
 import { IconPrinter, STATUS_STYLE } from "@casacarlos/ui";
 import { api, ApiError, getToken } from "../api.js";
@@ -221,8 +221,8 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                 {stay.cliente.nombres} {stay.cliente.apellidos}
               </p>
               <p className="mb-3 text-sm text-muted">DNI {stay.cliente.dni}</p>
-              <Row label="Check-in" value={new Date(stay.checkinPrevisto).toLocaleString("es-PE")} />
-              <Row label="Check-out previsto" value={new Date(stay.checkoutPrevisto).toLocaleString("es-PE")} />
+              <Row label="Check-in" value={formatDateTime12h(stay.checkinPrevisto)} />
+              <Row label="Check-out previsto" value={formatDateTime12h(stay.checkoutPrevisto)} />
               {remaining !== null && (
                 <div className="mt-3 rounded-xl bg-inset p-3 text-center">
                   <p className="text-xs uppercase tracking-wide text-subtle">{remaining < 0 ? "Excedido" : "Tiempo restante"}</p>

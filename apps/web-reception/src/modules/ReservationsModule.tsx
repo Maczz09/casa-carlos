@@ -8,6 +8,7 @@ import "@fullcalendar/react/skeleton.css";
 import "@fullcalendar/react/themes/breezy/theme.css";
 import "@fullcalendar/react/themes/breezy/palettes/emerald.css";
 import type { FloorBoard, Modality, StayWithCustomer } from "@casacarlos/contracts";
+import { formatDateTime12h } from "@casacarlos/contracts";
 import { IconCalendar } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Skeleton } from "../components/ui.js";
@@ -164,7 +165,7 @@ export function ReservationsModule({ floors }: Props) {
                 <Badge tone={selected.estado === "RESERVADA" ? "tone-violet" : selected.estado === "EN_CURSO" ? "tone-teal" : "tone-stone"}>{STATE_LABEL[selected.estado]}</Badge>
               </div>
               <p className="mt-1 text-sm text-muted">{selected.cliente.nombres} {selected.cliente.apellidos} · DNI {selected.cliente.dni}</p>
-              <p className="mt-1 text-xs text-subtle">{new Date(selected.bloqueoDesde).toLocaleString("es-PE")} → {new Date(selected.bloqueoHasta).toLocaleString("es-PE")}</p>
+              <p className="mt-1 text-xs text-subtle">{formatDateTime12h(selected.bloqueoDesde)} → {formatDateTime12h(selected.bloqueoHasta)}</p>
             </div>
             <div className="flex gap-2">
               <Button onClick={() => setSelectedId(null)}>Cerrar detalle</Button>
@@ -204,7 +205,7 @@ export function ReservationsModule({ floors }: Props) {
             <div className="flex max-h-[520px] flex-col gap-2 overflow-y-auto pr-1">
               {reservasVisibles.map((stay) => (
                 <button key={stay.id} onClick={() => setSelectedId(stay.id)} className="flex items-center justify-between gap-3 rounded-xl border border-line p-3 text-left transition-colors hover:bg-inset/60">
-                  <span className="min-w-0"><span className="block truncate text-sm font-medium text-ink">Cuarto {roomMeta.get(stay.cuartoId)?.numero ?? "—"} · {stay.cliente.nombres}</span><span className="block truncate text-xs text-muted">{new Date(stay.bloqueoDesde).toLocaleString("es-PE")}</span></span>
+                  <span className="min-w-0"><span className="block truncate text-sm font-medium text-ink">Cuarto {roomMeta.get(stay.cuartoId)?.numero ?? "—"} · {stay.cliente.nombres}</span><span className="block truncate text-xs text-muted">{formatDateTime12h(stay.bloqueoDesde)}</span></span>
                   <Badge tone={stay.estado === "RESERVADA" ? "tone-violet" : "tone-stone"}>{STATE_LABEL[stay.estado]}</Badge>
                 </button>
               ))}

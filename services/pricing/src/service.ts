@@ -19,6 +19,7 @@ import type {
   Season,
   SetNightScaleInput,
   SetRateInput,
+  UpdateModalityInput,
 } from "@casacarlos/contracts";
 import { PricingRepo } from "./repo.js";
 import { resolveBand, resolveSeason } from "./domain/resolve.js";
@@ -70,6 +71,16 @@ export class PricingService implements PricingPort {
       checkoutFijo: input.checkoutFijo ?? null,
       toleranciaMin: input.toleranciaMin ?? 15,
       activa: true,
+    });
+  }
+
+  async updateModality(id: string, input: UpdateModalityInput): Promise<Modality> {
+    return this.repo.updateModality(id, {
+      ...(input.nombre !== undefined && { nombre: input.nombre }),
+      ...(input.duracionHoras !== undefined && { duracionHoras: input.duracionHoras }),
+      ...(input.checkinFijo !== undefined && { checkinFijo: input.checkinFijo }),
+      ...(input.checkoutFijo !== undefined && { checkoutFijo: input.checkoutFijo }),
+      ...(input.toleranciaMin !== undefined && { toleranciaMin: input.toleranciaMin }),
     });
   }
 

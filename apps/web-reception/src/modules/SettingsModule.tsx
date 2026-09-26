@@ -235,7 +235,7 @@ function AppearanceTab() {
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-subtle">Hora actual en Lima, Perú</p>
               <p className="mt-0.5 font-mono text-2xl font-bold tracking-tight text-ink tabular-nums">
-                {peruTime.timeString}
+                {peruTime.timeString12 || peruTime.timeString}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {autoEnabled ? (

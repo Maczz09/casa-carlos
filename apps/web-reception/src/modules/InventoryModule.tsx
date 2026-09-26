@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { Product, ProductCategory, ProductMovement, ProductState, Role } from "@casacarlos/contracts";
+import { formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format, soles } from "@casacarlos/money";
 import { IconBox, IconChevronDown, IconPlus, IconSearch } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
@@ -835,7 +836,7 @@ function AdminProductDetail({
                 <tbody className="divide-y divide-line-soft">
                   {movements.map((m) => (
                     <tr key={m.id} className="hover:bg-inset/50">
-                      <td className="py-2 px-3 text-subtle">{new Date(m.ocurridoEn).toLocaleString("es-PE")}</td>
+                      <td className="py-2 px-3 text-subtle">{formatDateTime12h(m.ocurridoEn)}</td>
                       <td className="py-2 px-3 font-medium">
                         <Badge tone={m.tipo === "INGRESO" ? "tone-teal" : m.tipo === "SALIDA" ? "tone-sky" : m.tipo === "ANULACION" ? "tone-red" : "tone-amber"}>
                           {MOVEMENT_LABEL[m.tipo] ?? m.tipo}

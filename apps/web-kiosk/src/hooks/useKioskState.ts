@@ -28,25 +28,44 @@ export function useKioskState(): { floors: FloorBoard[]; products: KioskProduct[
           if (msg.type === "board") setFloors(msg.floors);
           if (msg.type === "kiosk") setSession(msg.session);
           if (msg.type === "products") setProducts(msg.products);
+          if (msg.type === "kiosk_theme" || msg.type === "theme") {
+            const nextTheme = msg.theme === "dark" ? "dark" : "light";
+            document.documentElement.dataset.theme = nextTheme;
+            localStorage.setItem("casacarlos-kiosk.theme", nextTheme);
+            localStorage.setItem("casacarlos-kiosk.theme_override", nextTheme);
+            window.dispatchEvent(new CustomEvent("casacarlos:theme-change", { detail: { theme: nextTheme } }));
+          }
+          if (msg.type === "kiosk_action") {
+            window.dispatchEvent(new CustomEvent("casacarlos:kiosk-action", { detail: msg }));
+          }
           if (msg.type === "kiosk_scroll") {
             const deltaY = typeof msg.deltaY === "number" ? msg.deltaY : 0;
             const to = msg.to;
-            const doScroll = (el: Element | Window) => {
+            const scrollTargets: (Element | Window)[] = [
+              document.getElementById("kiosk-main-scroll") as Element,
+              ...Array.from(document.querySelectorAll(".overflow-y-auto, .overflow-auto, main")),
+              document.scrollingElement as Element,
+              document.documentElement,
+              document.body,
+              window,
+            ].filter(Boolean);
+
+            for (const el of scrollTargets) {
               try {
                 if (to === "top") {
-                  el.scrollTo({ top: 0, behavior: "smooth" });
+                  (el as Element).scrollTo({ top: 0, behavior: "smooth" });
                 } else if (to === "bottom") {
-                  const max = el instanceof Window ? Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) : el.scrollHeight;
-                  el.scrollTo({ top: max, behavior: "smooth" });
+                  const max = el instanceof Window
+                    ? Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)
+                    : (el as Element).scrollHeight;
+                  (el as Element).scrollTo({ top: max, behavior: "smooth" });
                 } else if (deltaY) {
-                  el.scrollBy({ top: deltaY, behavior: "smooth" });
+                  (el as Element).scrollBy({ top: deltaY, behavior: "smooth" });
                 }
               } catch {
                 // ignore
               }
-            };
-            doScroll(window);
-            document.querySelectorAll(".overflow-y-auto, .overflow-auto, main").forEach((el) => doScroll(el));
+            }
             window.dispatchEvent(new CustomEvent("casacarlos:remote-scroll", { detail: msg }));
           }
         } catch {

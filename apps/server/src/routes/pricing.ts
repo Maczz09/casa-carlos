@@ -8,6 +8,17 @@ export function pricingRoutes(services: Services) {
 
     app.get("/api/pricing/modalities", auth, async () => services.pricing.listModalities());
 
+    app.patch<{
+      Params: { id: string };
+      Body: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number };
+    }>("/api/pricing/modalities/:id", auth, async (request, reply) => {
+      try {
+        return await services.pricing.updateModality(request.params.id, request.body);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
     app.get<{ Querystring: { categoriaId: string; modalidadId: string } }>(
       "/api/pricing/resolve",
       auth,

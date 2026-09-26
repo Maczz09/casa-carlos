@@ -124,8 +124,18 @@ export function useTheme() {
     };
 
     window.addEventListener("storage", handleStorage);
+
+    const handleRemoteTheme = (e: Event) => {
+      const customEvent = e as CustomEvent<{ theme: Theme }>;
+      if (customEvent.detail?.theme) {
+        setThemeState(customEvent.detail.theme);
+      }
+    };
+    window.addEventListener("casacarlos:theme-change", handleRemoteTheme);
+
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("casacarlos:theme-change", handleRemoteTheme);
       channel?.close();
     };
   }, []);

@@ -75,6 +75,13 @@ export class PricingRepo {
     return toModality(row);
   }
 
+  async updateModality(id: string, patch: Partial<ModalityRow>): Promise<Modality> {
+    await this.db.update(schema.pricingModalidades).set(patch).where(eq(schema.pricingModalidades.id, id));
+    const updated = await this.getModality(id);
+    if (!updated) throw new Error(`Modalidad ${id} no encontrada.`);
+    return updated;
+  }
+
   async insertRate(row: RateRow): Promise<Rate> {
     const existing = await this.findRate(row.franjaId, row.categoriaId, row.modalidadId);
     if (existing) {

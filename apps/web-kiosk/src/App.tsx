@@ -12,6 +12,7 @@ import { ProductsScreen } from "./components/ProductsScreen.js";
 import { WaitingScreen } from "./components/WaitingScreen.js";
 import { PaymentScreen } from "./components/PaymentScreen.js";
 import { ResultScreen } from "./components/ResultScreen.js";
+import { ScreenManager } from "./components/ScreenManager.js";
 
 export default function App() {
   const { floors, products, session, connected } = useKioskState();
@@ -113,6 +114,7 @@ export default function App() {
 
   return (
     <>
+      <ScreenManager />
       <ThemeToggle theme={theme} onToggle={toggle} />
       {renderScreen()}
     </>

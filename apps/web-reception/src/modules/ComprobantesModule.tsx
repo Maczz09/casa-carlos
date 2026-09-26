@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ComprobantePago } from "@casacarlos/contracts";
+import { formatDateTime12h } from "@casacarlos/contracts";
 import { IconPrinter, IconReceipt } from "@casacarlos/ui";
 import { api } from "../api.js";
 import { printComprobantePago } from "../components/receipt.js";
@@ -118,7 +119,7 @@ export function ComprobantesModule() {
                   <p className="truncate text-sm font-medium text-ink">
                     {i.tipo === "BOLETA" ? "Boleta" : `Factura · RUC ${i.receptorRuc}`} — {clientes[i.id] ?? "…"}
                   </p>
-                  <p className="text-xs text-muted">{new Date(i.creadoEn).toLocaleString("es-PE")}</p>
+                  <p className="text-xs text-muted">{formatDateTime12h(i.creadoEn)}</p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <Badge tone={i.estado === "EMITIDO" ? "tone-teal" : "tone-amber"}>{i.estado === "EMITIDO" ? "Emitido" : "Borrador"}</Badge>

@@ -17,6 +17,7 @@ export * from "./entities/billing.js";
 export * from "./entities/brand.js";
 export * from "./entities/sunat.js";
 export * from "./entities/theme.js";
+export * from "./entities/date.js";
 
 export * from "./ports/identity-port.js";
 export * from "./ports/rooms-port.js";

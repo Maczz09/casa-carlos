@@ -32,6 +32,7 @@ export function getPeruTime(date = new Date()): {
   minute: number;
   second: number;
   timeString: string;
+  timeString12: string;
 } {
   try {
     const formatter = new Intl.DateTimeFormat("en-US", {
@@ -46,7 +47,10 @@ export function getPeruTime(date = new Date()): {
     const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
     const second = parseInt(parts.find((p) => p.type === "second")?.value ?? "0", 10);
     const timeString = `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")}`;
-    return { hour, minute, second, timeString };
+    const ampm = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    const timeString12 = `${String(hour12).padStart(2, "0")}:${String(minute).padStart(2, "0")}:${String(second).padStart(2, "0")} ${ampm}`;
+    return { hour, minute, second, timeString, timeString12 };
   } catch {
     // Fallback: Perú es UTC-5
     const utcHours = date.getUTCHours();
@@ -54,7 +58,10 @@ export function getPeruTime(date = new Date()): {
     const utcSeconds = date.getUTCSeconds();
     const peruHour = (utcHours - 5 + 24) % 24;
     const timeString = `${String(peruHour).padStart(2, "0")}:${String(utcMinutes).padStart(2, "0")}:${String(utcSeconds).padStart(2, "0")}`;
-    return { hour: peruHour, minute: utcMinutes, second: utcSeconds, timeString };
+    const ampm = peruHour >= 12 ? "PM" : "AM";
+    const hour12 = peruHour % 12 === 0 ? 12 : peruHour % 12;
+    const timeString12 = `${String(hour12).padStart(2, "0")}:${String(utcMinutes).padStart(2, "0")}:${String(utcSeconds).padStart(2, "0")} ${ampm}`;
+    return { hour: peruHour, minute: utcMinutes, second: utcSeconds, timeString, timeString12 };
   }
 }
 

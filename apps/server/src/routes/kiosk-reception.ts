@@ -71,6 +71,17 @@ export function kioskReceptionRoutes(services: Services) {
       services.kiosk.emitRemoteAction({ type: "kiosk_scroll", deltaY: request.body.deltaY, to: request.body.to });
       return { ok: true };
     });
+
+    app.post<{ Body: { theme: "dark" | "light" } }>("/api/reception/kiosk/theme", auth, async (request) => {
+      const theme = request.body.theme === "dark" ? "dark" : "light";
+      services.kiosk.emitRemoteAction({ type: "kiosk_theme", theme });
+      return { ok: true };
+    });
+
+    app.post<{ Body: { action: string } }>("/api/reception/kiosk/action", auth, async (request) => {
+      services.kiosk.emitRemoteAction({ type: "kiosk_action", action: request.body.action });
+      return { ok: true };
+    });
   };
 
 }

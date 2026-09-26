@@ -7,6 +7,8 @@ export function KioskRemoteViewer() {
   const [busy, setBusy] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
+  const [kioskTheme, setKioskTheme] = useState<"dark" | "light">("light");
+
   const handleRemoteScroll = async (deltaY?: number, to?: "top" | "bottom") => {
     setBusy(true);
     try {
@@ -30,6 +32,23 @@ export function KioskRemoteViewer() {
     }
   };
 
+  const toggleKioskTheme = async () => {
+    const next = kioskTheme === "dark" ? "light" : "dark";
+    setKioskTheme(next);
+    try {
+      await api.syncKioskTheme(next);
+      if (iframeRef.current && iframeRef.current.contentDocument) {
+        iframeRef.current.contentDocument.documentElement.dataset.theme = next;
+      }
+    } catch {}
+  };
+
+  const sendFullscreenCommand = async () => {
+    try {
+      await api.sendKioskAction("fullscreen");
+    } catch {}
+  };
+
   return (
     <aside aria-label="Control remoto del kiosco" className="fixed bottom-4 right-4 z-50 flex flex-col items-end select-none">
       {/* Ventana flotante (PiP) */}
@@ -37,7 +56,7 @@ export function KioskRemoteViewer() {
         <div
           role="dialog"
           aria-label="Pantalla del cliente en vivo"
-          className="mb-3 flex h-[480px] w-[340px] sm:w-[380px] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-pop)] ring-1 ring-black/10 dark:ring-white/10 animate-fade-up"
+          className="mb-3 flex h-[510px] w-[350px] sm:w-[390px] flex-col overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-pop)] ring-1 ring-black/10 dark:ring-white/10 animate-fade-up"
         >
           {/* Barra superior de control */}
           <div className="flex items-center justify-between border-b border-line bg-raised px-3 py-2">
@@ -50,42 +69,23 @@ export function KioskRemoteViewer() {
             </div>
 
             <div className="flex items-center gap-1">
-              {/* Botones de navegación de scroll */}
               <button
                 type="button"
-                onClick={() => void handleRemoteScroll(undefined, "top")}
-                disabled={busy}
-                title="Ir al inicio arriba en el kiosco"
-                className="rounded-lg border border-line bg-surface px-2 py-1 text-xs font-medium text-ink hover:bg-inset active:scale-95 disabled:opacity-50"
+                onClick={toggleKioskTheme}
+                title="Cambiar modo claro / oscuro en la pantalla del kiosco"
+                className="rounded-lg border border-line bg-surface px-2 py-1 text-xs font-semibold text-ink hover:bg-inset active:scale-95 flex items-center gap-1"
               >
-                ⤒
+                <span>{kioskTheme === "dark" ? "☀️" : "🌙"}</span>
+                <span className="text-[10px]">{kioskTheme === "dark" ? "Claro" : "Oscuro"}</span>
               </button>
+
               <button
                 type="button"
-                onClick={() => void handleRemoteScroll(-220)}
-                disabled={busy}
-                title="Subir pantalla del kiosco (scroll arriba)"
-                className="flex items-center gap-1 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-bold text-ink hover:bg-inset active:scale-95 disabled:opacity-50"
+                onClick={sendFullscreenCommand}
+                title="Enviar kiosco a Pantalla 2 en Pantalla Completa"
+                className="rounded-lg border border-line bg-surface px-2 py-1 text-xs font-semibold text-brand hover:bg-brand-soft active:scale-95"
               >
-                ▲ Subir
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleRemoteScroll(220)}
-                disabled={busy}
-                title="Bajar pantalla del kiosco (scroll abajo)"
-                className="flex items-center gap-1 rounded-lg border border-line bg-brand px-2.5 py-1 text-xs font-bold text-brand-ink hover:opacity-90 active:scale-95 disabled:opacity-50"
-              >
-                ▼ Bajar
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleRemoteScroll(undefined, "bottom")}
-                disabled={busy}
-                title="Ir al final abajo en el kiosco"
-                className="rounded-lg border border-line bg-surface px-2 py-1 text-xs font-medium text-ink hover:bg-inset active:scale-95 disabled:opacity-50"
-              >
-                ⤓
+                🖥️ P2
               </button>
 
               <button
@@ -99,8 +99,56 @@ export function KioskRemoteViewer() {
             </div>
           </div>
 
-          {/* Iframe con la pantalla del kiosco */}
-          <div className="relative flex-1 bg-black/5 overflow-hidden">
+          {/* Barra de navegación de scroll directo */}
+          <div className="flex items-center justify-between border-b border-line bg-inset/90 px-3 py-1.5 text-xs">
+            <span className="text-[11px] font-semibold text-muted">Scroll remoto:</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => void handleRemoteScroll(undefined, "top")}
+                disabled={busy}
+                title="Ir al inicio arriba"
+                className="rounded border border-line bg-surface px-2 py-0.5 text-xs font-medium text-ink hover:bg-inset active:scale-95"
+              >
+                ⤒ Arriba
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRemoteScroll(-250)}
+                disabled={busy}
+                title="Subir pantalla del kiosco"
+                className="flex items-center gap-1 rounded border border-line bg-surface px-2 py-0.5 text-xs font-bold text-ink hover:bg-inset active:scale-95"
+              >
+                ▲ Subir
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRemoteScroll(250)}
+                disabled={busy}
+                title="Bajar pantalla del kiosco"
+                className="flex items-center gap-1 rounded border border-line bg-brand px-2 py-0.5 text-xs font-bold text-brand-ink hover:opacity-90 active:scale-95"
+              >
+                ▼ Bajar
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleRemoteScroll(undefined, "bottom")}
+                disabled={busy}
+                title="Ir al final abajo"
+                className="rounded border border-line bg-surface px-2 py-0.5 text-xs font-medium text-ink hover:bg-inset active:scale-95"
+              >
+                ⤓ Abajo
+              </button>
+            </div>
+          </div>
+
+          {/* Iframe con la pantalla del kiosco con reenvío de rueda de ratón */}
+          <div
+            className="relative flex-1 bg-black/5 overflow-hidden"
+            onWheel={(e) => {
+              void handleRemoteScroll(e.deltaY);
+            }}
+          >
             <iframe
               ref={iframeRef}
               src="/kiosk/"
@@ -109,26 +157,16 @@ export function KioskRemoteViewer() {
             />
           </div>
 
-          {/* Barra inferior explicativa con atajos rápidos */}
+          {/* Barra inferior explicativa */}
           <div className="flex items-center justify-between border-t border-line bg-inset/80 px-3 py-1.5 text-[11px] text-muted">
-            <span>Control 2.° monitor</span>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => void handleRemoteScroll(-150)}
-                className="rounded px-1.5 py-0.5 hover:bg-raised text-ink font-medium"
-              >
-                -150px
-              </button>
-              <span>·</span>
-              <button
-                type="button"
-                onClick={() => void handleRemoteScroll(150)}
-                className="rounded px-1.5 py-0.5 hover:bg-raised text-ink font-medium"
-              >
-                +150px
-              </button>
-            </div>
+            <span>Rueda de ratón o botones mueven la pantalla 2</span>
+            <button
+              type="button"
+              onClick={sendFullscreenCommand}
+              className="text-brand font-semibold hover:underline"
+            >
+              Pantalla Completa 2
+            </button>
           </div>
         </div>
       )}

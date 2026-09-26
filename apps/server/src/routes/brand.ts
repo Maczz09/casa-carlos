@@ -43,9 +43,17 @@ export function brandRoutes(services: Services) {
 
     app.get("/api/brand/theme", async () => services.brand.getThemeConfig());
 
-    app.patch<{ Body: Parameters<typeof services.brand.setThemeConfig>[0] }>("/api/brand/theme", admin, async (request, reply) => {
+    const themeAuth = { preHandler: requireAnyPermission(services.identity, ["BRAND_MANAGE", "SALES_MANAGE", "RESERVATIONS_MANAGE", "ROOMS_MANAGE", "USERS_MANAGE"]) };
+
+    app.patch<{ Body: Parameters<typeof services.brand.setThemeConfig>[0] }>("/api/brand/theme", themeAuth, async (request, reply) => {
       try {
-        return services.brand.setThemeConfig(request.body ?? {});
+        const updated = await services.brand.setThemeConfig(request.body ?? {});
+        services.kiosk.emitRemoteAction({
+          type: "kiosk_theme",
+          theme: updated.manualTheme,
+          config: updated,
+        });
+        return updated;
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }

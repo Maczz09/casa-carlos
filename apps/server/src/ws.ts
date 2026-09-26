@@ -85,7 +85,7 @@ export function registerWebSocketGateway(
     socket.on("message", (raw) => {
       try {
         const msg = JSON.parse(raw.toString());
-        if (msg.type === "kiosk_scroll" || msg.type === "kiosk_action") {
+        if (msg.type === "kiosk_scroll" || msg.type === "kiosk_action" || msg.type === "kiosk_theme") {
           send(kioskSockets, msg);
         }
       } catch {}

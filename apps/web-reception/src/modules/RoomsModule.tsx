@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Attribute, Category, CategoryRatesDto, Floor, FloorBoard, Room } from "@casacarlos/contracts";
+import type { Attribute, Category, CategoryRatesDto, Floor, FloorBoard, Modality, Room } from "@casacarlos/contracts";
+import { formatTime12h } from "@casacarlos/contracts";
 import { cents, format, soles } from "@casacarlos/money";
 import { IconBed, IconPlus, IconX } from "@casacarlos/ui";
 import { RoomIllustration } from "@casacarlos/ui";
@@ -19,6 +20,7 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
   const [rooms, setRooms] = useState<Room[] | null>(null);
   const [categories, setCategories] = useState<Category[] | null>(null);
   const [rates, setRates] = useState<Record<string, CategoryRatesDto>>({});
+  const [modalities, setModalities] = useState<Modality[] | null>(null);
   const [attributes, setAttributes] = useState<Attribute[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -26,16 +28,18 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
   const floors = useMemo<Floor[]>(() => floorBoards.map((fb) => fb.floor), [floorBoards]);
 
   const reload = async () => {
-    const [r, c, a, rt] = await Promise.all([
+    const [r, c, a, rt, m] = await Promise.all([
       api.allRooms(),
       api.categories(),
       api.attributes(),
       api.categoryRates().catch(() => ({} as Record<string, CategoryRatesDto>)),
+      api.modalities().catch(() => [] as Modality[]),
     ]);
     setRooms(r);
     setCategories(c);
     setAttributes(a);
     setRates(rt);
+    setModalities(m);
   };
 
   useEffect(() => {
@@ -61,6 +65,23 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
       setTimeout(() => setSuccess(null), 4000);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudieron guardar las tarifas.");
+    }
+  };
+
+  const handleSaveModality = async (
+    id: string,
+    patch: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number }
+  ) => {
+    setError(null);
+    setSuccess(null);
+    try {
+      await api.updateModality(id, patch);
+      await reload();
+      onCatalogChanged();
+      setSuccess("Horarios del tipo de alquiler actualizados correctamente.");
+      setTimeout(() => setSuccess(null), 4000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudo actualizar el tipo de alquiler.");
     }
   };
 
@@ -123,7 +144,9 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
         <TarifasTab
           categories={categories}
           rates={rates}
+          modalities={modalities}
           onSaveRates={handleSaveRates}
+          onSaveModality={handleSaveModality}
           onError={setError}
         />
       )}
@@ -795,16 +818,55 @@ function CategoryForm({
 function TarifasTab({
   categories,
   rates,
+  modalities,
   onSaveRates,
+  onSaveModality,
   onError,
 }: {
   categories: Category[] | null;
   rates: Record<string, CategoryRatesDto>;
+  modalities: Modality[] | null;
   onSaveRates: (catId: string, r: { precioHorasCentimos: number; precioNocheCentimos: number; precioNocheBCentimos?: number }) => Promise<void>;
+  onSaveModality: (id: string, patch: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number }) => Promise<void>;
   onError: (msg: string | null) => void;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
+      {/* Sección 1: Horarios por tipo de alquiler (Por Día, Por Noche, Por Horas) */}
+      <Section
+        title="Horarios por Tipo de Alquiler (Por Día, Por Noche, Por Horas)"
+        subtitle="Modifica desde qué hora empieza (check-in) y a qué hora termina (check-out) cada modalidad. Los horarios se muestran en formato de 12 horas con AM/PM para mayor claridad."
+      >
+        <div className="mb-4 rounded-xl bg-brand/5 p-3.5 border border-brand/20 text-xs text-brand leading-relaxed flex items-start gap-2">
+          <span className="text-base select-none">🕒</span>
+          <div>
+            <strong>Horarios de Check-in y Check-out:</strong> Define a qué hora empieza y a qué hora termina el alquiler por día o noche, y cuántas horas dura el alquiler por horas. Estos horarios rigen para las estadías en recepción y en el kiosco.
+          </div>
+        </div>
+
+        {modalities === null ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-44" />
+            ))}
+          </div>
+        ) : modalities.length === 0 ? (
+          <EmptyState icon={<IconBed className="h-6 w-6" />} title="No hay modalidades registradas" hint="Las modalidades se cargan por defecto en el sistema." />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {modalities.map((m) => (
+              <ModalityScheduleCard
+                key={m.id}
+                modality={m}
+                onSave={(patch) => onSaveModality(m.id, patch)}
+                onError={onError}
+              />
+            ))}
+          </div>
+        )}
+      </Section>
+
+      {/* Sección 2: Tarifas y precios por categoría */}
       <Section
         title="Tarifas por Tipo de Habitación"
         subtitle="Configura y modifica los precios por horas, por noche y por día para cada categoría. Los precios se sincronizan en vivo con la pantalla de recepción y con el kiosco."
@@ -827,6 +889,7 @@ function TarifasTab({
               <CategoryRateEditor
                 key={c.id}
                 category={c}
+                modalities={modalities}
                 initialRate={rates[c.id]}
                 onSave={(r) => onSaveRates(c.id, r)}
                 onError={onError}
@@ -839,13 +902,172 @@ function TarifasTab({
   );
 }
 
+function ModalityScheduleCard({
+  modality,
+  onSave,
+  onError,
+}: {
+  modality: Modality;
+  onSave: (patch: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number }) => Promise<void>;
+  onError: (msg: string | null) => void;
+}) {
+  const [nombre, setNombre] = useState(modality.nombre);
+  const [checkinFijo, setCheckinFijo] = useState(modality.checkinFijo ?? "");
+  const [checkoutFijo, setCheckoutFijo] = useState(modality.checkoutFijo ?? "");
+  const [duracionHoras, setDuracionHoras] = useState(String(modality.duracionHoras));
+  const [toleranciaMin, setToleranciaMin] = useState(String(modality.toleranciaMin));
+  const [busy, setBusy] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    setNombre(modality.nombre);
+    setCheckinFijo(modality.checkinFijo ?? "");
+    setCheckoutFijo(modality.checkoutFijo ?? "");
+    setDuracionHoras(String(modality.duracionHoras));
+    setToleranciaMin(String(modality.toleranciaMin));
+  }, [modality]);
+
+  const handleSave = async () => {
+    setBusy(true);
+    setSaved(false);
+    try {
+      await onSave({
+        nombre: nombre.trim() || modality.nombre,
+        checkinFijo: checkinFijo.trim() ? checkinFijo.trim() : null,
+        checkoutFijo: checkoutFijo.trim() ? checkoutFijo.trim() : null,
+        duracionHoras: Number(duracionHoras) || modality.duracionHoras,
+        toleranciaMin: Number(toleranciaMin) || modality.toleranciaMin,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch {
+      onError("No se pudo guardar el horario de la modalidad.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isHours = modality.codigo === "HORAS_3";
+  const isDia = modality.codigo === "NOCHE_A";
+  const isNoche = modality.codigo === "NOCHE_B";
+
+  const badgeTone = isDia ? "tone-sky" : isNoche ? "tone-amber" : "tone-teal";
+  const typeLabel = isDia ? "Por Día / Noche A" : isNoche ? "Por Noche / Noche B" : "Por Horas";
+
+  return (
+    <div className="rounded-2xl border border-line bg-surface p-4 flex flex-col justify-between gap-4 shadow-sm">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Badge tone={badgeTone} className="font-semibold text-xs px-2.5 py-0.5">
+            {typeLabel}
+          </Badge>
+          <span className="text-[11px] font-mono text-muted">{modality.codigo}</span>
+        </div>
+
+        <Field label="Nombre descriptivo">
+          <Input
+            type="text"
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            className="text-sm font-medium"
+            placeholder="Ej. Por Día (check-in 14:00 - 10:00)"
+          />
+        </Field>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-line-soft">
+        {!isHours ? (
+          <>
+            <div>
+              <Field label="Empieza a las (Check-in)">
+                <Input
+                  type="time"
+                  value={checkinFijo}
+                  onChange={(e) => setCheckinFijo(e.target.value)}
+                  className="font-mono text-sm font-semibold"
+                />
+              </Field>
+              {checkinFijo && (
+                <div className="mt-1 text-[11px] font-bold text-brand">
+                  {formatTime12h(checkinFijo)}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Field label="Termina a las (Check-out)">
+                <Input
+                  type="time"
+                  value={checkoutFijo}
+                  onChange={(e) => setCheckoutFijo(e.target.value)}
+                  className="font-mono text-sm font-semibold"
+                />
+              </Field>
+              {checkoutFijo && (
+                <div className="mt-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                  {formatTime12h(checkoutFijo)}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="col-span-2">
+            <p className="text-xs text-muted mb-2">
+              El alquiler por horas inicia en el momento exacto del check-in del huésped y dura las horas configuradas abajo.
+            </p>
+          </div>
+        )}
+
+        <div>
+          <Field label="Duración (Horas)">
+            <Input
+              type="number"
+              min="1"
+              max="72"
+              value={duracionHoras}
+              onChange={(e) => setDuracionHoras(e.target.value)}
+              className="tabular-nums font-semibold"
+            />
+          </Field>
+        </div>
+
+        <div>
+          <Field label="Tolerancia (Min)">
+            <Input
+              type="number"
+              min="0"
+              max="120"
+              value={toleranciaMin}
+              onChange={(e) => setToleranciaMin(e.target.value)}
+              className="tabular-nums font-semibold"
+            />
+          </Field>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-1 border-t border-line-soft">
+        {saved ? (
+          <span className="text-xs text-ok font-semibold animate-fade">✓ Horario guardado</span>
+        ) : (
+          <span className="text-[11px] text-subtle">Aplica a recepción y kiosco</span>
+        )}
+        <Button variant="primary" size="sm" onClick={handleSave} disabled={busy}>
+          {busy ? "Guardando…" : "Guardar Horario"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function CategoryRateEditor({
   category,
+  modalities,
   initialRate,
   onSave,
   onError,
 }: {
   category: Category;
+  modalities: Modality[] | null;
   initialRate?: CategoryRatesDto;
   onSave: (r: { precioHorasCentimos: number; precioNocheCentimos: number; precioNocheBCentimos?: number }) => Promise<void>;
   onError: (msg: string | null) => void;
@@ -861,6 +1083,18 @@ function CategoryRateEditor({
   );
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const horasMod = modalities?.find((m) => m.codigo === "HORAS_3");
+  const nocheAMod = modalities?.find((m) => m.codigo === "NOCHE_A");
+  const nocheBMod = modalities?.find((m) => m.codigo === "NOCHE_B");
+
+  const horasLabel = `Por Horas (${horasMod?.duracionHoras ?? 3}h)`;
+  const nocheLabel = nocheBMod?.checkinFijo
+    ? `Por Noche (${formatTime12h(nocheBMod.checkinFijo)})`
+    : "Por Noche (7:00 PM)";
+  const diaLabel = nocheAMod?.checkinFijo
+    ? `Por Día / Noche B (${formatTime12h(nocheAMod.checkinFijo)})`
+    : "Por Día / Noche B";
 
   useEffect(() => {
     if (initialRate) {
@@ -911,7 +1145,7 @@ function CategoryRateEditor({
       </div>
 
       <div className="grid grid-cols-3 gap-2.5 pt-2 border-t border-line-soft">
-        <Field label="Por Horas (3h)">
+        <Field label={horasLabel}>
           <Input
             type="number"
             min="0"
@@ -921,7 +1155,7 @@ function CategoryRateEditor({
             className="font-bold tabular-nums text-brand"
           />
         </Field>
-        <Field label="Por Noche (19:00)">
+        <Field label={nocheLabel}>
           <Input
             type="number"
             min="0"
@@ -931,7 +1165,7 @@ function CategoryRateEditor({
             className="font-bold tabular-nums text-amber-600 dark:text-amber-400"
           />
         </Field>
-        <Field label="Por Día / Noche B">
+        <Field label={diaLabel}>
           <Input
             type="number"
             min="0"

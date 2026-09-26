@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import type { NotificationEventCode, NotificationQueueItem, NotificationRecipient, NotificationState, NotificationTemplate } from "@casacarlos/contracts";
+import { formatDateTime12h } from "@casacarlos/contracts";
 import { IconBell } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Tabs, Textarea, cx } from "../components/ui.js";
@@ -423,7 +424,7 @@ export function NotificationsModule() {
                       <p className="truncate text-sm font-medium text-ink">
                         {EVENT_LABEL[item.codigo]} · {item.destinatarioNombre}
                       </p>
-                      <p className="text-xs text-muted">{new Date(item.creadoEn).toLocaleString("es-PE")}</p>
+                      <p className="text-xs text-muted">{formatDateTime12h(item.creadoEn)}</p>
                     </div>
                     <Badge tone={QUEUE_TONE[item.estado]}>{QUEUE_STATE_LABEL[item.estado]}</Badge>
                   </div>

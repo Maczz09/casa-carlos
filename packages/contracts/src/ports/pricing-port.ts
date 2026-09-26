@@ -32,6 +32,14 @@ export interface CreateModalityInput {
   toleranciaMin?: number;
 }
 
+export interface UpdateModalityInput {
+  nombre?: string;
+  duracionHoras?: number;
+  checkinFijo?: string | null;
+  checkoutFijo?: string | null;
+  toleranciaMin?: number;
+}
+
 export interface SetRateInput {
   franjaId: string;
   categoriaId: string;
@@ -71,6 +79,7 @@ export interface PricingPort {
   listBands(temporadaId: string): Promise<RateBand[]>;
 
   createModality(input: CreateModalityInput): Promise<Modality>;
+  updateModality(id: string, input: UpdateModalityInput): Promise<Modality>;
   listModalities(): Promise<Modality[]>;
   getModality(id: string): Promise<Modality>;
   getModalityByCode(codigo: ModalityCode): Promise<Modality>;

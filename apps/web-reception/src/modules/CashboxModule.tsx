@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Arqueo, CashMovementType, CashSummary, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import { formatDateTime12h, formatTime12h, formatTimeOnly12h } from "@casacarlos/contracts";
 import { cents, format, soles, splitIncludedIgv } from "@casacarlos/money";
 import { IconCash, IconPrinter, IconReceipt } from "@casacarlos/ui";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip as ChartTooltip } from "chart.js";
@@ -320,7 +321,7 @@ export function CashboxModule() {
                       <option value="">Sin plantilla</option>
                       {templates.map((t) => (
                         <option key={t.id} value={t.id}>
-                          {t.nombre} ({t.horaInicio}–{t.horaFin})
+                          {t.nombre} ({formatTime12h(t.horaInicio)} – {formatTime12h(t.horaFin)})
                         </option>
                       ))}
                     </select>
@@ -347,7 +348,7 @@ export function CashboxModule() {
 
               <div className="grid gap-5 xl:grid-cols-[1.55fr_0.8fr]">
                 <div className="flex flex-col gap-5">
-                  <Section title="Resumen del turno" subtitle={`Abierto ${new Date(shift.abiertoEn).toLocaleString("es-PE")}`}>
+                  <Section title="Resumen del turno" subtitle={`Abierto ${formatDateTime12h(shift.abiertoEn)}`}>
                     <Row label="Fondo de apertura" value={format(cents(summary.aperturaCentimos))} />
                     <Row label="Ingresos manuales" value={format(cents(summary.ingresosManualesCentimos))} tone="text-ok" />
                     <Row label="Egresos manuales" value={`−${format(cents(summary.egresosManualesCentimos))}`} tone="text-danger" />
@@ -446,7 +447,7 @@ export function CashboxModule() {
                     {arqueos.map((a) => (
                       <Row
                         key={a.id}
-                        label={new Date(a.creadoEn).toLocaleTimeString("es-PE")}
+                        label={formatTimeOnly12h(a.creadoEn)}
                         value={format(cents(a.diferenciaCentimos))}
                         tone={a.diferenciaCentimos === 0 ? "text-ok" : "text-warn"}
                       />
@@ -547,7 +548,7 @@ export function CashboxModule() {
                   <tbody>
                     {movements.map((movement) => (
                       <tr key={movement.id} className="border-t border-line-soft transition-colors hover:bg-inset/60">
-                        <td className="py-3 pr-4 tabular-nums text-muted">{new Date(movement.ocurridoEn).toLocaleString("es-PE")}</td>
+                        <td className="py-3 pr-4 tabular-nums text-muted">{formatDateTime12h(movement.ocurridoEn)}</td>
                         <td className="py-3 pr-4"><Badge tone={movementTone(movement.tipo)}>{MOVEMENT_LABEL[movement.tipo]}</Badge></td>
                         <td className="py-3 pr-4 text-muted">
                           {movement.metodo ? METHOD_LABEL[movement.metodo] ?? movement.metodo : "—"}
@@ -611,7 +612,7 @@ export function CashboxModule() {
                         {v.clienteDni ? <span className="ml-2 text-xs font-normal text-subtle">DNI {v.clienteDni}</span> : null}
                       </p>
                       <p className="truncate text-xs text-muted">
-                        {v.serie}-{v.correlativo} · {new Date(v.creadoEn).toLocaleString("es-PE")}
+                        {v.serie}-{v.correlativo} · {formatDateTime12h(v.creadoEn)}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-3">

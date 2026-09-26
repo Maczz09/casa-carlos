@@ -1,4 +1,5 @@
 import type { ComprobantePago, SaleWithLines } from "@casacarlos/contracts";
+import { formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format, splitIncludedIgv } from "@casacarlos/money";
 import { api, getToken } from "../api.js";
 import { getBrand } from "../hooks/useBrand.js";
@@ -87,7 +88,7 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   <p class="center">Comprobante de pago (BORRADOR)</p>
   <p class="center">Control interno — no válido como comprobante SUNAT</p>
   <hr>
-  <p>${new Date(fecha).toLocaleString("es-PE")}</p>
+  <p>${formatDateTime12h(fecha)}</p>
   ${cuarto ? `<p>Cuarto: ${escapeHtml(cuarto)}</p>` : ""}
   ${sale.clienteNombres ? `<p>Cliente: ${escapeHtml(sale.clienteNombres)} ${escapeHtml(sale.clienteApellidos ?? "")}</p>` : ""}
   ${sale.clienteDni ? `<p>DNI: ${escapeHtml(sale.clienteDni)}</p>` : ""}

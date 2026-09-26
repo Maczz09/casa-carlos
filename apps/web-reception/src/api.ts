@@ -155,6 +155,16 @@ export const api = {
   deleteRoom: (id: string) => del<void>(`/api/rooms/${id}`),
 
   modalities: () => get<Modality[]>("/api/pricing/modalities"),
+  updateModality: (
+    id: string,
+    patchBody: {
+      nombre?: string;
+      checkinFijo?: string | null;
+      checkoutFijo?: string | null;
+      duracionHoras?: number;
+      toleranciaMin?: number;
+    },
+  ) => patch<Modality>(`/api/pricing/modalities/${id}`, patchBody),
   resolveRate: (categoriaId: string, modalidadId: string) =>
     get<ResolvedRate>(`/api/pricing/resolve?categoriaId=${encodeURIComponent(categoriaId)}&modalidadId=${encodeURIComponent(modalidadId)}`),
   categoryRates: () => get<Record<string, CategoryRatesDto>>("/api/pricing/category-rates"),
@@ -184,6 +194,10 @@ export const api = {
   ) => post<KioskSession>("/api/reception/kiosk/select-payment-method", { metodo, detalles }),
   scrollKiosk: (input: { deltaY?: number; to?: "top" | "bottom" }) =>
     post<{ ok: true }>("/api/reception/kiosk/scroll", input),
+  syncKioskTheme: (theme: "dark" | "light") =>
+    post<{ ok: true }>("/api/reception/kiosk/theme", { theme }),
+  sendKioskAction: (action: string) =>
+    post<{ ok: true }>("/api/reception/kiosk/action", { action }),
 
   activeStays: () => get<StayWithCustomer[]>("/api/stays/active"),
   staysByRange: (range: { desde: string; hasta: string }) => get<StayWithCustomer[]>(`/api/stays?desde=${encodeURIComponent(range.desde)}&hasta=${encodeURIComponent(range.hasta)}`),
