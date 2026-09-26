@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-move-to-secondary-screen"
+description = "Enables the move_to_secondary_screen command without any pre-configured scope."
+commands.allow = ["move_to_secondary_screen"]
+
+[[permission]]
+identifier = "deny-move-to-secondary-screen"
+description = "Denies the move_to_secondary_screen command without any pre-configured scope."
+commands.deny = ["move_to_secondary_screen"]

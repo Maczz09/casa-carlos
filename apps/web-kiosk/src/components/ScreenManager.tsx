@@ -1,8 +1,24 @@
 import { useEffect, useState } from "react";
 
+declare global {
+  interface Window {
+    __TAURI_INTERNALS__?: {
+      invoke: (command: string, args?: Record<string, unknown>) => Promise<unknown>;
+    };
+  }
+}
+
 const AUTO_SCREEN2_KEY = "casacarlos-kiosk.auto_screen2";
 
 export function ScreenManager() {
+  // CRÍTICO: Si está dentro de un iframe (como el control remoto en Recepción), NO hacer nada.
+  // De lo contrario, un comando de pantalla completa desde recepción pone en pantalla completa
+  // la pantalla de Recepción en lugar de solo la del cliente.
+  const isInsideIframe = typeof window !== "undefined" && window.self !== window.top;
+  if (isInsideIframe) {
+    return null;
+  }
+
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoScreen2, setAutoScreen2] = useState(() => localStorage.getItem(AUTO_SCREEN2_KEY) === "true");
   const [hasPrompt, setHasPrompt] = useState(false);
@@ -17,8 +33,18 @@ export function ScreenManager() {
     };
     document.addEventListener("fullscreenchange", handleFsChange);
 
-    // Detectar pantallas disponibles si la API está soportada
-    if ("getScreenDetails" in window) {
+    // 1. Detectar pantallas con Tauri si estamos en la app de escritorio
+    if (window.__TAURI_INTERNALS__?.invoke) {
+      window.__TAURI_INTERNALS__.invoke("get_screens_info")
+        .then((res: unknown) => {
+          const data = res as { count?: number; screens?: Array<{ name: string; is_primary: boolean }> };
+          if (typeof data?.count === "number") {
+            setScreenCount(data.count);
+          }
+        })
+        .catch(() => {});
+    } else if ("getScreenDetails" in window) {
+      // 2. Detectar pantallas disponibles en navegador moderno
       (window as unknown as { getScreenDetails: () => Promise<{ screens: unknown[] }> })
         .getScreenDetails()
         .then((details) => setScreenCount(details.screens.length))
@@ -30,7 +56,19 @@ export function ScreenManager() {
 
   const triggerFullscreenOnScreen2 = async () => {
     try {
-      // 1. Intentar API multi-pantalla moderna (Chromium / Edge WebView2)
+      // 1. Comando nativo Tauri: mueve la ventana al monitor secundario y activa pantalla completa real
+      if (window.__TAURI_INTERNALS__?.invoke) {
+        try {
+          await window.__TAURI_INTERNALS__.invoke("move_to_secondary_screen");
+          setIsFullscreen(true);
+          setHasPrompt(false);
+          return;
+        } catch (tauriError) {
+          console.warn("Fallo invoke Tauri move_to_secondary_screen:", tauriError);
+        }
+      }
+
+      // 2. Intentar API multi-pantalla moderna (Chromium / Edge WebView2)
       if ("getScreenDetails" in window) {
         try {
           const details = await (window as unknown as { getScreenDetails: () => Promise<{ screens: Array<{ isPrimary?: boolean }> }> }).getScreenDetails();
@@ -42,11 +80,11 @@ export function ScreenManager() {
             return;
           }
         } catch {
-          // fallback a requestFullscreen normal si el permiso fue denegado o no soportado
+          // fallback
         }
       }
 
-      // 2. Pantalla completa estándar
+      // 3. Pantalla completa estándar
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
         setIsFullscreen(true);

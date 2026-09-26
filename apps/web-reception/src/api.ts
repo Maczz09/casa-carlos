@@ -199,6 +199,7 @@ export const api = {
     post<{ ok: true }>("/api/reception/kiosk/theme", { theme }),
   sendKioskAction: (action: string) =>
     post<{ ok: true }>("/api/reception/kiosk/action", { action }),
+  launchKiosk: () => post<{ ok: boolean; launched?: boolean }>("/api/reception/kiosk/launch"),
 
   activeStays: () => get<StayWithCustomer[]>("/api/stays/active"),
   staysByRange: (range: { desde: string; hasta: string }) => get<StayWithCustomer[]>(`/api/stays?desde=${encodeURIComponent(range.desde)}&hasta=${encodeURIComponent(range.hasta)}`),

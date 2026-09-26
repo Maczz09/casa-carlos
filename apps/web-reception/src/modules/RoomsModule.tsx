@@ -902,6 +902,152 @@ function TarifasTab({
   );
 }
 
+function parse24to12(time24?: string | null): { hour: number; minute: string; period: "AM" | "PM" } {
+  if (!time24 || !time24.includes(":")) {
+    return { hour: 12, minute: "00", period: "PM" };
+  }
+  const parts = time24.split(":");
+  let h = parseInt(parts[0], 10);
+  const m = parts[1] ? parts[1].padStart(2, "0").slice(0, 2) : "00";
+  if (isNaN(h)) h = 12;
+  const period: "AM" | "PM" = h >= 12 ? "PM" : "AM";
+  let hour12 = h % 12;
+  if (hour12 === 0) hour12 = 12;
+  return { hour: hour12, minute: m, period };
+}
+
+function format12to24(hour12: number, minute: string, period: "AM" | "PM"): string {
+  let h = hour12 % 12;
+  if (period === "PM") h += 12;
+  const hStr = String(h).padStart(2, "0");
+  const mStr = String(minute).padStart(2, "0");
+  return `${hStr}:${mStr}`;
+}
+
+interface TimePicker12hProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  presets?: { label: string; time: string }[];
+  accentColor?: "brand" | "amber";
+}
+
+function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" }: TimePicker12hProps) {
+  const { hour, minute, period } = parse24to12(value);
+
+  const handleHourChange = (newHour: number) => {
+    onChange(format12to24(newHour, minute, period));
+  };
+
+  const handleMinuteChange = (newMinute: string) => {
+    onChange(format12to24(hour, newMinute, period));
+  };
+
+  const handlePeriodChange = (newPeriod: "AM" | "PM") => {
+    onChange(format12to24(hour, minute, newPeriod));
+  };
+
+  const displayTime = value ? formatTime12h(value) : "Sin definir";
+
+  return (
+    <div className="space-y-1.5 rounded-xl bg-inset/40 p-2.5 border border-line-soft">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-bold text-ink">{label}</label>
+        <span
+          className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+            accentColor === "amber"
+              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+              : "bg-brand/15 text-brand border border-brand/20"
+          }`}
+        >
+          {displayTime}
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        {/* Selector de Hora 1-12 */}
+        <div className="flex-1">
+          <select
+            value={hour}
+            onChange={(e) => handleHourChange(Number(e.target.value))}
+            className="w-full rounded-xl border border-line bg-surface px-2.5 py-1.5 text-sm font-bold text-ink shadow-sm focus:border-brand focus:outline-none"
+          >
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+              <option key={h} value={h}>
+                {h} : {minute}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Selector de Minutos */}
+        <div className="w-20">
+          <select
+            value={minute}
+            onChange={(e) => handleMinuteChange(e.target.value)}
+            className="w-full rounded-xl border border-line bg-surface px-2 py-1.5 text-sm font-semibold text-ink shadow-sm focus:border-brand focus:outline-none"
+          >
+            {["00", "15", "30", "45"].map((m) => (
+              <option key={m} value={m}>
+                :{m}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Botones AM / PM */}
+        <div className="flex rounded-xl border border-line bg-surface p-0.5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => handlePeriodChange("AM")}
+            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+              period === "AM"
+                ? "bg-brand text-brand-ink shadow-sm scale-100"
+                : "text-muted hover:text-ink hover:bg-raised"
+            }`}
+          >
+            AM
+          </button>
+          <button
+            type="button"
+            onClick={() => handlePeriodChange("PM")}
+            className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
+              period === "PM"
+                ? "bg-brand text-brand-ink shadow-sm scale-100"
+                : "text-muted hover:text-ink hover:bg-raised"
+            }`}
+          >
+            PM
+          </button>
+        </div>
+      </div>
+
+      {/* Atajos Rápidos */}
+      {presets && presets.length > 0 && (
+        <div className="flex flex-wrap gap-1 pt-1 border-t border-line/40">
+          {presets.map((p) => {
+            const isSelected = value === p.time;
+            return (
+              <button
+                key={p.time}
+                type="button"
+                onClick={() => onChange(p.time)}
+                className={`rounded-md px-2 py-0.5 text-[11px] transition-all ${
+                  isSelected
+                    ? "bg-brand text-brand-ink font-bold shadow-xs"
+                    : "bg-surface border border-line text-muted hover:text-ink hover:bg-raised"
+                }`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ModalityScheduleCard({
   modality,
   onSave,
@@ -927,6 +1073,21 @@ function ModalityScheduleCard({
     setToleranciaMin(String(modality.toleranciaMin));
   }, [modality]);
 
+  const isHours = modality.codigo === "HORAS_3";
+  const isDia = modality.codigo === "NOCHE_A";
+  const isNoche = modality.codigo === "NOCHE_B";
+
+  // Calcular duración sugerida automáticamente si checkin y checkout están definidos
+  const calculatedDuration = (() => {
+    if (!checkinFijo || !checkoutFijo) return null;
+    const inH = parseInt(checkinFijo.split(":")[0], 10);
+    const outH = parseInt(checkoutFijo.split(":")[0], 10);
+    if (isNaN(inH) || isNaN(outH)) return null;
+    let diff = outH - inH;
+    if (diff <= 0) diff += 24;
+    return diff;
+  })();
+
   const handleSave = async () => {
     setBusy(true);
     setSaved(false);
@@ -947,16 +1108,40 @@ function ModalityScheduleCard({
     }
   };
 
-  const isHours = modality.codigo === "HORAS_3";
-  const isDia = modality.codigo === "NOCHE_A";
-  const isNoche = modality.codigo === "NOCHE_B";
-
   const badgeTone = isDia ? "tone-sky" : isNoche ? "tone-amber" : "tone-teal";
   const typeLabel = isDia ? "Por Día / Noche A" : isNoche ? "Por Noche / Noche B" : "Por Horas";
 
+  const checkinPresets = isDia
+    ? [
+        { label: "12:00 PM", time: "12:00" },
+        { label: "1:00 PM", time: "13:00" },
+        { label: "2:00 PM", time: "14:00" },
+        { label: "3:00 PM", time: "15:00" },
+      ]
+    : [
+        { label: "6:00 PM", time: "18:00" },
+        { label: "7:00 PM", time: "19:00" },
+        { label: "8:00 PM", time: "20:00" },
+        { label: "9:00 PM", time: "21:00" },
+      ];
+
+  const checkoutPresets = isDia
+    ? [
+        { label: "10:00 AM", time: "10:00" },
+        { label: "11:00 AM", time: "11:00" },
+        { label: "12:00 PM", time: "12:00" },
+        { label: "1:00 PM", time: "13:00" },
+      ]
+    : [
+        { label: "11:00 AM", time: "11:00" },
+        { label: "12:00 PM", time: "12:00" },
+        { label: "1:00 PM", time: "13:00" },
+        { label: "2:00 PM", time: "14:00" },
+      ];
+
   return (
     <div className="rounded-2xl border border-line bg-surface p-4 flex flex-col justify-between gap-4 shadow-sm">
-      <div className="space-y-2">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Badge tone={badgeTone} className="font-semibold text-xs px-2.5 py-0.5">
             {typeLabel}
@@ -975,83 +1160,159 @@ function ModalityScheduleCard({
         </Field>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 pt-2 border-t border-line-soft">
+      <div className="space-y-3 pt-2 border-t border-line-soft">
         {!isHours ? (
-          <>
-            <div>
-              <Field label="Empieza a las (Check-in)">
-                <Input
-                  type="time"
-                  value={checkinFijo}
-                  onChange={(e) => setCheckinFijo(e.target.value)}
-                  className="font-mono text-sm font-semibold"
-                />
-              </Field>
-              {checkinFijo && (
-                <div className="mt-1 text-[11px] font-bold text-brand">
-                  {formatTime12h(checkinFijo)}
-                </div>
-              )}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <TimePicker12h
+              label="Empieza a las (Check-in)"
+              value={checkinFijo}
+              onChange={setCheckinFijo}
+              presets={checkinPresets}
+              accentColor="brand"
+            />
 
-            <div>
-              <Field label="Termina a las (Check-out)">
-                <Input
-                  type="time"
-                  value={checkoutFijo}
-                  onChange={(e) => setCheckoutFijo(e.target.value)}
-                  className="font-mono text-sm font-semibold"
-                />
-              </Field>
-              {checkoutFijo && (
-                <div className="mt-1 text-[11px] font-bold text-amber-600 dark:text-amber-400">
-                  {formatTime12h(checkoutFijo)}
-                </div>
-              )}
-            </div>
-          </>
+            <TimePicker12h
+              label="Termina a las (Check-out)"
+              value={checkoutFijo}
+              onChange={setCheckoutFijo}
+              presets={checkoutPresets}
+              accentColor="amber"
+            />
+          </div>
         ) : (
-          <div className="col-span-2">
-            <p className="text-xs text-muted mb-2">
-              El alquiler por horas inicia en el momento exacto del check-in del huésped y dura las horas configuradas abajo.
+          <div className="rounded-xl bg-teal-500/10 border border-teal-500/20 p-3 text-xs text-teal-800 dark:text-teal-200">
+            <p className="font-bold mb-1">⏱️ Alquiler Por Horas</p>
+            <p className="text-[11px] leading-relaxed">
+              Inicia en el momento en que se registra al huésped y concluye al cumplirse las horas asignadas más el tiempo de tolerancia.
             </p>
           </div>
         )}
 
-        <div>
-          <Field label="Duración (Horas)">
-            <Input
-              type="number"
-              min="1"
-              max="72"
-              value={duracionHoras}
-              onChange={(e) => setDuracionHoras(e.target.value)}
-              className="tabular-nums font-semibold"
-            />
-          </Field>
-        </div>
+        {/* Duración y sugerencia */}
+        {!isHours && calculatedDuration !== null && Number(duracionHoras) !== calculatedDuration && (
+          <div className="flex items-center justify-between rounded-xl bg-brand/10 border border-brand/20 p-2 text-xs text-brand">
+            <span>
+              💡 Horas calculadas entre Check-in y Check-out: <strong>{calculatedDuration} horas</strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setDuracionHoras(String(calculatedDuration))}
+              className="rounded-lg bg-brand px-2.5 py-1 text-xs font-bold text-brand-ink hover:opacity-90 active:scale-95 transition-all shadow-xs"
+            >
+              Aplicar {calculatedDuration}h
+            </button>
+          </div>
+        )}
 
-        <div>
-          <Field label="Tolerancia (Min)">
-            <Input
-              type="number"
-              min="0"
-              max="120"
-              value={toleranciaMin}
-              onChange={(e) => setToleranciaMin(e.target.value)}
-              className="tabular-nums font-semibold"
-            />
-          </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-ink">Duración (Horas)</label>
+              <span className="text-xs font-bold text-brand">{duracionHoras} hrs</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setDuracionHoras((h) => String(Math.max(1, Number(h) - 1)))}
+                className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
+              >
+                −
+              </button>
+              <Input
+                type="number"
+                min="1"
+                max="72"
+                value={duracionHoras}
+                onChange={(e) => setDuracionHoras(e.target.value)}
+                className="tabular-nums font-bold text-center h-9"
+              />
+              <button
+                type="button"
+                onClick={() => setDuracionHoras((h) => String(Math.min(72, Number(h) + 1)))}
+                className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
+              >
+                +
+              </button>
+            </div>
+            {isHours && (
+              <div className="flex flex-wrap gap-1 pt-1">
+                {[2, 3, 4, 6, 8, 12].map((hrs) => (
+                  <button
+                    key={hrs}
+                    type="button"
+                    onClick={() => setDuracionHoras(String(hrs))}
+                    className={`rounded px-1.5 py-0.5 text-[11px] font-semibold transition-all ${
+                      Number(duracionHoras) === hrs
+                        ? "bg-brand text-brand-ink"
+                        : "bg-surface border border-line text-muted hover:text-ink"
+                    }`}
+                  >
+                    {hrs}h
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-ink">Tolerancia (Min)</label>
+              <span className="text-xs font-bold text-muted">{toleranciaMin} min</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setToleranciaMin((m) => String(Math.max(0, Number(m) - 5)))}
+                className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
+              >
+                −
+              </button>
+              <Input
+                type="number"
+                min="0"
+                max="120"
+                value={toleranciaMin}
+                onChange={(e) => setToleranciaMin(e.target.value)}
+                className="tabular-nums font-bold text-center h-9"
+              />
+              <button
+                type="button"
+                onClick={() => setToleranciaMin((m) => String(Math.min(120, Number(m) + 5)))}
+                className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
+              >
+                +
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1 pt-1">
+              {[0, 10, 15, 20, 30].map((mins) => (
+                <button
+                  key={mins}
+                  type="button"
+                  onClick={() => setToleranciaMin(String(mins))}
+                  className={`rounded px-1.5 py-0.5 text-[11px] font-semibold transition-all ${
+                    Number(toleranciaMin) === mins
+                      ? "bg-brand text-brand-ink"
+                      : "bg-surface border border-line text-muted hover:text-ink"
+                  }`}
+                >
+                  {mins}m
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-line-soft">
+      <div className="flex items-center justify-between pt-2 border-t border-line-soft">
         {saved ? (
-          <span className="text-xs text-ok font-semibold animate-fade">✓ Horario guardado</span>
+          <span className="text-xs text-ok font-bold animate-fade flex items-center gap-1">
+            <span>✓</span>
+            <span>Horario guardado correctamente</span>
+          </span>
         ) : (
-          <span className="text-[11px] text-subtle">Aplica a recepción y kiosco</span>
+          <span className="text-[11px] text-muted">Aplica en recepción y kiosco</span>
         )}
-        <Button variant="primary" size="sm" onClick={handleSave} disabled={busy}>
+        <Button variant="primary" size="sm" onClick={handleSave} disabled={busy} className="font-bold">
           {busy ? "Guardando…" : "Guardar Horario"}
         </Button>
       </div>

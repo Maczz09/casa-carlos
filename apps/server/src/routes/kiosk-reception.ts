@@ -85,6 +85,33 @@ export function kioskReceptionRoutes(services: Services) {
       services.kiosk.emitRemoteAction({ type: "kiosk_action", action: request.body.action });
       return { ok: true };
     });
+
+    app.post("/api/reception/kiosk/launch", auth, async () => {
+      try {
+        const { spawn } = await import("node:child_process");
+        const path = await import("node:path");
+        const fs = await import("node:fs");
+
+        const candidates = [
+          "D:\\CasaCarlos\\desktop\\HospedajeCarlos.exe",
+          path.resolve(process.cwd(), "apps/desktop/publish/HospedajeCarlos.exe"),
+          path.resolve(process.cwd(), "desktop/HospedajeCarlos.exe"),
+        ];
+
+        const exe = candidates.find((p) => fs.existsSync(p));
+        if (exe) {
+          const child = spawn(exe, ["--kiosk"], {
+            detached: true,
+            stdio: "ignore",
+          });
+          child.unref();
+          return { ok: true, launched: true };
+        }
+        return { ok: false, error: "Ejecutable no encontrado" };
+      } catch (err) {
+        return { ok: false, error: (err as Error).message };
+      }
+    });
   };
 
 }

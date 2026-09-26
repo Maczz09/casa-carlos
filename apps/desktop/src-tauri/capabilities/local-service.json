@@ -3,8 +3,15 @@
   "identifier": "local-service",
   "description": "Permite que el servicio local de Hospedaje Carlos guarde exportaciones solicitadas por Recepción.",
   "windows": ["main"],
-    "permissions": ["core:default", "notification:default", "allow-save-export-file"],
+    "permissions": [
+      "core:default",
+      "notification:default",
+      "allow-save-export-file",
+      "allow-move-to-screen",
+      "allow-move-to-secondary-screen",
+      "allow-get-screens-info"
+    ],
   "remote": {
-    "urls": ["http://127.0.0.1:4000/*", "http://localhost:4000/*"]
+    "urls": ["http://127.0.0.1:*/*", "http://localhost:*/*"]
   }
 }

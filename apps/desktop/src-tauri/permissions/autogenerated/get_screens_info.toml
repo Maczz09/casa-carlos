@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-screens-info"
+description = "Enables the get_screens_info command without any pre-configured scope."
+commands.allow = ["get_screens_info"]
+
+[[permission]]
+identifier = "deny-get-screens-info"
+description = "Denies the get_screens_info command without any pre-configured scope."
+commands.deny = ["get_screens_info"]

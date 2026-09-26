@@ -70,7 +70,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
 
   const sendFullscreenCommand = async () => {
     try {
-      await api.sendKioskAction("fullscreen");
+      await api.sendKioskAction("screen2");
+      void api.launchKiosk().catch(() => {});
     } catch {}
   };
 

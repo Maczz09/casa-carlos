@@ -15,8 +15,9 @@ use std::{
     thread,
     time::Duration,
 };
+use serde::{Deserialize, Serialize};
 use tauri::{
-    Manager, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
+    Manager, PhysicalPosition, Position, WebviewUrl, WebviewWindow, WebviewWindowBuilder,
     webview::NewWindowResponse,
 };
 use url::Url;
@@ -143,6 +144,120 @@ fn save_export_file(filename: String, contents: Vec<u8>) -> Result<String, Strin
     let destination = downloads.join(safe_name);
     fs::write(&destination, contents).map_err(|error| format!("No se pudo guardar el archivo: {error}"))?;
     Ok(destination.display().to_string())
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ScreenItem {
+    pub index: usize,
+    pub name: String,
+    pub is_primary: bool,
+    pub width: u32,
+    pub height: u32,
+    pub x: i32,
+    pub y: i32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct ScreensResponse {
+    pub count: usize,
+    pub screens: Vec<ScreenItem>,
+}
+
+pub fn move_window_to_monitor_internal(
+    window: &WebviewWindow,
+    target_index: Option<usize>,
+    fullscreen: bool,
+) -> Result<String, String> {
+    let monitors = window.available_monitors().map_err(|e| e.to_string())?;
+    if monitors.is_empty() {
+        return Err("No se detectaron pantallas en el sistema.".to_string());
+    }
+
+    let primary_opt = window.primary_monitor().ok().flatten();
+
+    let target = match target_index {
+        Some(idx) => monitors.get(idx).ok_or_else(|| format!("Pantalla {} no encontrada", idx + 1))?,
+        None => {
+            // Buscar pantalla secundaria (la primera que no sea la principal)
+            monitors.iter().find(|m| {
+                if let Some(ref p) = primary_opt {
+                    m.position() != p.position()
+                } else {
+                    false
+                }
+            }).or_else(|| monitors.get(1)).unwrap_or(&monitors[0])
+        }
+    };
+
+    let pos = *target.position();
+    let name = target.name().cloned().unwrap_or_else(|| format!("Pantalla en ({}, {})", pos.x, pos.y));
+    write_log(format!("Moviendo ventana a {name} en pos ({}, {})", pos.x, pos.y));
+
+    // Desmaximizar primero para que Windows permita reubicar libremente las coordenadas
+    let _ = window.set_fullscreen(false);
+    let _ = window.unmaximize();
+    thread::sleep(Duration::from_millis(80));
+
+    window.set_position(Position::Physical(PhysicalPosition::new(pos.x, pos.y)))
+        .map_err(|e| format!("No se pudo cambiar la posición de la ventana: {e}"))?;
+
+    thread::sleep(Duration::from_millis(80));
+
+    if fullscreen {
+        window.set_fullscreen(true)
+            .map_err(|e| format!("No se pudo activar pantalla completa: {e}"))?;
+    } else {
+        window.maximize()
+            .map_err(|e| format!("No se pudo maximizar la ventana: {e}"))?;
+    }
+
+    Ok(format!("Ventana colocada con éxito en {name}"))
+}
+
+#[tauri::command]
+fn get_screens_info(window: WebviewWindow) -> Result<ScreensResponse, String> {
+    let monitors = window.available_monitors().map_err(|e| e.to_string())?;
+    let primary_opt = window.primary_monitor().ok().flatten();
+
+    let screens = monitors
+        .iter()
+        .enumerate()
+        .map(|(index, m)| {
+            let is_primary = primary_opt
+                .as_ref()
+                .map(|p| p.position() == m.position())
+                .unwrap_or(index == 0);
+            let name = m.name().cloned().unwrap_or_else(|| format!("Pantalla {}", index + 1));
+            ScreenItem {
+                index,
+                name,
+                is_primary,
+                width: m.size().width,
+                height: m.size().height,
+                x: m.position().x,
+                y: m.position().y,
+            }
+        })
+        .collect();
+
+    Ok(ScreensResponse {
+        count: monitors.len(),
+        screens,
+    })
+}
+
+#[tauri::command]
+fn move_to_screen(
+    window: WebviewWindow,
+    screen_index: Option<usize>,
+    fullscreen: Option<bool>,
+) -> Result<String, String> {
+    move_window_to_monitor_internal(&window, screen_index, fullscreen.unwrap_or(true))
+}
+
+#[tauri::command]
+fn move_to_secondary_screen(window: WebviewWindow) -> Result<String, String> {
+    move_window_to_monitor_internal(&window, None, true)
 }
 
 fn write_log(message: impl AsRef<str>) {
@@ -363,12 +478,27 @@ fn run() -> Result<(), String> {
     let test_popup = should_test_popup(&args);
     tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
-        .invoke_handler(tauri::generate_handler![save_export_file])
+        .invoke_handler(tauri::generate_handler![
+            save_export_file,
+            move_to_screen,
+            move_to_secondary_screen,
+            get_screens_info
+        ])
         .setup(move |app| {
             app.manage(instance_lock);
             let window = build_main_window(app, mode, server.clone())?;
             let label = mode.loading_label().replace('\\', "\\\\").replace('"', "\\\"");
             let _ = window.eval(format!("window.setDesktopMode(\"{label}\")"));
+
+            if matches!(mode, Mode::Kiosk) {
+                let win = window.clone();
+                thread::spawn(move || {
+                    thread::sleep(Duration::from_millis(600));
+                    let res = move_window_to_monitor_internal(&win, None, true);
+                    write_log(format!("Auto-colocación Kiosco: {res:?}"));
+                });
+            }
+
             wait_for_server(window, server.clone(), test_popup);
 
             if let Some(seconds) = exit_after {

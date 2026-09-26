@@ -1437,6 +1437,7 @@ name = "hospedaje-carlos-desktop"
 version = "1.2.0"
 dependencies = [
  "fs2",
+ "serde",
  "tauri",
  "tauri-build",
  "tauri-plugin-notification",
