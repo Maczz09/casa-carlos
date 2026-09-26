@@ -159,6 +159,14 @@ async function main() {
   const billing = createBillingService(db, sales, runtime.sunatClient, runtime.emisor, runtime.cert, () => brand.readPdfLogo());
   const kiosk = new KioskStore(rooms, pricing, stays, sales, inventory, bus);
 
+  bus.subscribe("sale.paid", async ({ saleId }) => {
+    try {
+      await billing.createComprobantePago(saleId, { tipo: "BOLETA" }, "system");
+    } catch {
+      // Ya existe o no requiere acción adicional
+    }
+  });
+
   await seedIfEmpty(rooms, pricing, identity, payments, inventory, cashbox);
 
   const scheduler = startScheduler(rooms, stays);

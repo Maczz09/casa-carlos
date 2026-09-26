@@ -133,3 +133,17 @@ export const CreateComprobantePagoInputSchema = z.object({
   receptorRazonSocial: z.string().nullable().optional(),
 });
 export type CreateComprobantePagoInput = z.infer<typeof CreateComprobantePagoInputSchema>;
+
+export interface ComprobantePagoView extends ComprobantePago {
+  serie: string;
+  correlativo: number;
+  totalCentimos: number;
+  saldoCentimos: number;
+  pagadoCentimos: number;
+  saleEstado: string;
+  clienteNombres: string | null;
+  clienteApellidos: string | null;
+  clienteDni: string | null;
+  cuartoId: string | null;
+}
+

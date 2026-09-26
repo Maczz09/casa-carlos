@@ -137,6 +137,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
         });
         setComprobantePago(created);
         setGenerandoPago(null);
+        void printReceiptForSale(sale.id, entry.room.numero);
       },
       "No se pudo generar el comprobante de pago.",
     );
@@ -564,6 +565,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                         await api.acceptPayment(payment.id);
                         setPayingBalance(false);
                         await reload();
+                        void printReceiptForSale(sale.id, entry.room.numero);
                       },
                       "No se pudo cobrar el saldo.",
                     )

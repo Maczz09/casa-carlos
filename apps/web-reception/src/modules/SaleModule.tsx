@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails, SaleWithLines } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconCheck, IconX, RoomIllustration } from "@casacarlos/ui";
+import { IconCheck, IconPrinter, IconX, RoomIllustration } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
+import { printReceiptForSale } from "../components/receipt.js";
 import { PaymentForm } from "../components/PaymentForm.js";
 import { ProductPicker } from "../components/ProductPicker.js";
 import { Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, cx } from "../components/ui.js";
@@ -90,6 +91,24 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
       setWantsProducts(true);
     }
   }, [session?.estado, session?.wantsProducts]);
+
+  const printedRef = useRef<string | null>(null);
+
+  const roomNumber = useMemo(() => {
+    if (!session?.cuartoId) return null;
+    for (const fb of floors) {
+      const r = fb.rooms.find((x) => x.room.id === session.cuartoId);
+      if (r) return r.room.numero;
+    }
+    return null;
+  }, [floors, session?.cuartoId]);
+
+  useEffect(() => {
+    if (session?.estado === "ACEPTADO" && session.saleId && printedRef.current !== session.id) {
+      printedRef.current = session.id;
+      void printReceiptForSale(session.saleId, roomNumber);
+    }
+  }, [session?.estado, session?.saleId, session?.id, roomNumber]);
 
 
   useEffect(() => {
@@ -631,10 +650,33 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
     <>
       <PageHeader title={aceptado ? "Venta confirmada" : "Pago rechazado"} />
       <Card className="mx-auto max-w-md p-8 text-center">
-        <span className={cx("mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full text-3xl", aceptado ? "tone-teal" : "tone-red")}>{aceptado ? "✓" : "!"}</span>
-        <p className="text-lg font-semibold text-ink">{aceptado ? "Cuarto entregado" : "El pago fue rechazado"}</p>
-        <p className="mt-1 text-sm text-muted">{aceptado ? "La venta quedó registrada correctamente." : (session.error ?? "El cuarto se liberó.")}</p>
-        <Button variant="primary" size="lg" className="mt-6" onClick={onDone}>
+        <span className={cx("mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full text-3xl", aceptado ? "tone-teal" : "tone-red")}>
+          {aceptado ? "✓" : "!"}
+        </span>
+        <p className="text-lg font-semibold text-ink">
+          {aceptado ? "Cuarto entregado y comprobante generado" : "El pago fue rechazado"}
+        </p>
+        <p className="mt-1 text-sm text-muted">
+          {aceptado
+            ? "La venta quedó registrada y el comprobante se envió a la impresora automáticamente."
+            : (session.error ?? "El cuarto se liberó.")}
+        </p>
+
+        {aceptado && session.saleId && (
+          <div className="mt-6 flex flex-col gap-2.5">
+            <Button
+              variant="secondary"
+              icon={<IconPrinter className="h-4 w-4" />}
+              onClick={() => {
+                if (session.saleId) void printReceiptForSale(session.saleId, roomNumber);
+              }}
+            >
+              Imprimir comprobante de nuevo
+            </Button>
+          </div>
+        )}
+
+        <Button variant="primary" size="lg" className="mt-4" onClick={onDone}>
           Volver al tablero
         </Button>
       </Card>

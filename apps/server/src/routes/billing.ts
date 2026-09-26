@@ -101,7 +101,42 @@ export function billingRoutes(services: Services) {
 
     app.get<{ Querystring: { desde?: string; hasta?: string } }>("/api/billing/comprobantes-pago", auth, async (request) => {
       const { desde, hasta } = request.query;
-      return services.billing.listComprobantesPago(desde && hasta ? { desde, hasta } : undefined);
+      const list = await services.billing.listComprobantesPago(desde && hasta ? { desde, hasta } : undefined);
+      const enriched = await Promise.all(
+        list.map(async (item) => {
+          try {
+            const sale = await services.sales.getSale(item.ventaId);
+            return {
+              ...item,
+              serie: sale.serie,
+              correlativo: sale.correlativo,
+              totalCentimos: sale.totalCentimos,
+              saldoCentimos: sale.saldoCentimos,
+              pagadoCentimos: sale.pagadoCentimos,
+              saleEstado: sale.estado,
+              clienteNombres: sale.clienteNombres,
+              clienteApellidos: sale.clienteApellidos,
+              clienteDni: sale.clienteDni,
+              cuartoId: sale.cuartoId,
+            };
+          } catch {
+            return {
+              ...item,
+              serie: "B001",
+              correlativo: 0,
+              totalCentimos: 0,
+              saldoCentimos: 0,
+              pagadoCentimos: 0,
+              saleEstado: "CERRADA",
+              clienteNombres: null,
+              clienteApellidos: null,
+              clienteDni: null,
+              cuartoId: null,
+            };
+          }
+        }),
+      );
+      return enriched;
     });
   };
 }

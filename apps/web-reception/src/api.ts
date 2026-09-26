@@ -19,6 +19,7 @@ import type {
   DateRange,
   Floor,
   ComprobantePago,
+  ComprobantePagoView,
   CreateComprobantePagoInput,
   CreateReservationInput,
   FloorBoard,
@@ -371,7 +372,10 @@ export const api = {
   issueNotaDebito: (comprobanteId: string, input: IssueNotaInput) => post<Comprobante>(`/api/billing/${comprobanteId}/nota-debito`, input),
   createComprobantePago: (ventaId: string, input: CreateComprobantePagoInput) => post<ComprobantePago>("/api/billing/comprobante-pago", { ventaId, ...input }),
   comprobantePagoForSale: (ventaId: string) => get<ComprobantePago | null>(`/api/billing/comprobante-pago/for-sale/${ventaId}`),
-  listComprobantesPago: () => get<ComprobantePago[]>("/api/billing/comprobantes-pago"),
+  listComprobantesPago: (range?: { desde?: string; hasta?: string }) =>
+    get<ComprobantePagoView[]>(
+      `/api/billing/comprobantes-pago${range?.desde && range?.hasta ? `?desde=${encodeURIComponent(range.desde)}&hasta=${encodeURIComponent(range.hasta)}` : ""}`
+    ),
 };
 
 export { ApiError };

@@ -88,6 +88,38 @@ export class BillingService implements BillingPort {
   }
 
   async listComprobantesPago(range?: DateRange): Promise<ComprobantePago[]> {
+    const desde = range?.desde ?? "2020-01-01";
+    const hasta = range?.hasta ?? "2099-12-31";
+    try {
+      const sales = await this.sales.listSalesByRange(desde, hasta);
+      for (const sale of sales) {
+        const existing = await this.repo.getComprobantePagoForSale(sale.id);
+        const sunatComp = await this.repo.getForSale(sale.id);
+        if (!existing) {
+          const isFactura = Boolean(sale.clienteDni && sale.clienteDni.length === 11);
+          await this.repo.insertComprobantePago({
+            id: newId(),
+            ventaId: sale.id,
+            tipo: isFactura ? "FACTURA" : "BOLETA",
+            receptorRuc: isFactura ? sale.clienteDni : null,
+            receptorRazonSocial: isFactura ? `${sale.clienteNombres ?? ""} ${sale.clienteApellidos ?? ""}`.trim() || null : null,
+            estado: sunatComp?.estadoSunat === "ACEPTADO" ? "EMITIDO" : "BORRADOR",
+            comprobanteId: sunatComp?.id ?? null,
+            usuarioId: sale.usuarioId || "system",
+            creadoEn: sale.creadoEn,
+            emitidoEn: sunatComp?.emitidoEn ?? null,
+          });
+        } else if (sunatComp?.estadoSunat === "ACEPTADO" && existing.estado !== "EMITIDO") {
+          await this.repo.updateComprobantePago(existing.id, {
+            estado: "EMITIDO",
+            comprobanteId: sunatComp.id,
+            emitidoEn: sunatComp.emitidoEn,
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[billing] Error al sincronizar comprobantes para ventas:", err);
+    }
     return this.repo.listComprobantesPago(range);
   }
 
