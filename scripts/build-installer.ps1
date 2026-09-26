@@ -25,6 +25,10 @@ function Get-OfficialPrerequisite {
 & (Join-Path $PSScriptRoot 'build-desktop.ps1')
 if ($LASTEXITCODE -ne 0) { throw 'No se pudo compilar la aplicación de escritorio.' }
 
+Write-Host 'Compilando interfaces web (recepción y kiosco)...'
+& pnpm -r run build
+if ($LASTEXITCODE -ne 0) { throw 'No se pudieron compilar las aplicaciones web.' }
+
 $webViewDir = Join-Path $root 'vendor\webview2'
 $webViewSetup = Join-Path $webViewDir 'MicrosoftEdgeWebview2Setup.exe'
 $vcRedistSetup = Join-Path $root 'vendor\windows-prerequisites\VC_redist.x64.exe'
