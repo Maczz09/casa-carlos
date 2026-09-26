@@ -40,5 +40,16 @@ export function brandRoutes(services: Services) {
         return reply.code(400).send({ error: (err as Error).message });
       }
     });
+
+    app.get("/api/brand/theme", async () => services.brand.getThemeConfig());
+
+    app.patch<{ Body: Parameters<typeof services.brand.setThemeConfig>[0] }>("/api/brand/theme", admin, async (request, reply) => {
+      try {
+        return services.brand.setThemeConfig(request.body ?? {});
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
   };
 }
+

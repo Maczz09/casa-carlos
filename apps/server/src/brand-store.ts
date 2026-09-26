@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import type { Brand } from "@casacarlos/contracts";
+import type { Brand, ThemeConfig } from "@casacarlos/contracts";
+import { DEFAULT_THEME_CONFIG } from "@casacarlos/contracts";
 import { ImageStorage, detectImage, type ImageMimeType } from "./image-storage.js";
 
 const DEFAULT_NOMBRE = "Hospedaje Carlos";
@@ -12,7 +13,9 @@ interface BrandFile {
   logoArchivo?: string | null;
   logoMimeType?: ImageMimeType | null;
   actualizadoEn?: string | null;
+  themeConfig?: ThemeConfig | null;
 }
+
 
 /**
  * Nombre y logo que el hotel ve en recepción, en el kiosco y en los
@@ -86,6 +89,33 @@ export class BrandStore {
     this.writeFile({ ...file, logoArchivo: null, logoMimeType: null });
     return this.read();
   }
+
+  getThemeConfig(): ThemeConfig {
+    const file = this.readFile();
+    if (file.themeConfig) {
+      return {
+        autoEnabled: typeof file.themeConfig.autoEnabled === "boolean" ? file.themeConfig.autoEnabled : DEFAULT_THEME_CONFIG.autoEnabled,
+        startTime: file.themeConfig.startTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(file.themeConfig.startTime) ? file.themeConfig.startTime : DEFAULT_THEME_CONFIG.startTime,
+        endTime: file.themeConfig.endTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(file.themeConfig.endTime) ? file.themeConfig.endTime : DEFAULT_THEME_CONFIG.endTime,
+        manualTheme: file.themeConfig.manualTheme === "dark" ? "dark" : "light",
+      };
+    }
+    return DEFAULT_THEME_CONFIG;
+  }
+
+  setThemeConfig(config: Partial<ThemeConfig>): ThemeConfig {
+    const current = this.getThemeConfig();
+    const updated: ThemeConfig = {
+      autoEnabled: typeof config.autoEnabled === "boolean" ? config.autoEnabled : current.autoEnabled,
+      startTime: config.startTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(config.startTime) ? config.startTime : current.startTime,
+      endTime: config.endTime && /^([01]\d|2[0-3]):[0-5]\d$/.test(config.endTime) ? config.endTime : current.endTime,
+      manualTheme: config.manualTheme === "dark" || config.manualTheme === "light" ? config.manualTheme : current.manualTheme,
+    };
+    const file = this.readFile();
+    this.writeFile({ ...file, themeConfig: updated });
+    return updated;
+  }
+
 
   private readFile(): BrandFile {
     if (!existsSync(this.filePath)) return {};

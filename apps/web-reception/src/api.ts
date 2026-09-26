@@ -51,6 +51,7 @@ import type {
   UpdateRecipientInput,
   UpdateUserInput,
   User,
+  ThemeConfig,
 } from "@casacarlos/contracts";
 import { cents, splitIncludedIgv } from "@casacarlos/money";
 
@@ -240,6 +241,8 @@ export const api = {
     return request<Brand>("/api/brand/logo", { method: "POST", body: form });
   },
   deleteBrandLogo: () => del<Brand>("/api/brand/logo"),
+  themeConfig: () => get<ThemeConfig>("/api/brand/theme"),
+  updateThemeConfig: (input: Partial<ThemeConfig>) => patch<ThemeConfig>("/api/brand/theme", input),
 
   // ---- inventory ----
   products: () => get<Product[]>("/api/inventory/products"),

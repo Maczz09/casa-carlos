@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { Brand, CollectionAccount } from "@casacarlos/contracts";
 import { WALLET_PROVIDERS } from "@casacarlos/contracts";
-import { IconBank, IconPlus, IconWallet, IconX } from "@casacarlos/ui";
+import { IconBank, IconCheck, IconClock, IconMoon, IconPlus, IconSun, IconWallet, IconX } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { setBrand, useBrand } from "../hooks/useBrand.js";
+import { useTheme } from "../hooks/useTheme.js";
 import { SunatTab } from "./SunatSettingsTab.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Skeleton, Tabs, cx } from "../components/ui.js";
 
@@ -27,15 +28,19 @@ const BANCOS = [
 const WALLET_LABEL: Record<string, string> = { YAPE: "Yape", PLIN: "Plin", LEMON: "Lemon", AGORA: "Agora" };
 
 export function SettingsModule() {
-  const [tab, setTab] = useState<"marca" | "cobros" | "sunat">("marca");
+  const [tab, setTab] = useState<"marca" | "apariencia" | "cobros" | "sunat">("marca");
 
   return (
     <>
-      <PageHeader title="Ajustes" subtitle="El logo y el nombre que muestra todo el sistema, las cuentas por las que el hotel cobra y la facturación electrónica" />
+      <PageHeader
+        title="Ajustes"
+        subtitle="Logo y nombre del hotel, apariencia y horario del modo oscuro, cuentas de cobro y facturación electrónica SUNAT"
+      />
       <div className="mb-5">
         <Tabs
           tabs={[
             { id: "marca" as const, label: "Marca" },
+            { id: "apariencia" as const, label: "Tema y Apariencia" },
             { id: "cobros" as const, label: "Cobros" },
             { id: "sunat" as const, label: "Facturación SUNAT" },
           ]}
@@ -43,10 +48,19 @@ export function SettingsModule() {
           onChange={setTab}
         />
       </div>
-      {tab === "marca" ? <BrandTab /> : tab === "cobros" ? <CollectionAccountsTab /> : <SunatTab />}
+      {tab === "marca" ? (
+        <BrandTab />
+      ) : tab === "apariencia" ? (
+        <AppearanceTab />
+      ) : tab === "cobros" ? (
+        <CollectionAccountsTab />
+      ) : (
+        <SunatTab />
+      )}
     </>
   );
 }
+
 
 /* ------------------------------- Marca ------------------------------- */
 
@@ -149,6 +163,272 @@ function BrandTab() {
     </div>
   );
 }
+
+/* ------------------------------- Apariencia ------------------------------- */
+
+function formatHour12(hhmm: string): string {
+  const [hStr, mStr] = hhmm.split(":");
+  const h = Number(hStr);
+  const m = Number(mStr);
+  if (isNaN(h)) return hhmm;
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${String(isNaN(m) ? 0 : m).padStart(2, "0")} ${ampm}`;
+}
+
+function AppearanceTab() {
+  const { theme, toggle, config, updateConfig, peruTime, isScheduledDark } = useTheme();
+
+  const [autoEnabled, setAutoEnabled] = useState(config.autoEnabled);
+  const [startTime, setStartTime] = useState(config.startTime);
+  const [endTime, setEndTime] = useState(config.endTime);
+  const [manualTheme, setManualTheme] = useState(config.manualTheme);
+
+  const [busy, setBusy] = useState(false);
+  const [ok, setOk] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAutoEnabled(config.autoEnabled);
+    setStartTime(config.startTime);
+    setEndTime(config.endTime);
+    setManualTheme(config.manualTheme);
+  }, [config.autoEnabled, config.startTime, config.endTime, config.manualTheme]);
+
+  const handleSave = async () => {
+    setBusy(true);
+    setOk(null);
+    setError(null);
+    try {
+      if (!startTime || !endTime) {
+        throw new Error("Por favor completa los horarios de inicio y fin.");
+      }
+      await updateConfig({
+        autoEnabled,
+        startTime,
+        endTime,
+        manualTheme,
+      });
+      setOk("Configuración de apariencia guardada correctamente.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar la configuración.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleResetDefaults = () => {
+    setStartTime("18:00");
+    setEndTime("07:00");
+    setAutoEnabled(true);
+  };
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-2">
+      {/* Reloj y Estado en Vivo */}
+      <Section title="Horario Oficial de Perú (UTC-5)">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-4 rounded-2xl border border-line bg-inset p-4">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-brand/15 text-brand">
+              <IconClock className="h-7 w-7" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">Hora actual en Lima, Perú</p>
+              <p className="mt-0.5 font-mono text-2xl font-bold tracking-tight text-ink tabular-nums">
+                {peruTime.timeString}
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {autoEnabled ? (
+                  isScheduledDark ? (
+                    <Badge tone="tone-slate" className="gap-1.5 py-1">
+                      <IconMoon className="h-3.5 w-3.5" />
+                      <span>Modo Oscuro Activo (Noche hasta las {formatHour12(endTime)})</span>
+                    </Badge>
+                  ) : (
+                    <Badge tone="tone-amber" className="gap-1.5 py-1">
+                      <IconSun className="h-3.5 w-3.5" />
+                      <span>Modo Claro Activo (Día hasta las {formatHour12(startTime)})</span>
+                    </Badge>
+                  )
+                ) : (
+                  <Badge tone={manualTheme === "dark" ? "tone-slate" : "tone-amber"} className="gap-1.5 py-1">
+                    {manualTheme === "dark" ? <IconMoon className="h-3.5 w-3.5" /> : <IconSun className="h-3.5 w-3.5" />}
+                    <span>Modo Manual Fijo ({manualTheme === "dark" ? "Oscuro" : "Claro"})</span>
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <Card className="bg-inset p-3.5 shadow-none">
+            <p className="text-xs leading-relaxed text-muted">
+              El horario del sistema se sincroniza con la zona horaria oficial de Perú (America/Lima, UTC-5)
+              automáticamente, garantizando que el modo oscuro se aplique puntualmente a las {formatHour12(startTime)} y
+              retorne al modo claro a las {formatHour12(endTime)} independientemente del reloj de la PC o dispositivo.
+            </p>
+          </Card>
+        </div>
+      </Section>
+
+      {/* Programación Automática */}
+      <Section title="Programación de Modo Oscuro">
+        <div className="flex flex-col gap-5">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-raised p-3.5 transition-colors hover:border-brand/40">
+            <input
+              type="checkbox"
+              checked={autoEnabled}
+              onChange={(e) => setAutoEnabled(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-line text-brand accent-brand focus:ring-brand"
+            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-semibold text-ink">Activar modo oscuro automático</span>
+              <span className="text-xs text-muted">
+                Cambia automáticamente entre modo claro y modo oscuro según el horario configurado abajo.
+              </span>
+            </div>
+          </label>
+
+          <div className={cx("grid gap-4 sm:grid-cols-2 transition-opacity", !autoEnabled && "opacity-40 pointer-events-none")}>
+            <Field label="Inicio del modo oscuro (Noche)" hint={`Equivale a: ${formatHour12(startTime)}`}>
+              <Input
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                disabled={!autoEnabled || busy}
+              />
+            </Field>
+
+            <Field label="Fin del modo oscuro (Amanecer)" hint={`Equivale a: ${formatHour12(endTime)}`}>
+              <Input
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                disabled={!autoEnabled || busy}
+              />
+            </Field>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line-soft pt-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={busy || !autoEnabled}
+              onClick={handleResetDefaults}
+            >
+              Restablecer a 18:00 — 07:00 (Por defecto)
+            </Button>
+          </div>
+        </div>
+      </Section>
+
+      {/* Selector de Tema Manual / Vista Previa */}
+      <Section title="Tema Predeterminado" className="lg:col-span-2">
+        <div className="flex flex-col gap-4">
+          <p className="text-xs text-muted">
+            {autoEnabled
+              ? "El modo automático está activo. Puedes elegir el tema que se usará si se desactiva la programación, o hacer clic en cualquiera para probarlo ahora:"
+              : "Selecciona el tema que permanecerá visible de forma continua:"}
+          </p>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {/* Tarjeta Claro */}
+            <div
+              onClick={() => {
+                setManualTheme("light");
+                if (!autoEnabled) {
+                  void updateConfig({ manualTheme: "light" });
+                }
+              }}
+              className={cx(
+                "group relative flex cursor-pointer items-center gap-4 rounded-2xl border p-4.5 transition-all duration-200",
+                manualTheme === "light"
+                  ? "border-brand bg-brand/5 shadow-sm ring-2 ring-brand/20"
+                  : "border-line bg-raised hover:border-brand/40 hover:bg-inset"
+              )}
+            >
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                <IconSun className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-ink">Modo Claro</p>
+                  {manualTheme === "light" && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-brand-ink">
+                      <IconCheck className="h-3 w-3" />
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs text-muted">
+                  Superficies claras, alto contraste y lectura óptima para luz de día.
+                </p>
+              </div>
+            </div>
+
+            {/* Tarjeta Oscuro */}
+            <div
+              onClick={() => {
+                setManualTheme("dark");
+                if (!autoEnabled) {
+                  void updateConfig({ manualTheme: "dark" });
+                }
+              }}
+              className={cx(
+                "group relative flex cursor-pointer items-center gap-4 rounded-2xl border p-4.5 transition-all duration-200",
+                manualTheme === "dark"
+                  ? "border-brand bg-brand/5 shadow-sm ring-2 ring-brand/20"
+                  : "border-line bg-raised hover:border-brand/40 hover:bg-inset"
+              )}
+            >
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-slate-500/15 text-slate-700 dark:text-slate-300">
+                <IconMoon className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-ink">Modo Oscuro</p>
+                  {manualTheme === "dark" && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand text-brand-ink">
+                      <IconCheck className="h-3 w-3" />
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-xs text-muted">
+                  Superficies profundas y menor brillo para turnos de noche y recepción con poca luz.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-4">
+            <div className="flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={toggle}
+                title="Cambiar tema de la pantalla en este momento"
+              >
+                {theme === "dark" ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}
+                <span>Probar alternar tema ahora ({theme === "dark" ? "Ver Claro" : "Ver Oscuro"})</span>
+              </Button>
+            </div>
+
+            <Button
+              variant="primary"
+              disabled={busy}
+              onClick={handleSave}
+            >
+              {busy ? "Guardando…" : "Guardar ajustes de apariencia"}
+            </Button>
+          </div>
+
+          {error && <Notice kind="error">{error}</Notice>}
+          {ok && <Notice kind="ok">{ok}</Notice>}
+        </div>
+      </Section>
+    </div>
+  );
+}
+
 
 /* ------------------------------- Cobros ------------------------------- */
 

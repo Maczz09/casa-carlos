@@ -338,3 +338,4 @@ export function IconSliders({ className }: IconProps) {
     </svg>
   );
 }
+
