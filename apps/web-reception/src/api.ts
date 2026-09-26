@@ -166,6 +166,10 @@ export const api = {
   cancelKiosk: (motivo?: string) => post<{ ok: true }>("/api/reception/kiosk/cancel", { motivo }),
   selectKioskFloor: (pisoId: string) => post<KioskSession>("/api/kiosk/select-floor", { pisoId }),
   selectKioskRoom: (cuartoId: string) => post<KioskSession>("/api/kiosk/select-room", { cuartoId }),
+  addKioskProduct: (productoId: string, cantidad?: number) =>
+    post<KioskSession>("/api/kiosk/add-product", { productoId, cantidad: cantidad ?? 1 }),
+  removeKioskProduct: (lineId: string, motivo?: string) =>
+    post<KioskSession>("/api/kiosk/remove-product", { lineId, motivo: motivo ?? "Quitado desde recepción" }),
   finishKioskProducts: () => post<KioskSession>("/api/kiosk/finish-products"),
 
   activeStays: () => get<StayWithCustomer[]>("/api/stays/active"),

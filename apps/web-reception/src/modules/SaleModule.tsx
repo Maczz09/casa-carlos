@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import type { Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails, SaleWithLines } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconCheck, RoomIllustration } from "@casacarlos/ui";
+import { IconCheck, IconX, RoomIllustration } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { PaymentForm } from "../components/PaymentForm.js";
+import { ProductPicker } from "../components/ProductPicker.js";
 import { Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, cx } from "../components/ui.js";
 
 interface Props {
@@ -67,6 +68,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   const [customer, setCustomer] = useState({ nombres: "", apellidos: "", dni: "", telefono: "" });
   const [payment, setPayment] = useState<PaymentWithDetails | null>(null);
   const [productSale, setProductSale] = useState<SaleWithLines | null>(null);
+  const [wantsProducts, setWantsProducts] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -80,6 +82,12 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   useEffect(() => {
     if (!session) setPayment(null);
   }, [session?.id]);
+
+  useEffect(() => {
+    if (session?.estado !== "SELECCION_PRODUCTOS") {
+      setWantsProducts(null);
+    }
+  }, [session?.estado]);
 
   useEffect(() => {
     if (session?.estado !== "SELECCION_PRODUCTOS" || !session.saleId) {
@@ -333,11 +341,68 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
 
   /* ---------- Paso 4: productos ---------- */
   if (session.estado === "SELECCION_PRODUCTOS") {
+    const productLines = (productSale?.lineas ?? []).filter((l) => l.tipo === "PRODUCTO");
+    const hasProducts = productLines.length > 0;
+
+    if (!hasProducts && wantsProducts === null) {
+      return (
+        <>
+          <PageHeader
+            title="Productos"
+            subtitle="Consulta si el huésped desea agregar productos o bebidas a su habitación"
+            actions={
+              <Button variant="danger" onClick={cancel} disabled={busy}>
+                Cancelar venta
+              </Button>
+            }
+          />
+          <Stepper current={current} />
+
+          <Section title="¿El huésped desea agregar productos a la habitación?" className="mx-auto max-w-2xl text-center">
+            <div className="py-6">
+              <p className="mb-8 text-base text-muted">
+                Puedes registrar bebidas, snacks o artículos de bodega para incluirlos en la misma cuenta, o continuar directamente al cobro.
+              </p>
+
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await api.finishKioskProducts();
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  No, continuar a pago
+                </Button>
+
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full sm:w-auto px-8 py-3.5 text-base font-semibold"
+                  disabled={busy}
+                  onClick={() => setWantsProducts(true)}
+                >
+                  Sí, seleccionar productos
+                </Button>
+              </div>
+            </div>
+          </Section>
+        </>
+      );
+    }
+
     return (
       <>
         <PageHeader
           title="Productos"
-          subtitle="El cliente está eligiendo desde el kiosco — podés pasar directo a pagar"
+          subtitle="Agrega productos de bodega a la cuenta o revisa los que elija el huésped"
           actions={
             <Button variant="danger" onClick={cancel} disabled={busy}>
               Cancelar venta
@@ -346,39 +411,102 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
         />
         <Stepper current={current} />
 
-        <Section title="Lo que va agregando el cliente" className="mx-auto max-w-2xl">
-          {productSale && productSale.lineas.length > 0 ? (
-            <div className="mb-4">
-              {productSale.lineas.map((l) => (
-                <Row key={l.id} label={`${l.cantidad}× ${l.descripcion}`} value={format(cents(l.subtotalCentimos))} />
-              ))}
-            </div>
-          ) : (
-            <EmptyState title="Todavía no agregó nada" hint="Cuando el cliente toque un producto en el kiosco vas a verlo acá al instante." />
-          )}
-
-          <div className="flex items-center justify-between border-t border-line pt-4">
-            <div>
-              <p className="text-xs uppercase tracking-wide text-subtle">Total</p>
-              <p className="text-2xl font-semibold tabular-nums text-ink">{format(cents(session.totalCentimos ?? 0))}</p>
-            </div>
-            <Button
-              variant="primary"
-              size="lg"
-              disabled={busy}
-              onClick={async () => {
+        <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+          <Section title="Buscar y agregar producto" subtitle="Escribe el nombre o usa el lector de código de barras">
+            <ProductPicker
+              onAdd={async (productoId) => {
                 setBusy(true);
                 try {
-                  await api.finishKioskProducts();
+                  await api.addKioskProduct(productoId, 1);
+                  if (session.saleId) {
+                    const updated = await api.getSale(session.saleId);
+                    setProductSale(updated);
+                  }
                 } finally {
                   setBusy(false);
                 }
               }}
-            >
-              Continuar a pago
-            </Button>
-          </div>
-        </Section>
+            />
+          </Section>
+
+          <Section title="Detalle de la cuenta">
+            {productSale && productSale.lineas.length > 0 ? (
+              <div className="flex flex-col divide-y divide-line">
+                {productSale.lineas.map((l) => (
+                  <div key={l.id} className="flex items-center justify-between py-2.5 text-sm">
+                    <div className="min-w-0 pr-2">
+                      <p className="font-medium text-ink truncate">{l.descripcion}</p>
+                      <p className="text-xs text-subtle">{l.cantidad} × {format(cents(l.precioUnitarioCentimos))}</p>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="font-semibold tabular-nums text-ink">{format(cents(l.subtotalCentimos))}</span>
+                      {l.tipo === "PRODUCTO" && (
+                        <button
+                          type="button"
+                          title="Quitar producto"
+                          disabled={busy}
+                          onClick={async () => {
+                            setBusy(true);
+                            try {
+                              await api.removeKioskProduct(l.id);
+                              if (session.saleId) {
+                                const updated = await api.getSale(session.saleId);
+                                setProductSale(updated);
+                              }
+                            } finally {
+                              setBusy(false);
+                            }
+                          }}
+                          className="rounded-lg p-1.5 text-subtle hover:bg-inset hover:text-danger transition-colors disabled:opacity-40"
+                        >
+                          <IconX className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="Sin productos agregados" hint="Busca un producto a la izquierda o espera que el cliente lo elija en el kiosco." />
+            )}
+
+            <div className="mt-4 border-t border-line pt-4">
+              <div className="flex items-baseline justify-between mb-4">
+                <span className="text-sm font-medium text-subtle">Total</span>
+                <span className="text-2xl font-bold tabular-nums text-ink">{format(cents(session.totalCentimos ?? 0))}</span>
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                {!hasProducts && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => setWantsProducts(null)}
+                  >
+                    ← Volver
+                  </Button>
+                )}
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="ml-auto"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true);
+                    try {
+                      await api.finishKioskProducts();
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                >
+                  Continuar a pago
+                </Button>
+              </div>
+            </div>
+          </Section>
+        </div>
       </>
     );
   }

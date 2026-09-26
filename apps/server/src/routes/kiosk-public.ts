@@ -58,6 +58,14 @@ export function kioskPublicRoutes(services: Services) {
       }
     });
 
+    app.post<{ Body: { lineId: string; motivo?: string } }>("/api/kiosk/remove-product", async (request, reply) => {
+      try {
+        return await services.kiosk.removeProduct(request.body.lineId, request.body.motivo ?? "Quitado desde recepción");
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
     app.post("/api/kiosk/finish-products", async (request, reply) => {
       try {
         return await services.kiosk.finishProducts();

@@ -124,6 +124,14 @@ export class KioskStore {
     return this.commit({ ...session, totalCentimos: sale.totalCentimos, error: null });
   }
 
+  async removeProduct(lineId: string, motivo = "Quitado de la venta"): Promise<KioskSession> {
+    const session = this.mustGet();
+    if (!session.saleId) throw new Error("Todavía no hay una venta abierta.");
+    await this.sales.cancelLine(session.saleId, lineId, motivo, session.usuarioId);
+    const sale = await this.sales.getSale(session.saleId);
+    return this.commit({ ...session, totalCentimos: sale.totalCentimos, error: null });
+  }
+
   async finishProducts(): Promise<KioskSession> {
     const session = this.mustGet();
     return this.commit({ ...session, estado: "SELECCION_PAGO" });
