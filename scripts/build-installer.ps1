@@ -46,19 +46,54 @@ Get-OfficialPrerequisite `
   -Uri 'https://go.microsoft.com/fwlink/?linkid=2088631' `
   -Destination $dotNet48Setup
 
-$portableNode = Join-Path $root 'vendor\node-win-x64\node.exe'
-$portableCorepack = Join-Path $root 'vendor\node-win-x64\corepack.cmd'
+$portableNodeDir = Join-Path $root 'vendor\node-win-x64'
+$portableNode = Join-Path $portableNodeDir 'node.exe'
+$portableCorepack = Join-Path $portableNodeDir 'corepack.cmd'
 if ((-not (Test-Path -LiteralPath $portableNode)) -or (-not (Test-Path -LiteralPath $portableCorepack))) {
-  throw 'Falta el Node.js portátil en vendor\node-win-x64. El instalador no dependerá de un Node global del cliente.'
+  Write-Host 'Descargando Node.js v24 portátil para incluir en el instalador...'
+  $nodeVersion = 'v24.18.0'
+  $nodeZipUrl = "https://nodejs.org/dist/$nodeVersion/node-$nodeVersion-win-x64.zip"
+  $vendorDir = Join-Path $root 'vendor'
+  New-Item -ItemType Directory -Force -Path $vendorDir | Out-Null
+  $nodeZip = Join-Path $vendorDir "node-$nodeVersion-win-x64.zip"
+  $nodeExtractDir = Join-Path $vendorDir 'node-temp'
+
+  if (-not (Test-Path -LiteralPath $nodeZip)) {
+    Invoke-WebRequest -Uri $nodeZipUrl -OutFile $nodeZip
+  }
+
+  if (Test-Path -LiteralPath $nodeExtractDir) {
+    Remove-Item -LiteralPath $nodeExtractDir -Recurse -Force
+  }
+  Expand-Archive -LiteralPath $nodeZip -DestinationPath $nodeExtractDir
+
+  $extractedInner = Join-Path $nodeExtractDir "node-$nodeVersion-win-x64"
+  if (Test-Path -LiteralPath $portableNodeDir) {
+    Remove-Item -LiteralPath $portableNodeDir -Recurse -Force
+  }
+  Move-Item -LiteralPath $extractedInner -Destination $portableNodeDir -Force
+  Remove-Item -LiteralPath $nodeExtractDir -Recurse -Force
+  if (Test-Path -LiteralPath $nodeZip) {
+    Remove-Item -LiteralPath $nodeZip -Force
+  }
 }
 
 $isccCandidates = @(
+  (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 7\ISCC.exe'),
+  (Join-Path $env:LOCALAPPDATA 'Programs\Inno Setup 6\ISCC.exe'),
   'C:\Program Files\Inno Setup 7\ISCC.exe',
   'C:\Program Files (x86)\Inno Setup 7\ISCC.exe',
+  'C:\Program Files\Inno Setup 6\ISCC.exe',
   'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
 )
-$iscc = $isccCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $iscc) { throw 'No se encontró ISCC.exe. Instalá Inno Setup 7 y volvé a ejecutar este comando.' }
+$cmdIscc = Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue
+if ($cmdIscc -and $cmdIscc.Source) {
+  $isccCandidates = @($cmdIscc.Source) + $isccCandidates
+}
+$iscc = $isccCandidates | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+if (-not $iscc) {
+  throw 'No se encontró ISCC.exe. Instalá Inno Setup 7 ejecutando en la consola: winget install JRSoftware.InnoSetup.7'
+}
 
 Write-Host 'Compilando instalador permanente...'
 & $iscc (Join-Path $root 'installer\casacarlos.iss')

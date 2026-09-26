@@ -31,6 +31,7 @@ apps/server/src/daemon/
 installer/output/
 # Salidas de compilación de Tauri (se regeneran con `pnpm run
 # desktop:publish` antes de compilar el instalador).
+apps/desktop/target/
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
 apps/desktop/bin/

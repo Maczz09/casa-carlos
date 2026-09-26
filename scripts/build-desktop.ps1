@@ -17,7 +17,7 @@ $rustupInit = Join-Path $toolRoot 'rustup-init.exe'
 $w64Archive = Join-Path $toolRoot 'w64devkit-x64.exe'
 $w64Bin = Join-Path $toolRoot 'w64devkit\bin'
 $gcc = Join-Path $w64Bin 'gcc.exe'
-$targetDir = Join-Path $env:LOCALAPPDATA 'HospedajeCarlosBuild\tauri-target'
+$targetDir = Join-Path $desktopDir 'target'
 
 New-Item -ItemType Directory -Force -Path $toolRoot | Out-Null
 $env:RUSTUP_HOME = $rustupHome
