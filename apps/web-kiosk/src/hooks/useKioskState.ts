@@ -37,11 +37,14 @@ export function useKioskState(): { floors: FloorBoard[]; products: KioskProduct[
           }
           if (msg.type === "kiosk_action") {
             window.dispatchEvent(new CustomEvent("casacarlos:kiosk-action", { detail: msg }));
+            if (msg.action === "reload") {
+              window.location.reload();
+            }
           }
           if (msg.type === "kiosk_scroll") {
             const deltaY = typeof msg.deltaY === "number" ? msg.deltaY : 0;
             const to = msg.to;
-            const scrollTargets: (Element | Window)[] = [
+            const rawTargets: (Element | Window)[] = [
               document.getElementById("kiosk-main-scroll") as Element,
               ...Array.from(document.querySelectorAll(".overflow-y-auto, .overflow-auto, main")),
               document.scrollingElement as Element,
@@ -49,6 +52,14 @@ export function useKioskState(): { floors: FloorBoard[]; products: KioskProduct[
               document.body,
               window,
             ].filter(Boolean);
+
+            const scrollTargets = Array.from(new Set(rawTargets)).filter((target) => {
+              if (target instanceof Window) {
+                return (document.documentElement.scrollHeight > window.innerHeight) || (document.body.scrollHeight > window.innerHeight);
+              }
+              const el = target as Element;
+              return el.scrollHeight > el.clientHeight + 4;
+            });
 
             for (const el of scrollTargets) {
               try {

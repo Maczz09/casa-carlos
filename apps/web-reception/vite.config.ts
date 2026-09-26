@@ -27,6 +27,7 @@ export default defineConfig({
       "/product-images": { target: `http://${apiHost}`, changeOrigin: true },
       "/qr-images": { target: `http://${apiHost}`, changeOrigin: true },
       "/brand-images": { target: `http://${apiHost}`, changeOrigin: true },
+      "/kiosk": { target: `http://${apiHost}`, changeOrigin: true },
     },
   },
 });

@@ -74,6 +74,9 @@ export function kioskReceptionRoutes(services: Services) {
 
     app.post<{ Body: { theme: "dark" | "light" } }>("/api/reception/kiosk/theme", auth, async (request) => {
       const theme = request.body.theme === "dark" ? "dark" : "light";
+      try {
+        await services.brand.setThemeConfig({ manualTheme: theme, autoEnabled: false });
+      } catch {}
       services.kiosk.emitRemoteAction({ type: "kiosk_theme", theme });
       return { ok: true };
     });

@@ -28,7 +28,7 @@ import { useBrand } from "../hooks/useBrand.js";
 import type { OperationalAlert } from "../hooks/useOperationalAlerts.js";
 import type { Theme } from "../hooks/useTheme.js";
 import { startAppTour, useFirstRunTour } from "./AppTour.js";
-import { KioskRemoteViewer } from "./KioskRemoteViewer.js";
+import { KioskRemoteViewer, type KioskViewerMode } from "./KioskRemoteViewer.js";
 
 export interface NavEntry {
   id: string;
@@ -239,6 +239,8 @@ function Topbar({
   alerts,
   onDismissAlert,
   onStartTour,
+  kioskMode,
+  onToggleKioskSplit,
 }: {
   title: string;
   connected: boolean;
@@ -252,6 +254,8 @@ function Topbar({
   alerts: OperationalAlert[];
   onDismissAlert: (id: string) => void;
   onStartTour: () => void;
+  kioskMode: KioskViewerMode;
+  onToggleKioskSplit: () => void;
 }) {
   const brandNombre = useBrand().nombre;
   const [alertsOpen, setAlertsOpen] = useState(false);
@@ -283,6 +287,23 @@ function Topbar({
           <span className={cx("h-1.5 w-1.5 rounded-full", connected ? "bg-current" : "bg-current animate-pulse")} />
           {connected ? "En vivo" : "Reconectando…"}
         </span>
+
+        <button
+          type="button"
+          onClick={onToggleKioskSplit}
+          title={kioskMode === "split" ? "Cerrar modo dividido (volver a pantalla completa de recepción)" : "Dividir pantalla con Kiosco (50% Recepción / 50% Kiosco)"}
+          className={cx(
+            "flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-bold transition-all shadow-sm active:scale-95",
+            kioskMode === "split"
+              ? "bg-brand text-brand-ink ring-2 ring-brand/30 shadow-md"
+              : "border border-line bg-surface text-ink hover:bg-inset hover:border-brand/40"
+          )}
+        >
+          <span className="text-sm">🖥️</span>
+          <span className="hidden sm:inline">
+            {kioskMode === "split" ? "50/50 Activo" : "Control Kiosco (50/50)"}
+          </span>
+        </button>
 
         <button
           data-tour="alerts"
@@ -369,14 +390,27 @@ export function AppShell({
 }) {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem("casacarlos.sidebar") === "collapsed");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [kioskMode, setKioskMode] = useState<KioskViewerMode>(() => {
+    const saved = localStorage.getItem("casacarlos.kiosk_view_mode");
+    return saved === "split" || saved === "pip" ? saved : "closed";
+  });
   useFirstRunTour(user);
 
   useEffect(() => {
     localStorage.setItem("casacarlos.sidebar", collapsed ? "collapsed" : "expanded");
   }, [collapsed]);
 
+  const handleKioskModeChange = (next: KioskViewerMode) => {
+    setKioskMode(next);
+    localStorage.setItem("casacarlos.kiosk_view_mode", next);
+  };
+
+  const handleToggleKioskSplit = () => {
+    handleKioskModeChange(kioskMode === "split" ? "closed" : "split");
+  };
+
   return (
-    <div className="min-h-[100dvh] bg-bg">
+    <div className={cx("min-h-[100dvh] bg-bg", kioskMode === "split" && "h-[100dvh] max-h-[100dvh] overflow-hidden")}>
       <Sidebar
         user={user}
         active={active}
@@ -386,7 +420,7 @@ export function AppShell({
         onCloseMobile={() => setMobileOpen(false)}
       />
 
-      <div className={cx("flex min-h-[100dvh] flex-col transition-all duration-300 ease-out", collapsed ? "lg:pl-[76px]" : "lg:pl-[260px]")}>
+      <div className={cx("flex min-h-[100dvh] flex-col transition-all duration-300 ease-out", collapsed ? "lg:pl-[76px]" : "lg:pl-[260px]", kioskMode === "split" && "h-[100dvh] max-h-[100dvh] overflow-hidden")}>
         <Topbar
           title={title}
           connected={connected}
@@ -400,9 +434,33 @@ export function AppShell({
           alerts={alerts}
           onDismissAlert={onDismissAlert}
           onStartTour={() => startAppTour(user)}
+          kioskMode={kioskMode}
+          onToggleKioskSplit={handleToggleKioskSplit}
         />
-        <main className="flex-1 p-4 sm:p-6"><div className="mx-auto w-full max-w-[1880px]">{children}</div></main>
-        <KioskRemoteViewer />
+        {kioskMode === "split" ? (
+          <div className="flex flex-1 min-h-0 w-full overflow-hidden flex-col lg:flex-row">
+            {/* Mitad izquierda (50%): Vista de Recepción */}
+            <main className="flex-1 min-w-0 overflow-y-auto p-4 sm:p-6 transition-all duration-200">
+              <div className="mx-auto w-full max-w-[1880px]">{children}</div>
+            </main>
+
+            {/* Mitad derecha (50%): Control Remoto de Kiosco en Vivo */}
+            <section
+              aria-label="Panel de Control Kiosco en Vivo"
+              className="w-full lg:w-1/2 min-w-0 lg:min-w-[420px] border-t lg:border-t-0 lg:border-l border-line bg-surface flex flex-col shadow-[-4px_0_20px_rgba(0,0,0,0.06)] h-[550px] lg:h-full min-h-0"
+            >
+              <KioskRemoteViewer
+                mode="split"
+                onModeChange={handleKioskModeChange}
+              />
+            </section>
+          </div>
+        ) : (
+          <>
+            <main className="flex-1 p-4 sm:p-6"><div className="mx-auto w-full max-w-[1880px]">{children}</div></main>
+            <KioskRemoteViewer mode={kioskMode} onModeChange={handleKioskModeChange} />
+          </>
+        )}
       </div>
     </div>
   );
