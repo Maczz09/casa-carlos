@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
-import { requirePermission } from "../auth.js";
+import { requirePermission, requireAnyPermission } from "../auth.js";
 
 /**
  * Nombre y logo del hotel. El GET es público a propósito: lo consume el kiosco

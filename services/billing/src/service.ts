@@ -107,13 +107,13 @@ export class BillingService implements BillingPort {
             comprobanteId: sunatComp?.id ?? null,
             usuarioId: sale.usuarioId || "system",
             creadoEn: sale.creadoEn,
-            emitidoEn: sunatComp?.emitidoEn ?? null,
+            emitidoEn: sunatComp?.enviadoEn ?? null,
           });
         } else if (sunatComp?.estadoSunat === "ACEPTADO" && existing.estado !== "EMITIDO") {
           await this.repo.updateComprobantePago(existing.id, {
             estado: "EMITIDO",
             comprobanteId: sunatComp.id,
-            emitidoEn: sunatComp.emitidoEn,
+            emitidoEn: sunatComp.enviadoEn,
           });
         }
       }
