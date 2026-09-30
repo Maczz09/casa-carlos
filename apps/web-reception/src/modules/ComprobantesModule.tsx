@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ComprobantePagoView, DocumentType } from "@casacarlos/contracts";
+import type { ComprobantePagoView, DocumentType, PaymentMethod } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { IconPrinter, IconReceipt, IconSearch, IconX } from "@casacarlos/ui";
@@ -37,6 +37,12 @@ export function ComprobantesModule() {
   const [facturaRuc, setFacturaRuc] = useState("");
   const [facturaRazonSocial, setFacturaRazonSocial] = useState("");
   const [emitBusy, setEmitBusy] = useState(false);
+
+  // Modal para cobrar saldo pendiente directamente desde comprobantes
+  const [paySaldoItem, setPaySaldoItem] = useState<ComprobantePagoView | null>(null);
+  const [paySaldoMetodo, setPaySaldoMetodo] = useState<PaymentMethod>("EFECTIVO");
+  const [paySaldoCodigoOp, setPaySaldoCodigoOp] = useState("");
+  const [paySaldoBusy, setPaySaldoBusy] = useState(false);
 
   const loadData = async (rangeDesde = desde, rangeHasta = hasta) => {
     setLoading(true);
@@ -131,6 +137,37 @@ export function ComprobantesModule() {
       setError(err instanceof Error ? err.message : "Error al emitir a SUNAT.");
     } finally {
       setEmitBusy(false);
+    }
+  };
+
+  const handleOpenPaySaldo = (item: ComprobantePagoView) => {
+    setPaySaldoItem(item);
+    setPaySaldoMetodo("EFECTIVO");
+    setPaySaldoCodigoOp("");
+  };
+
+  const handleConfirmPaySaldo = async () => {
+    if (!paySaldoItem) return;
+    setPaySaldoBusy(true);
+    setError(null);
+    try {
+      const payment = await api.createPayment(paySaldoItem.ventaId, [
+        {
+          metodo: paySaldoMetodo,
+          montoCentimos: paySaldoItem.saldoCentimos,
+          codigoOperacion: paySaldoCodigoOp.trim() || undefined,
+        },
+      ]);
+      await api.acceptPayment(payment.id);
+      setSuccess(`Saldo de ${format(cents(paySaldoItem.saldoCentimos))} cobrado con éxito.`);
+      setTimeout(() => setSuccess(null), 4000);
+      setPaySaldoItem(null);
+      setPaySaldoCodigoOp("");
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al registrar el pago del saldo.");
+    } finally {
+      setPaySaldoBusy(false);
     }
   };
 
@@ -304,6 +341,17 @@ export function ComprobantesModule() {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {item.saldoCentimos > 0 && (
+                        <Button
+                          variant="warn"
+                          size="sm"
+                          disabled={paySaldoBusy}
+                          onClick={() => handleOpenPaySaldo(item)}
+                        >
+                          Cobrar Saldo
+                        </Button>
+                      )}
+
                       <Button
                         variant="primary"
                         size="sm"
@@ -402,6 +450,133 @@ export function ComprobantesModule() {
               <Button variant="primary" className="flex-1" onClick={handleConfirmEmit} disabled={emitBusy}>
                 {emitBusy ? "Emitiendo a SUNAT…" : "Confirmar y Emitir"}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal para cobrar saldo pendiente */}
+      {paySaldoItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-line-soft pb-3">
+              <div>
+                <h3 className="text-lg font-bold text-ink">Cobrar Saldo Pendiente</h3>
+                <p className="text-xs text-muted">
+                  Comprobante {paySaldoItem.serie}-{String(paySaldoItem.correlativo).padStart(6, "0")}
+                </p>
+              </div>
+              <button
+                onClick={() => setPaySaldoItem(null)}
+                className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-inset hover:text-ink transition-colors"
+              >
+                <IconX className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-xl bg-inset p-4 space-y-2">
+              <div className="flex items-center justify-between text-xs text-muted">
+                <span>Tipo: <strong>{paySaldoItem.tipo}</strong></span>
+                <span>Estado venta: <strong className="text-warn">{paySaldoItem.saleEstado}</strong></span>
+              </div>
+              <p className="text-sm font-semibold text-ink">
+                Cliente: {paySaldoItem.clienteNombres ? `${paySaldoItem.clienteNombres} ${paySaldoItem.clienteApellidos ?? ""}`.trim() : paySaldoItem.receptorRazonSocial || "Venta mostrador"}
+              </p>
+              <div className="flex items-center justify-between text-xs text-subtle pt-1">
+                <span>Total de venta: {format(cents(paySaldoItem.totalCentimos))}</span>
+                <span>Ya cobrado: {format(cents(paySaldoItem.pagadoCentimos))}</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-line/60 pt-2">
+                <span className="font-semibold text-ink">Saldo pendiente a cobrar:</span>
+                <span className="font-mono text-xl font-black text-warn">
+                  {format(cents(paySaldoItem.saldoCentimos))}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                Selecciona método de cobro:
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  className={cx(
+                    "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
+                    paySaldoMetodo === "EFECTIVO"
+                      ? "border-brand bg-brand-soft text-brand ring-1 ring-brand"
+                      : "border-line bg-raised hover:bg-inset text-ink"
+                  )}
+                  onClick={() => setPaySaldoMetodo("EFECTIVO")}
+                >
+                  💵 Efectivo
+                </button>
+                <button
+                  type="button"
+                  className={cx(
+                    "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
+                    paySaldoMetodo === "YAPE"
+                      ? "border-[#742384] bg-[#742384]/10 text-[#742384] ring-1 ring-[#742384]"
+                      : "border-line bg-raised hover:bg-inset text-ink"
+                  )}
+                  onClick={() => setPaySaldoMetodo("YAPE")}
+                >
+                  📱 Yape
+                </button>
+                <button
+                  type="button"
+                  className={cx(
+                    "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
+                    paySaldoMetodo === "PLIN"
+                      ? "border-[#00c8b3] bg-[#00c8b3]/10 text-[#00c8b3] ring-1 ring-[#00c8b3]"
+                      : "border-line bg-raised hover:bg-inset text-ink"
+                  )}
+                  onClick={() => setPaySaldoMetodo("PLIN")}
+                >
+                  🟣 Plin
+                </button>
+                <button
+                  type="button"
+                  className={cx(
+                    "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
+                    paySaldoMetodo === "POS_DEBITO"
+                      ? "border-brand bg-brand-soft text-brand ring-1 ring-brand"
+                      : "border-line bg-raised hover:bg-inset text-ink"
+                  )}
+                  onClick={() => setPaySaldoMetodo("POS_DEBITO")}
+                >
+                  💳 Tarjeta / POS
+                </button>
+              </div>
+
+              {paySaldoMetodo !== "EFECTIVO" && (
+                <Field label="Código de operación (opcional)">
+                  <Input
+                    placeholder="Ej. 987654"
+                    value={paySaldoCodigoOp}
+                    onChange={(e) => setPaySaldoCodigoOp(e.target.value)}
+                  />
+                </Field>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="secondary"
+                  className="flex-1"
+                  disabled={paySaldoBusy}
+                  onClick={() => setPaySaldoItem(null)}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  className="flex-1 font-semibold"
+                  disabled={paySaldoBusy}
+                  onClick={handleConfirmPaySaldo}
+                >
+                  {paySaldoBusy ? "Cobrando…" : `Cobrar ${format(cents(paySaldoItem.saldoCentimos))}`}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

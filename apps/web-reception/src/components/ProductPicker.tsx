@@ -4,7 +4,7 @@ import { cents, format } from "@casacarlos/money";
 import { api, ApiError } from "../api.js";
 
 interface Props {
-  onAdd: (productoId: string) => Promise<void>;
+  onAdd: (productoId: string, product: Product) => Promise<void>;
 }
 
 /** Search box doubles as a barcode-scanner target — the scanner just "types" the code and Enter. */
@@ -28,7 +28,7 @@ export function ProductPicker({ onAdd }: Props) {
     setBusyId(product.id);
     setError(null);
     try {
-      await onAdd(product.id);
+      await onAdd(product.id, product);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo agregar el producto.");
     } finally {

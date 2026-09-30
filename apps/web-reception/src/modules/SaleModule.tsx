@@ -566,7 +566,9 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
               setBusy(true);
               setError(null);
               try {
-                setPayment(await api.createPayment(session.saleId!, detalles));
+                const created = await api.createPayment(session.saleId!, detalles);
+                await api.acceptPayment(created.id);
+                setPayment(created);
               } catch (err) {
                 setError(err instanceof ApiError ? err.message : "No se pudo registrar el pago.");
               } finally {

@@ -8,13 +8,15 @@ import type {
   IssueNotaInput,
   NotaTipo,
   PaymentDetailInput,
+  PaymentMethod,
+  Product,
   RoomBoardEntry,
   SaleWithLines,
   StayWithCustomer,
 } from "@casacarlos/contracts";
 import { MOTIVOS_NOTA_CREDITO, MOTIVOS_NOTA_DEBITO, formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format, splitIncludedIgv } from "@casacarlos/money";
-import { IconPrinter, STATUS_STYLE } from "@casacarlos/ui";
+import { IconPrinter, IconX, STATUS_STYLE } from "@casacarlos/ui";
 import { api, ApiError, getToken } from "../api.js";
 import { formatDuration, useCountdown } from "../hooks/useCountdown.js";
 import { PaymentForm } from "../components/PaymentForm.js";
@@ -54,6 +56,10 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
   const [busy, setBusy] = useState(false);
   const [payingBalance, setPayingBalance] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
+  const [productToCharge, setProductToCharge] = useState<Product | null>(null);
+  const [productQty, setProductQty] = useState(1);
+  const [productMetodo, setProductMetodo] = useState<PaymentMethod>("EFECTIVO");
+  const [productCodigoOp, setProductCodigoOp] = useState("");
   const [comprobante, setComprobante] = useState<Comprobante | null>(null);
   const [comprobantePago, setComprobantePago] = useState<ComprobantePago | null>(null);
   const [generandoPago, setGenerandoPago] = useState<DocumentType | null>(null);
@@ -111,6 +117,48 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleAddProductAndPay = async (metodo: PaymentMethod) => {
+    if (!sale || !productToCharge) return;
+    run(async () => {
+      const cantidad = productQty;
+      const subtotalCentimos = productToCharge.precioCentimos * cantidad;
+
+      // 1. Agregar línea de producto a la venta
+      await api.addProductLine(sale.id, productToCharge.id, cantidad);
+
+      // 2. Registrar e inmediatamente aceptar el pago para que no quede con saldo
+      const payment = await api.createPayment(sale.id, [
+        {
+          metodo,
+          montoCentimos: subtotalCentimos,
+          codigoOperacion: productCodigoOp.trim() || undefined,
+        },
+      ]);
+      await api.acceptPayment(payment.id);
+
+      setProductToCharge(null);
+      setProductQty(1);
+      setProductCodigoOp("");
+      setAddingProduct(false);
+      await reload();
+
+      // 3. Imprimir comprobante / ticket
+      void printReceiptForSale(sale.id, entry.room.numero);
+    }, "No se pudo cobrar el producto.");
+  };
+
+  const handleAddProductToRoomOnly = async () => {
+    if (!sale || !productToCharge) return;
+    run(async () => {
+      await api.addProductLine(sale.id, productToCharge.id, productQty);
+      setProductToCharge(null);
+      setProductQty(1);
+      setProductCodigoOp("");
+      setAddingProduct(false);
+      await reload();
+    }, "No se pudo agregar el producto a la cuenta.");
   };
 
   const download = async (url: string, filename: string, asText: boolean) => {
@@ -546,10 +594,12 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                   </button>
                 </div>
                 <ProductPicker
-                  onAdd={async (productoId) => {
+                  onAdd={async (_productoId, product) => {
                     if (!sale) return;
-                    await api.addProductLine(sale.id, productoId, 1);
-                    await reload();
+                    setProductToCharge(product);
+                    setProductQty(1);
+                    setProductMetodo("EFECTIVO");
+                    setProductCodigoOp("");
                   }}
                 />
               </div>
@@ -603,6 +653,123 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
           </Section>
         </div>
       </div>
+
+      {/* Modal para cobrar producto al momento de agregarlo a la habitación */}
+      {productToCharge && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-line-soft">
+              <div>
+                <h3 className="text-lg font-bold text-ink">Cobrar producto · Cuarto {entry.room.numero}</h3>
+                <p className="text-xs text-muted">Registra el producto y cobra de inmediato o cárgalo a la cuenta</p>
+              </div>
+              <button
+                onClick={() => setProductToCharge(null)}
+                className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-inset hover:text-ink transition-colors"
+              >
+                <IconX className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-xl bg-inset p-4 space-y-3">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-semibold text-ink text-base">{productToCharge.nombre}</span>
+                <span className="font-mono text-sm text-subtle">
+                  {format(cents(productToCharge.precioCentimos))} c/u
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted">Cantidad:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors disabled:opacity-40"
+                    disabled={productQty <= 1}
+                    onClick={() => setProductQty((q) => Math.max(1, q - 1))}
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-bold text-base text-ink">{productQty}</span>
+                  <button
+                    type="button"
+                    className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors disabled:opacity-40"
+                    disabled={productQty >= productToCharge.stock}
+                    onClick={() => setProductQty((q) => Math.min(productToCharge.stock, q + 1))}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-line/60 pt-2">
+                <span className="font-medium text-muted">Total a cobrar:</span>
+                <span className="font-mono text-xl font-black text-brand">
+                  {format(cents(productToCharge.precioCentimos * productQty))}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                ¿Cómo paga el huésped ahora?
+              </p>
+
+              {/* Botones de cobro inmediato */}
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="primary"
+                  className="py-3 font-semibold justify-center"
+                  disabled={busy}
+                  onClick={() => handleAddProductAndPay("EFECTIVO")}
+                >
+                  💵 Efectivo
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="py-3 font-semibold justify-center text-[#742384] hover:bg-[#742384]/10 border-[#742384]/30"
+                  disabled={busy}
+                  onClick={() => handleAddProductAndPay("YAPE")}
+                >
+                  📱 Yape
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="py-3 font-semibold justify-center text-[#00c8b3] hover:bg-[#00c8b3]/10 border-[#00c8b3]/30"
+                  disabled={busy}
+                  onClick={() => handleAddProductAndPay("PLIN")}
+                >
+                  🟣 Plin
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="py-3 font-semibold justify-center"
+                  disabled={busy}
+                  onClick={() => handleAddProductAndPay("POS_DEBITO")}
+                >
+                  💳 Tarjeta / POS
+                </Button>
+              </div>
+
+              {/* Opción de cargar a la cuenta de la habitación */}
+              <div className="pt-2 border-t border-line-soft">
+                <Button
+                  block
+                  variant="ghost"
+                  className="text-xs text-muted hover:text-ink justify-center"
+                  disabled={busy}
+                  onClick={handleAddProductToRoomOnly}
+                >
+                  🏨 Cargar a la habitación (paga al salir en check-out)
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
