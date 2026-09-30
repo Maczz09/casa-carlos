@@ -1,5 +1,5 @@
 import type { ChargeCode } from "../entities/pricing.js";
-import type { Sale, SaleLine, SaleWithLines } from "../entities/sales.js";
+import type { CancelledSale, Sale, SaleLine, SaleWithLines } from "../entities/sales.js";
 
 export interface OpenSaleForStayInput {
   stayId: string;
@@ -18,6 +18,14 @@ export interface AddProductLineInput {
   productoId: string;
   cantidad: number;
   usuarioId: string;
+}
+
+export interface CancelSaleInput {
+  saleId: string;
+  motivo: string;
+  usuarioId: string;
+  correlationId?: string;
+  idempotencyKey?: string;
 }
 
 /**
@@ -40,6 +48,8 @@ export interface SalesPort {
   listOpenSales(): Promise<Sale[]>;
   /** Ventas del rango de días (YYYY-MM-DD, inclusive), más nueva primero — historial de caja. */
   listSalesByRange(desde: string, hasta: string): Promise<Sale[]>;
+  listCancelledSales(desde?: string, hasta?: string): Promise<CancelledSale[]>;
 
-  cancelSale(saleId: string, motivo: string, usuarioId: string): Promise<Sale>;
+  cancelSale(input: CancelSaleInput): Promise<Sale>;
+  cancelSale(saleId: string, motivo: string, usuarioId: string, correlationId?: string, idempotencyKey?: string): Promise<Sale>;
 }

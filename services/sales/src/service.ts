@@ -1,9 +1,12 @@
 import type { Db } from "@casacarlos/db";
-import { recordAudit } from "@casacarlos/db";
+import { recordAudit, schema } from "@casacarlos/db";
+import { and, eq, inArray } from "drizzle-orm";
 import { newId } from "@casacarlos/contracts";
 import type {
   AddExtraChargeInput,
   AddProductLineInput,
+  CancelledSale,
+  CancelSaleInput,
   InventoryPort,
   LinePhase,
   OpenSaleForStayInput,
@@ -196,10 +199,164 @@ export class SalesService implements SalesPort {
     return this.repo.listByRange(desde, hasta);
   }
 
-  async cancelSale(saleId: string, motivo: string, usuarioId: string): Promise<Sale> {
-    const sale = await this.mustGet(saleId);
-    const updated = await this.repo.updateSale(saleId, { estado: "ANULADA", motivoAnulacion: motivo });
-    await recordAudit(this.db, { entidad: "sales_ventas", entidadId: saleId, accion: "ANULAR", usuarioId, antes: sale, despues: updated, motivo });
+  async listCancelledSales(desde?: string, hasta?: string): Promise<CancelledSale[]> {
+    const sales = await this.repo.listCancelled(desde, hasta);
+    if (sales.length === 0) return [];
+
+    const saleIds = sales.map((s) => s.id);
+    const auditRows = await this.db
+      .select()
+      .from(schema.auditLog)
+      .where(and(eq(schema.auditLog.entidad, "sales_ventas"), eq(schema.auditLog.accion, "ANULAR"), inArray(schema.auditLog.entidadId, saleIds)))
+      .all();
+
+    const users = await this.db.select().from(schema.identityUsuarios).all();
+    const userMap = new Map(users.map((u) => [u.id, `${u.nombres} ${u.apellidos}`.trim() || u.usuario]));
+
+    const auditMap = new Map<string, typeof schema.auditLog.$inferSelect>();
+    for (const a of auditRows) {
+      const existing = auditMap.get(a.entidadId);
+      if (!existing || existing.ocurridoEn < a.ocurridoEn) {
+        auditMap.set(a.entidadId, a);
+      }
+    }
+
+    const allLines = await this.db
+      .select()
+      .from(schema.salesLineas)
+      .where(inArray(schema.salesLineas.ventaId, saleIds))
+      .all();
+    const linesBySaleId = new Map<string, SaleLine[]>();
+    for (const l of allLines) {
+      const list = linesBySaleId.get(l.ventaId) ?? [];
+      list.push({
+        id: l.id,
+        ventaId: l.ventaId,
+        tipo: l.tipo,
+        referenciaId: l.referenciaId,
+        descripcion: l.descripcion,
+        cantidad: l.cantidad,
+        precioUnitarioCentimos: l.precioUnitarioCentimos,
+        subtotalCentimos: l.subtotalCentimos,
+        fase: l.fase,
+        anulada: l.anulada,
+        motivoAnulacion: l.motivoAnulacion,
+        usuarioId: l.usuarioId,
+        creadoEn: l.creadoEn,
+      });
+      linesBySaleId.set(l.ventaId, list);
+    }
+
+    return sales.map((sale) => {
+      const audit = auditMap.get(sale.id);
+      let parsedDespues: Record<string, unknown> | null = null;
+      if (audit?.despuesJson) {
+        try {
+          parsedDespues = JSON.parse(audit.despuesJson);
+        } catch {}
+      }
+      const anuladoPorId = audit?.usuarioId ?? (parsedDespues?.anuladoPor as string) ?? null;
+      const correlationId = (parsedDespues?.correlationId as string) ?? null;
+      const idempotencyKey = (parsedDespues?.idempotencyKey as string) ?? null;
+      const anuladoEn = audit?.ocurridoEn ?? (parsedDespues?.anuladoEn as string) ?? null;
+      const anuladoPorNombre = anuladoPorId ? userMap.get(anuladoPorId) ?? anuladoPorId : null;
+
+      return {
+        ...sale,
+        motivoAnulacion: sale.motivoAnulacion || audit?.motivo || "Anulada",
+        anuladoPorUsuarioId: anuladoPorId,
+        anuladoPorNombre,
+        anuladoEn,
+        correlationId,
+        idempotencyKey,
+        lineas: linesBySaleId.get(sale.id) ?? [],
+      };
+    });
+  }
+
+  async cancelSale(
+    saleIdOrInput: string | CancelSaleInput,
+    motivoArg?: string,
+    usuarioIdArg?: string,
+    correlationIdArg?: string,
+    idempotencyKeyArg?: string,
+  ): Promise<Sale> {
+    const input: CancelSaleInput =
+      typeof saleIdOrInput === "string"
+        ? {
+            saleId: saleIdOrInput,
+            motivo: motivoArg ?? "Anulada por usuario",
+            usuarioId: usuarioIdArg ?? "system",
+            correlationId: correlationIdArg,
+            idempotencyKey: idempotencyKeyArg,
+          }
+        : saleIdOrInput;
+
+    const sale = await this.mustGet(input.saleId);
+
+    // Idempotencia: si ya estaba anulada, retorna de inmediato sin duplicar acciones
+    if (sale.estado === "ANULADA") {
+      return sale;
+    }
+
+    const correlationId = input.correlationId || `corr_${newId()}`;
+    const idempotencyKey = input.idempotencyKey || `idem_${newId()}`;
+    const motivo = input.motivo || "Anulación de venta";
+
+    // 1. Devolver stock de productos de todas las líneas activas de la venta
+    const lines = await this.repo.listLines(input.saleId);
+    for (const line of lines) {
+      if (!line.anulada && line.tipo === "PRODUCTO") {
+        await this.inventory
+          .returnStock({
+            lineaVentaId: line.id,
+            usuarioId: input.usuarioId,
+            motivo: `Venta anulada (${correlationId}): ${motivo}`,
+          })
+          .catch((err) => console.warn(`[sales] error al devolver stock para línea ${line.id}:`, err));
+        await this.repo.updateLine(line.id, { anulada: true, motivoAnulacion: motivo }).catch(() => {});
+      }
+    }
+
+    // 2. Si tenía estadía activa vinculada, cancelarla para desocupar la habitación
+    if (sale.estadiaId) {
+      await this.stays
+        .cancel(sale.estadiaId, `Venta anulada (${correlationId}): ${motivo}`, input.usuarioId)
+        .catch((err) => console.warn(`[sales] no se pudo cancelar estadía ${sale.estadiaId}:`, err));
+    }
+
+    // 3. Actualizar estado de la venta
+    const updated = await this.repo.updateSale(input.saleId, {
+      estado: "ANULADA",
+      motivoAnulacion: motivo,
+    });
+
+    // 4. Registrar auditoría completa con correlationId e idempotencyKey
+    await recordAudit(this.db, {
+      entidad: "sales_ventas",
+      entidadId: input.saleId,
+      accion: "ANULAR",
+      usuarioId: input.usuarioId,
+      antes: sale,
+      despues: {
+        ...updated,
+        correlationId,
+        idempotencyKey,
+        anuladoPor: input.usuarioId,
+        anuladoEn: new Date().toISOString(),
+      },
+      motivo,
+    });
+
+    // 5. Publicar evento en el bus para que caja y comprobantes reaccionen
+    await this.bus.publish("sale.cancelled", {
+      saleId: input.saleId,
+      motivo,
+      usuarioId: input.usuarioId,
+      correlationId,
+      idempotencyKey,
+    });
+
     return updated;
   }
 

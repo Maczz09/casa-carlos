@@ -19,23 +19,20 @@ export function useInactivityReset(session: KioskSession | null): void {
 
     if (!session || session.estado === "ESPERA") return;
 
+    // Cuando se está registrando una venta, no se cierra automáticamente por tiempo:
+    // se mantiene activa indefinidamente hasta que el recepcionista la cancele.
+    // Solo en estados terminales (cobro finalizado con ticket o rechazado) se vuelve a ESPERA tras la pausa fija.
     const isTerminal = session.estado === "ACEPTADO" || session.estado === "RECHAZADO";
-    const delay = isTerminal ? TERMINAL_DELAY_MS : IDLE_DELAY_MS;
+    if (!isTerminal) {
+      return clear;
+    }
 
     const schedule = () => {
       clear();
-      timerRef.current = setTimeout(() => void api.reset(), delay);
+      timerRef.current = setTimeout(() => void api.reset(), TERMINAL_DELAY_MS);
     };
 
     schedule();
-
-    if (isTerminal) return clear;
-
-    const events: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "touchstart"];
-    events.forEach((e) => window.addEventListener(e, schedule));
-    return () => {
-      clear();
-      events.forEach((e) => window.removeEventListener(e, schedule));
-    };
+    return clear;
   }, [session?.id, session?.estado]);
 }

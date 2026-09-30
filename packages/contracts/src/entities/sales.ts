@@ -62,3 +62,13 @@ export const SaleWithLinesSchema = SaleSchema.extend({
   lineas: z.array(SaleLineSchema),
 });
 export type SaleWithLines = z.infer<typeof SaleWithLinesSchema>;
+
+export interface CancelledSale extends Sale {
+  anuladoPorUsuarioId?: string | null;
+  anuladoPorNombre?: string | null;
+  anuladoEn?: string | null;
+  correlationId?: string | null;
+  idempotencyKey?: string | null;
+  lineas?: SaleLine[];
+}
+

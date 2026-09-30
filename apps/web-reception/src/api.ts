@@ -3,6 +3,7 @@ import type {
   AuthResult,
   Attribute,
   Brand,
+  CancelledSale,
   CashMovement,
   CashSummary,
   Denominaciones,
@@ -215,6 +216,12 @@ export const api = {
   addProductLine: (saleId: string, productoId: string, cantidad: number) =>
     post<SaleLine>(`/api/sales/${saleId}/product-line`, { productoId, cantidad }),
   cancelLine: (saleId: string, lineId: string, motivo: string) => post<{ ok: true }>(`/api/sales/${saleId}/lines/${lineId}/cancel`, { motivo }),
+  cancelSale: (id: string, motivo: string, correlationId?: string, idempotencyKey?: string) =>
+    post<Sale>(`/api/sales/${id}/cancel`, { motivo, correlationId, idempotencyKey }),
+  cancelledSales: (range?: { desde?: string; hasta?: string }) => {
+    const q = range?.desde && range?.hasta ? `?desde=${encodeURIComponent(range.desde)}&hasta=${encodeURIComponent(range.hasta)}` : "";
+    return get<CancelledSale[]>(`/api/sales/cancelled${q}`);
+  },
 
   createPayment: (saleId: string, detalles: PaymentDetailInput[]) => post<PaymentWithDetails>("/api/payments", { saleId, detalles }),
   acceptPayment: async (id: string) => {

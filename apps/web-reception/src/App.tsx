@@ -27,6 +27,7 @@ import { PaymentCelebration } from "./components/PaymentCelebration.js";
 // rápido incluso en una PC de recepción modesta.
 const ReservationsModule = lazy(() => import("./modules/ReservationsModule.js").then((module) => ({ default: module.ReservationsModule })));
 const CashboxModule = lazy(() => import("./modules/CashboxModule.js").then((module) => ({ default: module.CashboxModule })));
+const AnulacionesModule = lazy(() => import("./modules/AnulacionesModule.js").then((module) => ({ default: module.AnulacionesModule })));
 const DashboardModule = lazy(() => import("./modules/DashboardModule.js").then((module) => ({ default: module.DashboardModule })));
 const ReportsModule = lazy(() => import("./modules/ReportsModule.js").then((module) => ({ default: module.ReportsModule })));
 
@@ -126,6 +127,8 @@ export default function App() {
         return can("RESERVATIONS_MANAGE") ? <ReservationsModule floors={floors} /> : denied();
       case "caja":
         return can("CASHBOX_MANAGE") ? <CashboxModule /> : denied();
+      case "anulaciones":
+        return can("SALES_MANAGE") ? <AnulacionesModule /> : denied();
       case "bodega":
         return can("INVENTORY_MANAGE") ? <InventoryModule role={user.rol} onManageCategories={() => navigate("/categorias")} /> : denied();
       case "categorias":

@@ -146,4 +146,14 @@ export class CashboxRepo {
     const rows = await this.db.select().from(schema.cashboxArqueos).where(eq(schema.cashboxArqueos.turnoId, turnoId)).all();
     return rows.map(toArqueo).sort((a, b) => (a.creadoEn < b.creadoEn ? 1 : -1));
   }
+
+  async listMovementsForSale(ventaId: string): Promise<CashMovement[]> {
+    const rows = await this.db.select().from(schema.cashboxMovimientos).where(eq(schema.cashboxMovimientos.ventaId, ventaId)).all();
+    return rows.map(toMovement);
+  }
+
+  async deleteMovementsForSale(ventaId: string): Promise<void> {
+    await this.db.delete(schema.cashboxMovimientos).where(eq(schema.cashboxMovimientos.ventaId, ventaId));
+  }
 }
+

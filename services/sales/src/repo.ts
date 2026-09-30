@@ -86,6 +86,18 @@ export class SalesRepo {
     return rows.map(toSale).sort((a, b) => b.creadoEn.localeCompare(a.creadoEn));
   }
 
+  async listCancelled(desde?: string, hasta?: string): Promise<Sale[]> {
+    const conditions = [eq(schema.salesVentas.estado, "ANULADA")];
+    if (desde) conditions.push(gte(schema.salesVentas.creadoEn, `${desde}T00:00:00.000Z`));
+    if (hasta) conditions.push(lte(schema.salesVentas.creadoEn, `${hasta}T23:59:59.999Z`));
+    const rows = await this.db
+      .select()
+      .from(schema.salesVentas)
+      .where(and(...conditions))
+      .all();
+    return rows.map(toSale).sort((a, b) => b.creadoEn.localeCompare(a.creadoEn));
+  }
+
   async updateSale(id: string, patch: Partial<SaleRow>): Promise<Sale> {
     await this.db.update(schema.salesVentas).set(patch).where(eq(schema.salesVentas.id, id));
     const updated = await this.getSale(id);

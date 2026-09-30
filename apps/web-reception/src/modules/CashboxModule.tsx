@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import type { Arqueo, CashMovementType, CashSummary, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import type { Arqueo, CancelledSale, CashMovementType, CashSummary, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
 import { formatDateTime12h, formatTime12h, formatTimeOnly12h } from "@casacarlos/contracts";
 import { cents, format, soles, splitIncludedIgv } from "@casacarlos/money";
-import { IconCash, IconPrinter, IconReceipt } from "@casacarlos/ui";
+import { IconAlertTriangle, IconCash, IconCheck, IconFileX, IconPrinter, IconReceipt, IconTrash } from "@casacarlos/ui";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip as ChartTooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import { api, ApiError, type CashMovementView } from "../api.js";
@@ -28,7 +28,7 @@ const daysAgoIso = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-type Tab = "turno" | "movimientos" | "ventas" | "historial";
+type Tab = "turno" | "movimientos" | "ventas" | "anulaciones" | "historial";
 
 const MOVEMENT_LABEL: Record<CashMovementType, string> = {
   APERTURA: "Apertura de caja",
@@ -119,6 +119,19 @@ export function CashboxModule() {
   const [ventas, setVentas] = useState<Sale[] | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
 
+  const [cancellingSale, setCancellingSale] = useState<Sale | null>(null);
+  const [cancelMotivo, setCancelMotivo] = useState("Venta duplicada");
+  const [cancelCustomMotivo, setCancelCustomMotivo] = useState("");
+  const [cancelCorrelationId, setCancelCorrelationId] = useState("");
+  const [cancelIdempotencyKey, setCancelIdempotencyKey] = useState("");
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelSuccess, setCancelSuccess] = useState<string | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const [anulacionesDesde, setAnulacionesDesde] = useState(daysAgoIso(7));
+  const [anulacionesHasta, setAnulacionesHasta] = useState(todayIso());
+  const [anulaciones, setAnulaciones] = useState<CancelledSale[] | null>(null);
+
   const [movementDesde, setMovementDesde] = useState(todayIso());
   const [movementHasta, setMovementHasta] = useState(todayIso());
   const [movementHoraDesde, setMovementHoraDesde] = useState("00:00");
@@ -152,6 +165,53 @@ export function CashboxModule() {
     setVentas(await api.salesByRange({ desde: ventasDesde, hasta: ventasHasta }));
   };
 
+  const loadAnulaciones = async () => {
+    setAnulaciones(null);
+    try {
+      const list = await api.cancelledSales({ desde: anulacionesDesde, hasta: anulacionesHasta });
+      setAnulaciones(list);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudieron cargar las anulaciones.");
+      setAnulaciones([]);
+    }
+  };
+
+  const openCancelModal = (sale: Sale) => {
+    setCancellingSale(sale);
+    setCancelMotivo("Venta duplicada");
+    setCancelCustomMotivo("");
+    const randomHex = Math.random().toString(36).substring(2, 9);
+    setCancelCorrelationId(`corr_caja_${Date.now()}_${randomHex}`);
+    setCancelIdempotencyKey(`idem_caja_${sale.id.slice(0, 8)}_${Date.now()}`);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancellingSale) return;
+    const finalMotivo = cancelCustomMotivo.trim()
+      ? `${cancelMotivo}: ${cancelCustomMotivo.trim()}`
+      : cancelMotivo;
+    setCancelBusy(true);
+    setError(null);
+    try {
+      await api.cancelSale(cancellingSale.id, finalMotivo, cancelCorrelationId, cancelIdempotencyKey);
+      setCancelSuccess(`Venta ${cancellingSale.serie}-${cancellingSale.correlativo} anulada con éxito. Movimientos en caja revertidos para cuadre.`);
+      setCancellingSale(null);
+      await Promise.all([loadVentas(), loadShift(), loadMovements()]);
+      if (tab === "anulaciones") await loadAnulaciones();
+      setTimeout(() => setCancelSuccess(null), 6000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Error al anular la venta.");
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(label);
+    setTimeout(() => setCopiedKey(null), 2500);
+  };
+
   const loadMovements = async () => {
     setMovements(null);
     setError(null);
@@ -169,6 +229,7 @@ export function CashboxModule() {
     if (tab === "historial") loadHistory();
     if (tab === "ventas") loadVentas();
     if (tab === "movimientos") loadMovements();
+    if (tab === "anulaciones") loadAnulaciones();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
 
@@ -284,6 +345,7 @@ export function CashboxModule() {
               { id: "turno", label: "Mi turno" },
               { id: "movimientos", label: "Movimientos" },
               { id: "ventas", label: "Ventas" },
+              { id: "anulaciones", label: "Anulaciones" },
               { id: "historial", label: "Cierres" },
             ]}
             active={tab}
@@ -291,6 +353,12 @@ export function CashboxModule() {
           />
         }
       />
+
+      {cancelSuccess && (
+        <div className="mb-4">
+          <Notice tone="ok">{cancelSuccess}</Notice>
+        </div>
+      )}
 
       {error && (
         <div className="mb-4">
@@ -614,16 +682,143 @@ export function CashboxModule() {
                       <p className="truncate text-xs text-muted">
                         {v.serie}-{v.correlativo} · {formatDateTime12h(v.creadoEn)}
                       </p>
+                      {v.estado === "ANULADA" && v.motivoAnulacion && (
+                        <p className="mt-1 text-xs font-medium text-rose-500">
+                          Motivo: {v.motivoAnulacion}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex shrink-0 items-center gap-3">
-                      <span className="text-sm font-semibold tabular-nums text-ink">{format(cents(v.totalCentimos))}</span>
-                      <Badge tone={v.saldoCentimos > 0 ? "tone-amber" : "tone-teal"}>{v.saldoCentimos > 0 ? "Con saldo" : "Pagada"}</Badge>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className={cx("text-sm font-semibold tabular-nums", v.estado === "ANULADA" ? "line-through text-muted" : "text-ink")}>
+                        {format(cents(v.totalCentimos))}
+                      </span>
+                      {v.estado === "ANULADA" ? (
+                        <Badge tone="tone-red">Anulada</Badge>
+                      ) : (
+                        <Badge tone={v.saldoCentimos > 0 ? "tone-amber" : "tone-teal"}>
+                          {v.saldoCentimos > 0 ? "Con saldo" : "Pagada"}
+                        </Badge>
+                      )}
                       <Button size="sm" icon={<IconPrinter className="h-3.5 w-3.5" />} onClick={() => printSale(v)} disabled={printingId === v.id}>
                         {printingId === v.id ? "…" : "Imprimir"}
                       </Button>
+                      {v.estado !== "ANULADA" && (
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          icon={<IconTrash className="h-3.5 w-3.5" />}
+                          onClick={() => openCancelModal(v)}
+                          title="Anular venta duplicada o por error de digitación para corregir el cuadre de caja"
+                        >
+                          Anular
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </Section>
+        </>
+      )}
+
+      {/* ---------------- Anulaciones de ventas ---------------- */}
+      {tab === "anulaciones" && (
+        <>
+          <Card className="mb-5 flex flex-wrap items-end gap-3 p-4">
+            <Field label="Desde">
+              <Input type="date" value={anulacionesDesde} onChange={(e) => setAnulacionesDesde(e.target.value)} />
+            </Field>
+            <Field label="Hasta">
+              <Input type="date" value={anulacionesHasta} onChange={(e) => setAnulacionesHasta(e.target.value)} />
+            </Field>
+            <Button variant="primary" onClick={loadAnulaciones}>
+              Filtrar
+            </Button>
+            <span className="ml-auto self-center text-sm text-muted">
+              {anulaciones ? `${anulaciones.length} venta${anulaciones.length === 1 ? "" : "s"} anulada${anulaciones.length === 1 ? "" : "s"}` : ""}
+            </span>
+          </Card>
+
+          <Section title="Ventas anuladas" subtitle="Historial de ventas dadas de baja por duplicidad o error de digitación — no suman en el cuadre de caja">
+            {anulaciones === null ? (
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <Skeleton key={i} className="h-16" />
+                ))}
+              </div>
+            ) : anulaciones.length === 0 ? (
+              <EmptyState icon={<IconFileX className="h-6 w-6" />} title="Sin ventas anuladas en este rango" hint="Cambiá las fechas para ver otro periodo." />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-inset text-xs uppercase tracking-wide text-subtle">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Venta</th>
+                      <th className="px-4 py-3 font-semibold">Cliente</th>
+                      <th className="px-4 py-3 text-right font-semibold">Total</th>
+                      <th className="px-4 py-3 font-semibold">Motivo</th>
+                      <th className="px-4 py-3 font-semibold">Anulado por</th>
+                      <th className="px-4 py-3 font-semibold">Fecha</th>
+                      <th className="px-4 py-3 font-semibold">Trazabilidad</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-line-soft">
+                    {anulaciones.map((a) => (
+                      <tr key={a.id} className="transition-colors hover:bg-inset/40">
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-ink">{a.serie}-{a.correlativo}</p>
+                          <span className="text-[11px] text-muted">ID: {a.id.slice(0, 8)}</span>
+                        </td>
+                        <td className="px-4 py-3 text-muted">
+                          {a.clienteNombres ? `${a.clienteNombres} ${a.clienteApellidos ?? ""}`.trim() : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-semibold tabular-nums text-rose-500 line-through">
+                          {format(cents(a.totalCentimos))}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge tone="tone-red">{a.motivoAnulacion || "Anulada"}</Badge>
+                        </td>
+                        <td className="px-4 py-3 text-muted text-xs">
+                          {a.anuladoPorNombre ?? a.anuladoPorUsuarioId ?? "Usuario"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted tabular-nums">
+                          {formatDateTime12h(a.anuladoEn ?? a.creadoEn)}
+                        </td>
+                        <td className="px-4 py-3 text-xs">
+                          {a.correlationId && (
+                            <div className="flex items-center gap-1">
+                              <code className="text-[10px] bg-inset px-1.5 py-0.5 rounded font-mono text-subtle">
+                                {a.correlationId.slice(0, 16)}…
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(a.correlationId!, `tab_corr_${a.id}`)}
+                                className="text-[10px] text-brand hover:underline"
+                              >
+                                {copiedKey === `tab_corr_${a.id}` ? "✓" : "Copiar"}
+                              </button>
+                            </div>
+                          )}
+                          {a.idempotencyKey && (
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <code className="text-[10px] bg-inset px-1.5 py-0.5 rounded font-mono text-subtle">
+                                {a.idempotencyKey.slice(0, 16)}…
+                              </code>
+                              <button
+                                type="button"
+                                onClick={() => copyToClipboard(a.idempotencyKey!, `tab_idem_${a.id}`)}
+                                className="text-[10px] text-brand hover:underline"
+                              >
+                                {copiedKey === `tab_idem_${a.id}` ? "✓" : "Copiar"}
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </Section>
@@ -698,6 +893,104 @@ export function CashboxModule() {
             </div>
           </Card>
         </>
+      )}
+
+      {/* ---------------- Modal para anular venta ---------------- */}
+      {cancellingSale && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+          <Card className="relative w-full max-w-lg p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between gap-3 border-b border-line-soft pb-3">
+              <div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2.5 py-0.5 text-xs font-semibold text-rose-500 mb-1">
+                  <IconAlertTriangle className="h-3.5 w-3.5" />
+                  Anulación de venta
+                </span>
+                <h3 className="text-lg font-bold text-ink">
+                  Anular venta {cancellingSale.serie}-{cancellingSale.correlativo}
+                </h3>
+                <p className="text-xs text-muted">
+                  Total: <strong className="text-ink">{format(cents(cancellingSale.totalCentimos))}</strong> · Cliente: {cancellingSale.clienteNombres ? `${cancellingSale.clienteNombres} ${cancellingSale.clienteApellidos ?? ""}`.trim() : "Sin cliente"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancellingSale(null)}
+                className="rounded-lg p-1 text-muted hover:bg-inset hover:text-ink transition-colors"
+                disabled={cancelBusy}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300 space-y-1">
+              <p className="font-semibold">¿Por qué anular esta venta?</p>
+              <p>
+                Al anularla, <strong>se revertirán los movimientos en caja de este turno</strong> para que el efectivo esperado coincida con tu arqueo real (eliminando descuadres por ventas duplicadas o doble digitación). También se devolverá el stock de productos y se liberará la habitación si estaba vinculada.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                Motivo de anulación
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  "Venta duplicada",
+                  "Error de digitación",
+                  "Cobro duplicado por POS / billetera",
+                  "Cliente canceló servicio",
+                  "Otro motivo",
+                ].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCancelMotivo(preset)}
+                    className={cx(
+                      "rounded-lg px-2.5 py-1 text-xs font-medium transition-all",
+                      cancelMotivo === preset
+                        ? "bg-rose-500 text-white shadow-sm"
+                        : "bg-inset text-muted hover:bg-line hover:text-ink",
+                    )}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+              <Input
+                placeholder="Detalle adicional (ej: se digitó 2 veces el cobro por error en caja)..."
+                value={cancelCustomMotivo}
+                onChange={(e) => setCancelCustomMotivo(e.target.value)}
+              />
+            </div>
+
+            {/* Trazabilidad técnica */}
+            <div className="rounded-xl border border-line bg-inset/40 p-3 space-y-1.5 text-xs">
+              <span className="font-semibold text-subtle text-[11px] uppercase tracking-wider">Trazabilidad de la operación</span>
+              <div className="flex items-center justify-between text-muted text-[11px]">
+                <span>Correlation ID:</span>
+                <code className="font-mono bg-surface px-1.5 py-0.5 rounded text-ink">{cancelCorrelationId}</code>
+              </div>
+              <div className="flex items-center justify-between text-muted text-[11px]">
+                <span>Idempotency Key:</span>
+                <code className="font-mono bg-surface px-1.5 py-0.5 rounded text-ink">{cancelIdempotencyKey}</code>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-line-soft pt-3">
+              <Button onClick={() => setCancellingSale(null)} disabled={cancelBusy}>
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                icon={<IconTrash className="h-4 w-4" />}
+                onClick={handleConfirmCancel}
+                disabled={cancelBusy}
+              >
+                {cancelBusy ? "Anulando..." : "Confirmar anulación"}
+              </Button>
+            </div>
+          </Card>
+        </div>
       )}
     </>
   );

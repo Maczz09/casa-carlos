@@ -339,3 +339,22 @@ export function IconSliders({ className }: IconProps) {
   );
 }
 
+export function IconTrash({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M3.5 5.5h13M7.5 5.5v-2a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v2M5.5 5.5v11a1.5 1.5 0 0 0 1.5 1.5h6a1.5 1.5 0 0 0 1.5-1.5v-11M8 9v5M12 9v5" />
+    </svg>
+  );
+}
+
+export function IconFileX({ className }: IconProps) {
+  return (
+    <svg {...base} className={className} aria-hidden="true">
+      <path d="M5 2.5h6l4 4V17a.8.8 0 0 1-.8.8H5.8A.8.8 0 0 1 5 17Z" />
+      <path d="M11 2.5v4h4" />
+      <path d="m8.5 10.5 3 3M11.5 10.5l-3 3" />
+    </svg>
+  );
+}
+
+

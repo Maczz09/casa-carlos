@@ -34,6 +34,9 @@ export class CashboxService implements CashboxPort {
   ) {
     this.repo = new CashboxRepo(db);
     bus.subscribe("payment.accepted", (payload) => this.recordSalePayment(payload.paymentId, payload.saleId, payload.aceptadoPor));
+    bus.subscribe("sale.cancelled", (payload) =>
+      this.handleSaleCancelled(payload.saleId, payload.motivo, payload.usuarioId, payload.correlationId),
+    );
   }
 
   async createShiftTemplate(input: CreateShiftTemplateInput): Promise<ShiftTemplate> {
@@ -302,4 +305,26 @@ export class CashboxService implements CashboxPort {
       }
     }
   }
+
+  private async handleSaleCancelled(
+    saleId: string,
+    motivo: string,
+    usuarioId: string,
+    correlationId: string,
+  ): Promise<void> {
+    const movements = await this.repo.listMovementsForSale(saleId);
+    if (movements.length === 0) return;
+
+    await this.repo.deleteMovementsForSale(saleId);
+
+    await recordAudit(this.db, {
+      entidad: "cashbox_movimientos",
+      entidadId: saleId,
+      accion: "REVERTIR_VENTA_ANULADA",
+      usuarioId,
+      antes: movements,
+      motivo: `Venta anulada (${correlationId}): ${motivo}`,
+    });
+  }
 }
+

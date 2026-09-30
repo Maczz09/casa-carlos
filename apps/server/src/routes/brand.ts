@@ -43,7 +43,7 @@ export function brandRoutes(services: Services) {
 
     app.get("/api/brand/theme", async () => services.brand.getThemeConfig());
 
-    const themeAuth = { preHandler: requireAnyPermission(services.identity, ["BRAND_MANAGE", "SALES_MANAGE", "RESERVATIONS_MANAGE", "ROOMS_MANAGE", "USERS_MANAGE"]) };
+    const themeAuth = { preHandler: requireAnyPermission(services.identity, ["SETTINGS_MANAGE", "SALES_MANAGE", "RESERVATIONS_MANAGE", "ROOMS_MANAGE", "USERS_MANAGE"]) };
 
     app.patch<{ Body: Parameters<typeof services.brand.setThemeConfig>[0] }>("/api/brand/theme", themeAuth, async (request, reply) => {
       try {

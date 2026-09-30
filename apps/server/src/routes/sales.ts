@@ -61,6 +61,11 @@ export function salesRoutes(services: Services) {
       },
     );
 
+    app.get<{ Querystring: { desde?: string; hasta?: string } }>("/api/sales/cancelled", auth, async (request) => {
+      const { desde, hasta } = request.query;
+      return services.sales.listCancelledSales(desde, hasta);
+    });
+
     app.post<{ Params: { id: string; lineId: string }; Body: { motivo: string } }>(
       "/api/sales/:id/lines/:lineId/cancel",
       auth,
@@ -73,5 +78,27 @@ export function salesRoutes(services: Services) {
         }
       },
     );
+
+    app.post<{
+      Params: { id: string };
+      Body?: { motivo?: string; correlationId?: string; idempotencyKey?: string };
+    }>("/api/sales/:id/cancel", auth, async (request, reply) => {
+      try {
+        const correlationId = (request.headers["x-correlation-id"] as string) || request.body?.correlationId;
+        const idempotencyKey = (request.headers["idempotency-key"] as string) || request.body?.idempotencyKey;
+        const motivo = request.body?.motivo ?? "Anulación de venta";
+
+        const sale = await services.sales.cancelSale({
+          saleId: request.params.id,
+          motivo,
+          usuarioId: request.user!.id,
+          correlationId,
+          idempotencyKey,
+        });
+        return sale;
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
   };
 }

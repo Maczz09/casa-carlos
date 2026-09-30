@@ -24,6 +24,7 @@ export type DomainEvents = {
   "sale.line_added": { saleId: string; lineId: string; phase: "PRE_PAGO" | "POST_PAGO" };
   "sale.paid": { saleId: string; totalCentimos: number };
   "sale.closed": { saleId: string };
+  "sale.cancelled": { saleId: string; motivo: string; usuarioId: string; correlationId: string; idempotencyKey?: string };
 
   "payment.accepted": { paymentId: string; saleId: string; totalCentimos: number; aceptadoPor: string };
   "payment.rejected": { paymentId: string; saleId: string; motivo: string };

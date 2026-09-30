@@ -12,6 +12,7 @@ import {
   IconChevronRight,
   IconGrid,
   IconFileChart,
+  IconFileX,
   IconLogout,
   IconMenu,
   IconMoon,
@@ -58,6 +59,7 @@ export const NAV: NavGroup[] = [
     title: "Gestión",
     items: [
       { id: "caja", label: "Caja", icon: <IconCash className={ICON} />, permission: "CASHBOX_MANAGE" },
+      { id: "anulaciones", label: "Anulaciones", icon: <IconFileX className={ICON} />, permission: "SALES_MANAGE" },
       { id: "bodega", label: "Bodega", icon: <IconBox className={ICON} />, permission: "INVENTORY_MANAGE" },
       { id: "categorias", label: "Categorías", icon: <IconTag className={ICON} />, permission: "CATEGORIES_MANAGE" },
       { id: "cuartos-admin", label: "Cuartos", icon: <IconBed className={ICON} />, permission: "ROOMS_MANAGE" },
