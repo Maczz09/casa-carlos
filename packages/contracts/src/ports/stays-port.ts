@@ -17,6 +17,8 @@ export interface CheckInWalkInInput {
   bloques?: number;
   /** For night modalities, how many nights (default 1). */
   noches?: number;
+  /** Hora de entrada manual o retroactiva para clientes discretos (ISO string). */
+  horaEntrada?: string | null;
 }
 
 export interface CreateReservationInput {

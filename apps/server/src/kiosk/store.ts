@@ -41,17 +41,18 @@ export class KioskStore {
   }
 
 
-  async start(usuarioId: string, modalidadId: string, bloques: number, noches: number): Promise<KioskSession> {
+  async start(usuarioId: string, modalidadId: string, bloques: number, noches: number, horaEntrada?: string | null): Promise<KioskSession> {
     const modality = await this.pricing.getModality(modalidadId);
     const categories = await this.rooms.listCategories();
     const now = new Date();
+    const entryTime = horaEntrada ? new Date(horaEntrada) : now;
 
     const preciosPorCategoria: Record<string, number> = {};
     for (const categoria of categories) {
       try {
         preciosPorCategoria[categoria.id] = modality.checkinFijo
           ? await this.pricing.resolveNightScalePrice({ modalidadId, categoriaId: categoria.id, noches })
-          : (await this.pricing.resolveRate({ categoriaId: categoria.id, modalidadId, at: now })).precioCentimos * bloques;
+          : (await this.pricing.resolveRate({ categoriaId: categoria.id, modalidadId, at: entryTime })).precioCentimos * bloques;
       } catch {
         // sin tarifa configurada para esta categoría — se omite del preview, no bloquea el flujo
       }
@@ -64,6 +65,7 @@ export class KioskStore {
       modalidadId,
       bloques,
       noches,
+      horaEntrada: horaEntrada ?? null,
       pisoId: null,
       cuartoId: null,
       preciosPorCategoria,
@@ -115,6 +117,7 @@ export class KioskStore {
         usuarioId: session.usuarioId,
         bloques: session.bloques,
         noches: session.noches,
+        horaEntrada: session.horaEntrada,
       });
       const sale = await this.sales.openSaleForStay({ stayId: stay.id, usuarioId: session.usuarioId });
       const saleWithLines = await this.sales.getSale(sale.id);

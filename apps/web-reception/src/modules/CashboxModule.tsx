@@ -7,7 +7,7 @@ import { ArcElement, Chart as ChartJS, Legend, Tooltip as ChartTooltip } from "c
 import { Doughnut } from "react-chartjs-2";
 import { api, ApiError, type CashMovementView } from "../api.js";
 import { DenominationCounter, sumDenominaciones } from "../components/DenominationCounter.js";
-import { printReceiptForSale } from "../components/receipt.js";
+import { printReceiptForSale, printShiftClosureReceipt } from "../components/receipt.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, StatCard, Tabs, Textarea, cx } from "../components/ui.js";
 
 export const METHOD_LABEL: Record<string, string> = {
@@ -280,11 +280,17 @@ export function CashboxModule() {
     setBusy(true);
     setError(null);
     try {
-      await api.closeShift(shift.id, { denominaciones: denominacionesCierre, justificacion: justificacion || null });
+      const closed = await api.closeShift(shift.id, { denominaciones: denominacionesCierre, justificacion: justificacion || null });
       setClosing(false);
       setDenominacionesCierre({});
       setJustificacion("");
+      try {
+        await printShiftClosureReceipt(closed.id);
+      } catch (err) {
+        console.error("No se pudo abrir el ticket de cuadre:", err);
+      }
       await loadShift();
+      if (tab === "historial") await loadHistory();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo cerrar el turno.");
     } finally {
@@ -503,6 +509,13 @@ export function CashboxModule() {
                         Arqueo intermedio
                       </Button>
                     )}
+
+                    <Button block variant="ghost" onClick={() => printShiftClosureReceipt(shift.id)}>
+                      <span className="inline-flex items-center gap-1.5">
+                        <IconPrinter className="h-4 w-4" />
+                        <span>Imprimir cuadre (80 mm)</span>
+                      </span>
+                    </Button>
 
                     <Button block variant="warn" onClick={() => setClosing(true)}>
                       Cerrar turno
@@ -865,6 +878,7 @@ export function CashboxModule() {
                     <th className="px-4 py-3 text-right font-semibold">Esperado</th>
                     <th className="px-4 py-3 text-right font-semibold">Declarado</th>
                     <th className="px-4 py-3 text-right font-semibold">Diferencia</th>
+                    <th className="px-4 py-3 text-right font-semibold">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -879,11 +893,22 @@ export function CashboxModule() {
                       <td className={cx("px-4 py-3 text-right tabular-nums", s.diferenciaCentimos ? "font-medium text-warn" : "text-muted")}>
                         {s.diferenciaCentimos !== null ? format(cents(s.diferenciaCentimos)) : "—"}
                       </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          title="Imprimir cuadre de caja (80 mm)"
+                          onClick={() => printShiftClosureReceipt(s.id)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-ink shadow-xs hover:border-brand hover:text-brand transition-colors active:scale-95"
+                        >
+                          <IconPrinter className="h-3.5 w-3.5" />
+                          <span>Imprimir cuadre</span>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                   {history.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-muted">
+                      <td colSpan={6} className="px-4 py-8 text-center text-muted">
                         Sin turnos en ese rango.
                       </td>
                     </tr>

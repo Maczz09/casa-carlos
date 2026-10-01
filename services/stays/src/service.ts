@@ -91,7 +91,8 @@ export class StaysService implements StaysPort {
     const modality = await this.pricing.getModality(input.modalidadId);
     const cliente = await this.findOrCreateCustomer(input.cliente);
     const now = new Date();
-    const window = this.resolveWindow(modality, now, input.noches ?? 1, input.bloques ?? 1);
+    const entryTime = input.horaEntrada ? new Date(input.horaEntrada) : now;
+    const window = this.resolveWindow(modality, entryTime, input.noches ?? 1, input.bloques ?? 1);
 
     await this.assertNoOverlap(input.cuartoId, window);
 
@@ -110,7 +111,7 @@ export class StaysService implements StaysPort {
       bloqueoDesde: window.bloqueoDesde.toISOString(),
       bloqueoHasta: window.bloqueoHasta.toISOString(),
       checkinPrevisto: window.checkinPrevisto.toISOString(),
-      checkinReal: now.toISOString(),
+      checkinReal: entryTime.toISOString(),
       checkoutPrevisto: window.checkoutPrevisto.toISOString(),
       checkoutReal: null,
       noches: input.noches ?? 0,

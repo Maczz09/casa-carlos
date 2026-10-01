@@ -72,6 +72,29 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   const [wantsProducts, setWantsProducts] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [entryMode, setEntryMode] = useState<"ahora" | "15min" | "30min" | "45min" | "60min" | "manual">("ahora");
+  const [customTime, setCustomTime] = useState<string>("");
+
+  const calculateHoraEntrada = (): string | null => {
+    if (entryMode === "ahora") return null;
+    const now = new Date();
+    if (entryMode === "15min") return new Date(now.getTime() - 15 * 60 * 1000).toISOString();
+    if (entryMode === "30min") return new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+    if (entryMode === "45min") return new Date(now.getTime() - 45 * 60 * 1000).toISOString();
+    if (entryMode === "60min") return new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+    if (entryMode === "manual" && customTime) {
+      const [h, m] = customTime.split(":").map(Number);
+      if (!isNaN(h) && !isNaN(m)) {
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        if (d.getTime() > now.getTime() + 5 * 60 * 1000) {
+          d.setDate(d.getDate() - 1);
+        }
+        return d.toISOString();
+      }
+    }
+    return null;
+  };
 
   useEffect(() => {
     api.modalities().then((list) => {
@@ -184,6 +207,55 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
               </Field>
             )}
 
+            <Field label="Horario de entrada (clientes discretos o ingreso retroactivo)">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: "ahora", label: "Ahora (Normal)" },
+                  { id: "15min", label: "Hace 15 min" },
+                  { id: "30min", label: "Hace 30 min" },
+                  { id: "45min", label: "Hace 45 min" },
+                  { id: "60min", label: "Hace 1 hora" },
+                  { id: "manual", label: "Hora exacta…" },
+                ].map((pill) => (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => {
+                      setEntryMode(pill.id as any);
+                      if (pill.id === "manual" && !customTime) {
+                        const d = new Date();
+                        setCustomTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+                      }
+                    }}
+                    className={cx(
+                      "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors border",
+                      entryMode === pill.id ? "border-brand bg-brand-soft text-brand shadow-xs" : "border-line bg-surface text-ink hover:bg-inset",
+                    )}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+
+              {entryMode === "manual" && (
+                <div className="mt-2.5 flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted">Hora de ingreso:</span>
+                  <input
+                    type="time"
+                    value={customTime}
+                    onChange={(e) => setCustomTime(e.target.value)}
+                    className="rounded-lg border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-ink focus:border-brand focus:outline-none"
+                  />
+                </div>
+              )}
+
+              {entryMode !== "ahora" && (
+                <p className="mt-1.5 text-xs font-medium text-brand">
+                  ⏱️ El tiempo de estadía y checkout se calculará a partir de este horario ingresado.
+                </p>
+              )}
+            </Field>
+
             {error && <Notice>{error}</Notice>}
 
             <Button
@@ -194,7 +266,8 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
                 setBusy(true);
                 setError(null);
                 try {
-                  await api.startKiosk(modalidadId, bloques, noches);
+                  const horaEntrada = calculateHoraEntrada();
+                  await api.startKiosk(modalidadId, bloques, noches, horaEntrada);
                 } catch (err) {
                   setError(err instanceof ApiError ? err.message : "No se pudo iniciar la venta.");
                 } finally {

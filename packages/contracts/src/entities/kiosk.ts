@@ -53,6 +53,8 @@ export const KioskSessionSchema = z.object({
   modalidadId: z.string().nullable(),
   bloques: z.number().int().positive(),
   noches: z.number().int().positive(),
+  /** Hora de entrada manual o retroactiva para clientes discretos (ISO string). */
+  horaEntrada: z.string().nullable().optional(),
 
   pisoId: z.string().nullable(),
   cuartoId: z.string().nullable(),

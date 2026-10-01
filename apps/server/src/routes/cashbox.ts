@@ -99,6 +99,60 @@ export function cashboxRoutes(services: Services) {
       }
     });
 
+    app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/cuadre", auth, async (request, reply) => {
+      try {
+        const shiftId = request.params.id;
+        const shift = await services.cashbox.getShift(shiftId);
+        const summary = await services.cashbox.getShiftSummary(shiftId);
+        const movements = await services.cashbox.listMovements(shiftId);
+        const templates = await services.cashbox.listShiftTemplates();
+        const plantilla = shift.plantillaId ? templates.find((t) => t.id === shift.plantillaId) ?? null : null;
+
+        const userIds = [...new Set([shift.usuarioId, ...movements.map((m) => m.usuarioId)])];
+        const users = await Promise.all(userIds.map((uid) => services.identity.getUser(uid).catch(() => null)));
+        const userMap = new Map(users.filter(Boolean).map((u) => [u!.id, `${u!.nombres} ${u!.apellidos}`.trim()]));
+
+        const abiertoPor = {
+          id: shift.usuarioId,
+          nombre: userMap.get(shift.usuarioId) ?? "Usuario desconocido",
+        };
+
+        const cierreMovement = movements.slice().reverse().find((m) => m.tipo === "CIERRE");
+        const cerradoPor = shift.cerradoEn
+          ? {
+              id: cierreMovement ? cierreMovement.usuarioId : shift.usuarioId,
+              nombre: (cierreMovement ? userMap.get(cierreMovement.usuarioId) : userMap.get(shift.usuarioId)) ?? "Usuario desconocido",
+            }
+          : null;
+
+        const intervinientesMap = new Map<string, { id: string; nombre: string; operaciones: number; montoTotalCentimos: number }>();
+        for (const m of movements) {
+          const uId = m.usuarioId;
+          const uNombre = userMap.get(uId) ?? "Usuario";
+          const prev = intervinientesMap.get(uId) ?? { id: uId, nombre: uNombre, operaciones: 0, montoTotalCentimos: 0 };
+          prev.operaciones += 1;
+          if (m.tipo === "VENTA" || m.tipo === "INGRESO") {
+            prev.montoTotalCentimos += m.montoCentimos;
+          }
+          intervinientesMap.set(uId, prev);
+        }
+
+        const emisor = services.sunatConfig.read(services.sunatModoActivo).emisor;
+
+        return {
+          shift,
+          plantilla,
+          summary,
+          abiertoPor,
+          cerradoPor,
+          intervinientes: Array.from(intervinientesMap.values()),
+          emisor,
+        };
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
     app.get<{ Querystring: { desde: string; hasta: string } }>("/api/cashbox/summary", auth, async (request, reply) => {
       try {
         return await services.cashbox.getRangeSummary(request.query);

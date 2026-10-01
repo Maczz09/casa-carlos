@@ -15,6 +15,8 @@ export function sunatRoutes(services: Services) {
   return async function (app: FastifyInstance) {
     const admin = { preHandler: requirePermission(services.identity, "SETTINGS_MANAGE") };
 
+    app.get("/api/sunat/emisor", async () => services.sunatConfig.read(services.sunatModoActivo).emisor);
+
     app.get("/api/sunat/config", admin, async () => services.sunatConfig.read(services.sunatModoActivo));
 
     app.patch<{ Body: UpdateSunatConfigInput }>("/api/sunat/config", admin, async (request, reply) => {

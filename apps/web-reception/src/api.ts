@@ -49,6 +49,7 @@ import type {
   Stay,
   StayWithCustomer,
   SunatConfig,
+  SunatEmisor,
   SunatTestResult,
   UpdateCollectionAccountInput,
   UpdateRecipientInput,
@@ -72,6 +73,16 @@ export function setToken(token: string | null): void {
 class ApiError extends Error {}
 
 export type CashMovementView = CashMovement & { usuarioNombre: string };
+
+export interface ShiftCuadreDto {
+  shift: Shift;
+  plantilla: ShiftTemplate | null;
+  summary: CashSummary;
+  abiertoPor: { id: string; nombre: string };
+  cerradoPor: { id: string; nombre: string } | null;
+  intervinientes: Array<{ id: string; nombre: string; operaciones: number; montoTotalCentimos: number }>;
+  emisor: SunatEmisor;
+}
 
 // Compatibilidad de actualización: la versión anterior del servicio no
 // incluía todavía el desglose tributario. La interfaz puede convivir con ella
@@ -176,8 +187,8 @@ export const api = {
 
   checkOut: (stayId: string) => post<Stay>(`/api/reception/check-out/${stayId}`),
 
-  startKiosk: (modalidadId: string, bloques: number, noches: number) =>
-    post<KioskSession>("/api/reception/kiosk/start", { modalidadId, bloques, noches }),
+  startKiosk: (modalidadId: string, bloques: number, noches: number, horaEntrada?: string | null) =>
+    post<KioskSession>("/api/reception/kiosk/start", { modalidadId, bloques, noches, horaEntrada }),
   setKioskCustomer: (input: { nombres: string; apellidos: string; dni: string; telefono?: string | null }) =>
     post<KioskSession>("/api/reception/kiosk/customer", input),
   takeKioskControl: (actor: "CLIENTE" | "RECEPCION") => post<KioskSession>("/api/reception/kiosk/take-control", { actor }),
@@ -243,6 +254,7 @@ export const api = {
   deleteCollectionAccountQr: (id: string) => del<CollectionAccount>(`/api/payments/collection-accounts/${id}/qr`),
 
   // ---- facturación electrónica (SUNAT) ----
+  sunatEmisor: () => get<SunatEmisor>("/api/sunat/emisor"),
   sunatConfig: () => get<SunatConfig>("/api/sunat/config"),
   updateSunatConfig: (input: {
     modo?: "MOCK" | "BETA" | "PRODUCCION";
@@ -346,6 +358,7 @@ export const api = {
     return get<CashMovementView[]>(`/api/cashbox/movements${params.size ? `?${params.toString()}` : ""}`);
   },
   shiftSummary: (id: string) => get<CashSummary>(`/api/cashbox/shifts/${id}/summary`).then(normalizeCashSummary),
+  shiftCuadre: (id: string) => get<ShiftCuadreDto>(`/api/cashbox/shifts/${id}/cuadre`),
   rangeSummary: (range: { desde: string; hasta: string }) => get<CashSummary>(`/api/cashbox/summary?desde=${range.desde}&hasta=${range.hasta}`).then(normalizeCashSummary),
   registrarArqueo: (id: string, denominaciones: Denominaciones) => post<Arqueo>(`/api/cashbox/shifts/${id}/arqueo`, { denominaciones }),
   arqueos: (id: string) => get<Arqueo[]>(`/api/cashbox/shifts/${id}/arqueos`),
