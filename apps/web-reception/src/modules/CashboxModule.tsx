@@ -151,9 +151,13 @@ export function CashboxModule() {
   };
 
   useEffect(() => {
-    loadShift();
-    api.shiftTemplates().then(setTemplates);
-  }, []);
+    if (tab === "turno") {
+      loadShift();
+      api.shiftTemplates().then((list) => {
+        if (list) setTemplates(list);
+      }).catch(console.error);
+    }
+  }, [tab]);
 
   const loadHistory = async () => {
     const [shifts, sum] = await Promise.all([api.shifts({ desde, hasta }), api.rangeSummary({ desde, hasta })]);
@@ -395,9 +399,9 @@ export function CashboxModule() {
                 hint="Abrí el turno con el monto de apertura para empezar a registrar movimientos."
               />
               <div className="flex flex-col gap-3">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted">Plantilla de turno</span>
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted">Plantilla de turno</span>
                     <button
                       type="button"
                       onClick={() => setTab("turnos")}
@@ -407,20 +411,61 @@ export function CashboxModule() {
                       Modificar / crear turnos
                     </button>
                   </div>
-                  {templates.length > 0 ? (
-                    <select
-                      value={plantillaId}
-                      onChange={(e) => setPlantillaId(e.target.value)}
-                      className="w-full cursor-pointer rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25"
+
+                  {/* Selección de turno directa y táctil (100% visible sin popups bloqueados del sistema) */}
+                  <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setPlantillaId("")}
+                      className={cx(
+                        "flex items-center justify-between rounded-xl border p-2.5 text-left transition-all duration-150 active:scale-[0.99]",
+                        plantillaId === "" ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-line bg-surface hover:bg-inset",
+                      )}
                     >
-                      <option value="">Sin plantilla</option>
-                      {templates.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.nombre} ({formatTime12h(t.horaInicio)} – {formatTime12h(t.horaFin)})
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
+                      <div className="min-w-0 pr-2">
+                        <p className={cx("font-semibold text-xs truncate", plantillaId === "" ? "text-brand" : "text-ink")}>
+                          Sin plantilla
+                        </p>
+                        <p className="text-[11px] text-muted">Apertura general sin horario asignado</p>
+                      </div>
+                      {plantillaId === "" && (
+                        <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand text-brand-ink">
+                          <IconCheck className="h-3 w-3" />
+                        </span>
+                      )}
+                    </button>
+
+                    {templates.map((t) => {
+                      const isSelected = plantillaId === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setPlantillaId(t.id)}
+                          className={cx(
+                            "flex items-center justify-between rounded-xl border p-2.5 text-left transition-all duration-150 active:scale-[0.99]",
+                            isSelected ? "border-brand bg-brand-soft ring-1 ring-brand" : "border-line bg-surface hover:bg-inset",
+                          )}
+                        >
+                          <div className="min-w-0 pr-2">
+                            <p className={cx("font-semibold text-xs truncate", isSelected ? "text-brand" : "text-ink")}>
+                              {t.nombre}
+                            </p>
+                            <p className="text-[11px] text-muted">
+                              {formatTime12h(t.horaInicio)} – {formatTime12h(t.horaFin)}
+                            </p>
+                          </div>
+                          {isSelected && (
+                            <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-brand text-brand-ink">
+                              <IconCheck className="h-3 w-3" />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {templates.length === 0 && (
                     <div className="rounded-xl border border-dashed border-line bg-inset/50 p-3 text-center space-y-1.5">
                       <p className="text-xs text-muted">No hay turnos registrados en el sistema.</p>
                       <button
