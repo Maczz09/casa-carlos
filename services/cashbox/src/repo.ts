@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, inArray, lte, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, type SQL } from "drizzle-orm";
 import type { Db } from "@casacarlos/db";
 import { schema } from "@casacarlos/db";
 import type { Arqueo, CashMovement, CashMovementFilter, Denominaciones, Shift, ShiftTemplate } from "@casacarlos/contracts";
@@ -66,8 +66,34 @@ export class CashboxRepo {
     return toTemplate(row);
   }
 
+  async getTemplate(id: string): Promise<ShiftTemplate | null> {
+    const row = await this.db.select().from(schema.cashboxPlantillasTurno).where(eq(schema.cashboxPlantillasTurno.id, id)).get();
+    return row ? toTemplate(row) : null;
+  }
+
+  async updateTemplate(id: string, patch: Partial<TemplateRow>): Promise<ShiftTemplate> {
+    await this.db.update(schema.cashboxPlantillasTurno).set(patch).where(eq(schema.cashboxPlantillasTurno.id, id));
+    const updated = await this.getTemplate(id);
+    if (!updated) throw new Error(`Plantilla ${id} no encontrada tras actualizar.`);
+    return updated;
+  }
+
+  async deleteTemplate(id: string): Promise<void> {
+    const referenced = await this.db.select().from(schema.cashboxTurnos).where(eq(schema.cashboxTurnos.plantillaId, id)).limit(1).get();
+    if (referenced) {
+      await this.db.update(schema.cashboxPlantillasTurno).set({ activa: false }).where(eq(schema.cashboxPlantillasTurno.id, id));
+    } else {
+      await this.db.delete(schema.cashboxPlantillasTurno).where(eq(schema.cashboxPlantillasTurno.id, id));
+    }
+  }
+
   async listTemplates(): Promise<ShiftTemplate[]> {
-    const rows = await this.db.select().from(schema.cashboxPlantillasTurno).where(eq(schema.cashboxPlantillasTurno.activa, true)).all();
+    const rows = await this.db
+      .select()
+      .from(schema.cashboxPlantillasTurno)
+      .where(eq(schema.cashboxPlantillasTurno.activa, true))
+      .orderBy(asc(schema.cashboxPlantillasTurno.orden), asc(schema.cashboxPlantillasTurno.horaInicio))
+      .all();
     return rows.map(toTemplate);
   }
 
@@ -145,6 +171,11 @@ export class CashboxRepo {
   async listArqueos(turnoId: string): Promise<Arqueo[]> {
     const rows = await this.db.select().from(schema.cashboxArqueos).where(eq(schema.cashboxArqueos.turnoId, turnoId)).all();
     return rows.map(toArqueo).sort((a, b) => (a.creadoEn < b.creadoEn ? 1 : -1));
+  }
+
+  async getArqueo(id: string): Promise<Arqueo | null> {
+    const row = await this.db.select().from(schema.cashboxArqueos).where(eq(schema.cashboxArqueos.id, id)).get();
+    return row ? toArqueo(row) : null;
   }
 
   async listMovementsForSale(ventaId: string): Promise<CashMovement[]> {

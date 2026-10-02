@@ -44,9 +44,9 @@ export function kioskReceptionRoutes(services: Services) {
       }
     });
 
-    app.post<{ Body: { motivo?: string } }>("/api/reception/kiosk/cancel", auth, async (request, reply) => {
+    app.post<{ Body?: { motivo?: string } }>("/api/reception/kiosk/cancel", auth, async (request, reply) => {
       try {
-        await services.kiosk.reset(request.body.motivo ?? "Cancelado por recepción");
+        await services.kiosk.reset(request.body?.motivo ?? "Cancelado por recepción");
         return { ok: true };
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });

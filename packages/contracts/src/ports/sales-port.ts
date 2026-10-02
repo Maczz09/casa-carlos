@@ -45,6 +45,8 @@ export interface SalesPort {
 
   getSale(id: string): Promise<SaleWithLines>;
   getSaleForStay(stayId: string): Promise<SaleWithLines | null>;
+  syncOverstayCharge(stayId: string, atTime?: Date): Promise<SaleWithLines | null>;
+  syncAllActiveOverstays(atTime?: Date): Promise<void>;
   listOpenSales(): Promise<Sale[]>;
   /** Ventas del rango de días (YYYY-MM-DD, inclusive), más nueva primero — historial de caja. */
   listSalesByRange(desde: string, hasta: string): Promise<Sale[]>;

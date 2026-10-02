@@ -61,7 +61,14 @@ export async function seedIfEmpty(
     await rooms.createRoom({ ...room, incluye: "Toallas, jabón, papel higiénico, control remoto de TV y ventilador (si aplica)." });
   }
 
-  const modalidadHoras = await pricing.createModality({ codigo: "HORAS_3", nombre: "Por horas", duracionHoras: 3, toleranciaMin: 15 });
+  const modalidadHoras = await pricing.createModality({
+    codigo: "HORAS_3",
+    nombre: "Por horas",
+    duracionHoras: 3,
+    toleranciaMin: 15,
+    precioAdicionalCentimos: 1000,
+    tiempoAdicionalMinutos: 60,
+  });
   const modalidadNocheA = await pricing.createModality({
     codigo: "NOCHE_A",
     nombre: "Día — check-in 14:00",
@@ -69,6 +76,8 @@ export async function seedIfEmpty(
     checkinFijo: "14:00",
     checkoutFijo: "10:00",
     toleranciaMin: 15,
+    precioAdicionalCentimos: 1000,
+    tiempoAdicionalMinutos: 60,
   });
   const modalidadNocheB = await pricing.createModality({
     codigo: "NOCHE_B",
@@ -77,6 +86,8 @@ export async function seedIfEmpty(
     checkinFijo: "20:00",
     checkoutFijo: "08:00",
     toleranciaMin: 15,
+    precioAdicionalCentimos: 1000,
+    tiempoAdicionalMinutos: 60,
   });
 
   const temporada = await pricing.createSeason({ nombre: "Temporada general", desde: "2020-01-01", hasta: "2099-12-31", prioridad: 0 });

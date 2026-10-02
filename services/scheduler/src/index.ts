@@ -1,4 +1,4 @@
-import type { RoomsPort, StaysPort } from "@casacarlos/contracts";
+import type { RoomsPort, SalesPort, StaysPort } from "@casacarlos/contracts";
 
 const TICK_MS = 15_000;
 
@@ -13,12 +13,13 @@ export interface SchedulerHandle {
  * "what's overdue right now" against those columns, so a power cut never
  * loses a pending cleaning release or an overstay alert.
  */
-export function startScheduler(rooms: RoomsPort, stays: StaysPort): SchedulerHandle {
+export function startScheduler(rooms: RoomsPort, stays: StaysPort, sales?: SalesPort): SchedulerHandle {
   const tick = async () => {
     const now = new Date();
     try {
       await rooms.runTimers(now);
       await stays.runTimers(now);
+      await sales?.syncAllActiveOverstays(now);
     } catch (err) {
       console.error("[scheduler] tick failed:", err);
     }

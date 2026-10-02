@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 import type { Arqueo, CancelledSale, CashMovementType, CashSummary, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
 import { formatDateTime12h, formatTime12h, formatTimeOnly12h } from "@casacarlos/contracts";
 import { cents, format, soles, splitIncludedIgv } from "@casacarlos/money";
-import { IconAlertTriangle, IconCash, IconCheck, IconFileX, IconPrinter, IconReceipt, IconTrash } from "@casacarlos/ui";
+import { IconAlertTriangle, IconCash, IconCheck, IconFileX, IconPrinter, IconReceipt, IconSliders, IconTrash } from "@casacarlos/ui";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip as ChartTooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { api, ApiError, type CashMovementView } from "../api.js";
+import { api, ApiError, type CashMovementView, type ArqueoView } from "../api.js";
 import { DenominationCounter, sumDenominaciones } from "../components/DenominationCounter.js";
-import { printReceiptForSale, printShiftClosureReceipt } from "../components/receipt.js";
+import { printArqueoReceipt, printReceiptForSale, printShiftClosureReceipt } from "../components/receipt.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, StatCard, Tabs, Textarea, cx } from "../components/ui.js";
+import { ShiftTemplatesManager } from "./ShiftTemplatesManager.js";
 
 export const METHOD_LABEL: Record<string, string> = {
   EFECTIVO: "Efectivo",
@@ -28,7 +29,7 @@ const daysAgoIso = (days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-type Tab = "turno" | "movimientos" | "ventas" | "anulaciones" | "historial";
+type Tab = "turno" | "turnos" | "movimientos" | "ventas" | "anulaciones" | "historial";
 
 const MOVEMENT_LABEL: Record<CashMovementType, string> = {
   APERTURA: "Apertura de caja",
@@ -107,7 +108,7 @@ export function CashboxModule() {
 
   const [arqueando, setArqueando] = useState(false);
   const [denominacionesArqueo, setDenominacionesArqueo] = useState<Record<string, number>>({});
-  const [arqueos, setArqueos] = useState<Arqueo[]>([]);
+  const [arqueos, setArqueos] = useState<ArqueoView[]>([]);
 
   const [desde, setDesde] = useState(daysAgoIso(7));
   const [hasta, setHasta] = useState(todayIso());
@@ -237,7 +238,7 @@ export function CashboxModule() {
     setPrintingId(sale.id);
     setError(null);
     try {
-      await printReceiptForSale(sale.id, sale.cuartoId);
+      await printReceiptForSale(sale.id, sale.cuartoNumero);
     } catch {
       setError("No se pudo preparar la impresión de esa venta.");
     } finally {
@@ -303,10 +304,18 @@ export function CashboxModule() {
     setBusy(true);
     setError(null);
     try {
-      await api.registrarArqueo(shift.id, denominacionesArqueo);
+      const arqueo = await api.registrarArqueo(shift.id, denominacionesArqueo);
       setDenominacionesArqueo({});
       setArqueando(false);
-      setArqueos(await api.arqueos(shift.id));
+      const list = await api.arqueos(shift.id);
+      setArqueos(list);
+      if (arqueo?.id) {
+        try {
+          await printArqueoReceipt(arqueo.id);
+        } catch (printErr) {
+          console.error("Error al imprimir ticket de arqueo:", printErr);
+        }
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo registrar el arqueo.");
     } finally {
@@ -349,6 +358,7 @@ export function CashboxModule() {
           <Tabs<Tab>
             tabs={[
               { id: "turno", label: "Mi turno" },
+              { id: "turnos", label: "Turnos y Horarios" },
               { id: "movimientos", label: "Movimientos" },
               { id: "ventas", label: "Ventas" },
               { id: "anulaciones", label: "Anulaciones" },
@@ -362,7 +372,7 @@ export function CashboxModule() {
 
       {cancelSuccess && (
         <div className="mb-4">
-          <Notice tone="ok">{cancelSuccess}</Notice>
+          <Notice kind="ok">{cancelSuccess}</Notice>
         </div>
       )}
 
@@ -385,8 +395,19 @@ export function CashboxModule() {
                 hint="Abrí el turno con el monto de apertura para empezar a registrar movimientos."
               />
               <div className="flex flex-col gap-3">
-                {templates.length > 0 && (
-                  <Field label="Plantilla de turno">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted">Plantilla de turno</span>
+                    <button
+                      type="button"
+                      onClick={() => setTab("turnos")}
+                      className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
+                    >
+                      <IconSliders className="h-3 w-3" />
+                      Modificar / crear turnos
+                    </button>
+                  </div>
+                  {templates.length > 0 ? (
                     <select
                       value={plantillaId}
                       onChange={(e) => setPlantillaId(e.target.value)}
@@ -399,8 +420,19 @@ export function CashboxModule() {
                         </option>
                       ))}
                     </select>
-                  </Field>
-                )}
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-line bg-inset/50 p-3 text-center space-y-1.5">
+                      <p className="text-xs text-muted">No hay turnos registrados en el sistema.</p>
+                      <button
+                        type="button"
+                        onClick={() => setTab("turnos")}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
+                      >
+                        ⚡ Configurar 3 turnos de atención (9am, 5pm, 1am)
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <Field label="Monto de apertura (S/)">
                   <Input type="number" placeholder="0.00" value={apertura} onChange={(e) => setApertura(e.target.value)} />
                 </Field>
@@ -422,7 +454,14 @@ export function CashboxModule() {
 
               <div className="grid gap-5 xl:grid-cols-[1.55fr_0.8fr]">
                 <div className="flex flex-col gap-5">
-                  <Section title="Resumen del turno" subtitle={`Abierto ${formatDateTime12h(shift.abiertoEn)}`}>
+                  <Section
+                    title="Resumen del turno"
+                    subtitle={`Abierto ${formatDateTime12h(shift.abiertoEn)}${
+                      templates.find((t) => t.id === shift.plantillaId)
+                        ? ` · ${templates.find((t) => t.id === shift.plantillaId)!.nombre} (${formatTime12h(templates.find((t) => t.id === shift.plantillaId)!.horaInicio)} – ${formatTime12h(templates.find((t) => t.id === shift.plantillaId)!.horaFin)})`
+                        : ""
+                    }`}
+                  >
                     <Row label="Fondo de apertura" value={format(cents(summary.aperturaCentimos))} />
                     <Row label="Ingresos manuales" value={format(cents(summary.ingresosManualesCentimos))} tone="text-ok" />
                     <Row label="Egresos manuales" value={`−${format(cents(summary.egresosManualesCentimos))}`} tone="text-danger" />
@@ -500,7 +539,7 @@ export function CashboxModule() {
                             Cancelar
                           </Button>
                           <Button block variant="primary" onClick={registrarArqueo} disabled={busy}>
-                            Registrar arqueo
+                            Registrar e imprimir arqueo (80 mm)
                           </Button>
                         </div>
                       </div>
@@ -525,14 +564,30 @@ export function CashboxModule() {
 
                 {arqueos.length > 0 && (
                   <Section title="Arqueos de este turno" delay={180}>
-                    {arqueos.map((a) => (
-                      <Row
-                        key={a.id}
-                        label={formatTimeOnly12h(a.creadoEn)}
-                        value={format(cents(a.diferenciaCentimos))}
-                        tone={a.diferenciaCentimos === 0 ? "text-ok" : "text-warn"}
-                      />
-                    ))}
+                    <div className="flex flex-col gap-2">
+                      {arqueos.map((a) => (
+                        <div key={a.id} className="flex items-center justify-between rounded-xl border border-line-soft bg-surface p-2.5 shadow-xs">
+                          <div className="flex flex-col min-w-0 pr-2">
+                            <span className="text-xs font-semibold text-ink">{formatTimeOnly12h(a.creadoEn)}</span>
+                            <span className="truncate text-[11px] text-muted">{a.usuarioNombre || "Recepcionista"} • Contado: {format(cents(a.totalCentimos))}</span>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className={cx("text-xs font-bold", a.diferenciaCentimos === 0 ? "text-ok" : "text-warn")}>
+                              {a.diferenciaCentimos === 0 ? "Cuadrado" : format(cents(a.diferenciaCentimos))}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => void printArqueoReceipt(a.id)}
+                              title="Imprimir ticket de arqueo (80 mm)"
+                              icon={<IconPrinter className="h-3.5 w-3.5" />}
+                            >
+                              Ticket
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </Section>
                 )}
                 </div>
@@ -918,6 +973,11 @@ export function CashboxModule() {
             </div>
           </Card>
         </>
+      )}
+
+      {/* ---------------- Turnos y Horarios ---------------- */}
+      {tab === "turnos" && (
+        <ShiftTemplatesManager onTemplatesChange={(newTemplates) => setTemplates(newTemplates)} />
       )}
 
       {/* ---------------- Modal para anular venta ---------------- */}

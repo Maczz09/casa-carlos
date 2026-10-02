@@ -36,6 +36,14 @@ export class SalesService implements SalesPort {
     private readonly inventory: InventoryPort,
   ) {
     this.repo = new SalesRepo(db);
+
+    this.bus.subscribe("stay.overstayed", async ({ stayId }) => {
+      try {
+        await this.syncOverstayCharge(stayId);
+      } catch (err) {
+        console.error(`[sales] Error al sincronizar recargo por exceso para estadía ${stayId}:`, err);
+      }
+    });
   }
 
   async openSaleForStay(input: OpenSaleForStayInput): Promise<Sale> {
@@ -182,13 +190,137 @@ export class SalesService implements SalesPort {
 
   async getSale(id: string): Promise<SaleWithLines> {
     const sale = await this.mustGet(id);
-    return { ...sale, lineas: await this.repo.listLines(id) };
+    let cuartoNumero: string | null = null;
+    if (sale.cuartoId) {
+      try {
+        const room = await this.rooms.getRoom(sale.cuartoId);
+        cuartoNumero = room?.numero ?? null;
+      } catch {
+        // ignore
+      }
+    }
+    return { ...sale, cuartoNumero, lineas: await this.repo.listLines(id) };
   }
 
   async getSaleForStay(stayId: string): Promise<SaleWithLines | null> {
+    try {
+      await this.syncOverstayCharge(stayId);
+    } catch {
+      // non-fatal
+    }
     const sale = await this.repo.getSaleByStay(stayId);
     if (!sale) return null;
-    return { ...sale, lineas: await this.repo.listLines(sale.id) };
+    let cuartoNumero: string | null = null;
+    if (sale.cuartoId) {
+      try {
+        const room = await this.rooms.getRoom(sale.cuartoId);
+        cuartoNumero = room?.numero ?? null;
+      } catch {
+        // ignore
+      }
+    }
+    return { ...sale, cuartoNumero, lineas: await this.repo.listLines(sale.id) };
+  }
+
+  async syncOverstayCharge(stayId: string, atTime?: Date): Promise<SaleWithLines | null> {
+    const stay = await this.stays.getStay(stayId).catch(() => null);
+    if (!stay) return null;
+    const sale = await this.repo.getSaleByStay(stayId);
+    if (!sale || sale.estado === "ANULADA") return null;
+
+    const modality = await this.pricing.getModality(stay.modalidadId).catch(() => null);
+    if (!modality) return null;
+
+    const precioAdicional = modality.precioAdicionalCentimos ?? 0;
+    const tiempoMin = modality.tiempoAdicionalMinutos && modality.tiempoAdicionalMinutos > 0 ? modality.tiempoAdicionalMinutos : 60;
+    const intervalMs = tiempoMin * 60_000;
+
+    const checkoutPrevistoDate = new Date(stay.checkoutPrevisto);
+    const deadline = new Date(checkoutPrevistoDate.getTime() + (stay.toleranciaMin || 0) * 60_000);
+    const refTime = stay.checkoutReal ? new Date(stay.checkoutReal) : (atTime ?? new Date());
+
+    const lines = await this.repo.listLines(sale.id);
+    const existingOverstayLine = lines.find((l) => l.tipo === "CARGO_EXTRA" && l.referenciaId === "EXCESO_TIEMPO");
+
+    if (refTime <= deadline) {
+      if (existingOverstayLine && !existingOverstayLine.anulada) {
+        await this.repo.updateLine(existingOverstayLine.id, {
+          anulada: true,
+          motivoAnulacion: "Check-out dentro de tolerancia",
+        });
+        await this.recalcularTotales(sale.id);
+      }
+      return this.getSale(sale.id);
+    }
+
+    if (precioAdicional <= 0) {
+      return this.getSale(sale.id);
+    }
+
+    const diffMs = refTime.getTime() - deadline.getTime();
+    const blocks = Math.max(1, Math.ceil(diffMs / intervalMs));
+
+    const allLines = await this.db.select().from(schema.salesLineas).where(eq(schema.salesLineas.ventaId, sale.id)).all();
+    const wasCancelledByStaff = allLines.some(
+      (l) => l.tipo === "CARGO_EXTRA" && l.referenciaId === "EXCESO_TIEMPO" && l.anulada && l.motivoAnulacion !== "Check-out dentro de tolerancia",
+    );
+    if (wasCancelledByStaff && !existingOverstayLine) {
+      return this.getSale(sale.id);
+    }
+
+    const subtotal = blocks * precioAdicional;
+    const intervaloTexto = tiempoMin === 30 ? "30 min" : tiempoMin === 15 ? "15 min" : tiempoMin === 45 ? "45 min" : tiempoMin % 60 === 0 ? `${tiempoMin / 60}h` : `${tiempoMin} min`;
+    const descripcion = `Exceso de estadía (${blocks} × ${intervaloTexto})`;
+
+    if (existingOverstayLine) {
+      if (
+        existingOverstayLine.cantidad !== blocks ||
+        existingOverstayLine.precioUnitarioCentimos !== precioAdicional ||
+        existingOverstayLine.subtotalCentimos !== subtotal ||
+        existingOverstayLine.descripcion !== descripcion
+      ) {
+        await this.repo.updateLine(existingOverstayLine.id, {
+          cantidad: blocks,
+          precioUnitarioCentimos: precioAdicional,
+          subtotalCentimos: subtotal,
+          descripcion,
+        });
+        await this.recalcularTotales(sale.id);
+      }
+    } else {
+      const lineId = newId();
+      await this.repo.insertLine({
+        id: lineId,
+        ventaId: sale.id,
+        tipo: "CARGO_EXTRA",
+        referenciaId: "EXCESO_TIEMPO",
+        descripcion,
+        cantidad: blocks,
+        precioUnitarioCentimos: precioAdicional,
+        subtotalCentimos: subtotal,
+        fase: "POST_PAGO",
+        anulada: false,
+        motivoAnulacion: null,
+        usuarioId: stay.usuarioId,
+        creadoEn: new Date().toISOString(),
+      });
+      await this.recalcularTotales(sale.id);
+      await this.bus.publish("sale.line_added", { saleId: sale.id, lineId, phase: "POST_PAGO" });
+    }
+
+    return this.getSale(sale.id);
+  }
+
+  async syncAllActiveOverstays(atTime?: Date): Promise<void> {
+    try {
+      const activeStays = await this.stays.listActiveStays();
+      const exceeded = activeStays.filter((s) => s.estado === "EXCEDIDA");
+      for (const stay of exceeded) {
+        await this.syncOverstayCharge(stay.id, atTime);
+      }
+    } catch (err) {
+      console.error("[sales] Error syncing active overstays:", err);
+    }
   }
 
   async listOpenSales(): Promise<Sale[]> {

@@ -169,7 +169,7 @@ async function main() {
 
   await seedIfEmpty(rooms, pricing, identity, payments, inventory, cashbox);
 
-  const scheduler = startScheduler(rooms, stays);
+  const scheduler = startScheduler(rooms, stays, sales);
   const backupJob = startBackupJob(sqlite, dataDir);
 
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });

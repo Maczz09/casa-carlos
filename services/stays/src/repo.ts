@@ -111,6 +111,11 @@ export class StaysRepo {
     return rows.map(toStay);
   }
 
+  async listExcedidas(): Promise<Stay[]> {
+    const rows = await this.db.select().from(schema.staysEstadias).where(eq(schema.staysEstadias.estado, "EXCEDIDA")).all();
+    return rows.map(toStay);
+  }
+
   /** Usa la foto del cliente guardada en la propia estadía (columnas cliente_*), no un join en vivo a stays_clientes — ver el comentario en el schema. */
   async withCustomer(stay: Stay): Promise<StayWithCustomer> {
     const row = await this.db.select().from(schema.staysEstadias).where(eq(schema.staysEstadias.id, stay.id)).get();

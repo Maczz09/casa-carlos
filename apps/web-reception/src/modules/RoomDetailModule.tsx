@@ -73,6 +73,33 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
   const [notaMotivoCodigo, setNotaMotivoCodigo] = useState("");
   const [notaMontoSoles, setNotaMontoSoles] = useState("");
 
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [checkoutMode, setCheckoutMode] = useState<"ahora" | "15min" | "30min" | "45min" | "60min" | "manual">("ahora");
+  const [checkoutCustomTime, setCheckoutCustomTime] = useState<string>("");
+
+  const calculateHoraSalida = (): string | null => {
+    if (checkoutMode === "ahora") return null;
+    const now = new Date();
+    if (checkoutMode === "15min") return new Date(now.getTime() - 15 * 60 * 1000).toISOString();
+    if (checkoutMode === "30min") return new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+    if (checkoutMode === "45min") return new Date(now.getTime() - 45 * 60 * 1000).toISOString();
+    if (checkoutMode === "60min") return new Date(now.getTime() - 60 * 60 * 1000).toISOString();
+    if (checkoutMode === "manual" && checkoutCustomTime) {
+      const parts = checkoutCustomTime.split(":");
+      const h = Number(parts[0]);
+      const m = Number(parts[1]);
+      if (!isNaN(h) && !isNaN(m)) {
+        const d = new Date();
+        d.setHours(h, m, 0, 0);
+        if (d.getTime() > now.getTime() + 5 * 60 * 1000) {
+          d.setDate(d.getDate() - 1);
+        }
+        return d.toISOString();
+      }
+    }
+    return null;
+  };
+
   const remaining = useCountdown(entry?.desocupaEn ?? null);
 
   const reload = async () => {
@@ -633,13 +660,85 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                         Cobrar saldo pendiente
                       </Button>
                     )}
-                    <Button
-                      block
-                      disabled={busy || (sale ? sale.saldoCentimos > 0 : false)}
-                      onClick={() => run(() => api.checkOut(entry.stayId!), "No se pudo hacer el check-out.", onBack)}
-                    >
-                      Check-out
-                    </Button>
+                    {checkingOut ? (
+                      <div className="animate-fade flex flex-col gap-2.5 rounded-xl border border-line-soft bg-inset p-3.5">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-ink">Horario de salida (Check-out)</p>
+                          <span className="text-[11px] font-medium text-brand">Hab. {entry.room.numero}</span>
+                        </div>
+                        <p className="text-[11px] text-muted">
+                          ¿El huésped se retira en este momento o salió antes?
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { id: "ahora", label: "Ahora (Normal)" },
+                            { id: "15min", label: "Hace 15 min" },
+                            { id: "30min", label: "Hace 30 min" },
+                            { id: "45min", label: "Hace 45 min" },
+                            { id: "60min", label: "Hace 1 hora" },
+                            { id: "manual", label: "Hora exacta…" },
+                          ].map((pill) => (
+                            <button
+                              key={pill.id}
+                              type="button"
+                              onClick={() => {
+                                setCheckoutMode(pill.id as any);
+                                if (pill.id === "manual" && !checkoutCustomTime) {
+                                  const d = new Date();
+                                  setCheckoutCustomTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+                                }
+                              }}
+                              className={cx(
+                                "rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors border",
+                                checkoutMode === pill.id
+                                  ? "border-brand bg-brand-soft text-brand shadow-xs"
+                                  : "border-line bg-surface text-ink hover:bg-inset",
+                              )}
+                            >
+                              {pill.label}
+                            </button>
+                          ))}
+                        </div>
+
+                        {checkoutMode === "manual" && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <span className="text-xs font-medium text-muted">Hora de salida:</span>
+                            <input
+                              type="time"
+                              value={checkoutCustomTime}
+                              onChange={(e) => setCheckoutCustomTime(e.target.value)}
+                              className="rounded-lg border border-line bg-surface px-3 py-1 text-xs font-semibold text-ink focus:border-brand focus:outline-none"
+                            />
+                          </div>
+                        )}
+
+                        <div className="flex gap-2 pt-1">
+                          <Button block size="sm" onClick={() => setCheckingOut(false)}>
+                            Cancelar
+                          </Button>
+                          <Button
+                            block
+                            size="sm"
+                            variant="primary"
+                            disabled={busy}
+                            onClick={() => {
+                              const horaSalida = calculateHoraSalida();
+                              run(() => api.checkOut(entry.stayId!, horaSalida), "No se pudo hacer el check-out.", onBack);
+                            }}
+                          >
+                            Confirmar check-out
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <Button
+                        block
+                        disabled={busy || (sale ? sale.saldoCentimos > 0 : false)}
+                        onClick={() => setCheckingOut(true)}
+                      >
+                        Check-out
+                      </Button>
+                    )}
                   </>
                 )}
 

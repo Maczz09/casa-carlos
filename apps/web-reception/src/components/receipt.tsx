@@ -1,7 +1,9 @@
 import type { ComprobantePago, SaleWithLines, SunatEmisor } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
-import { api, getToken, type ShiftCuadreDto } from "../api.js";
+import { api, getToken, type ShiftCuadreDto, type ArqueoTicketDto } from "../api.js";
 import { getBrand } from "../hooks/useBrand.js";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Abre el PDF real que ya emitió SUNAT, en una pestaña nueva. */
 export async function openComprobantePdf(comprobanteId: string): Promise<void> {
@@ -70,6 +72,8 @@ const METHOD_LABEL: Record<string, string> = {
  */
 function buildDraftReceiptHtml(draft: DraftReceipt): string {
   const { sale, tipo, receptorRuc, receptorRazonSocial, fecha, cuarto, recepcionistaNombre, emisor } = draft;
+  const rawCuarto = cuarto ?? sale.cuartoNumero ?? null;
+  const displayCuarto = rawCuarto && !UUID_REGEX.test(rawCuarto) ? rawCuarto : (sale.cuartoNumero && !UUID_REGEX.test(sale.cuartoNumero) ? sale.cuartoNumero : null);
   const brand = getBrand();
   const razonSocial = emisor?.razonSocial || "HOSPEDAJE CARLOS";
   const nombreComercial = emisor?.nombreComercial || brand.nombre;
@@ -173,7 +177,7 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   </div>
   <div class="meta-info">
     <p>RECEPCIONISTA: ${recepcionista}</p>
-    ${cuarto ? `<p>CUARTO: ${escapeHtml(cuarto)}</p>` : ""}
+    ${displayCuarto ? `<p>CUARTO: ${escapeHtml(displayCuarto)}</p>` : ""}
     ${docLine}
     <hr class="divider">
     <p>${formatDateTime12h(fecha)}</p>
@@ -220,7 +224,7 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
  * con auditoría completa (quién abrió, quién cerró, personal interviniente, etc.)
  */
 export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorNombre: string): string {
-  const { shift, plantilla, summary, abiertoPor, cerradoPor, intervinientes, emisor } = cuadre;
+  const { shift, plantilla, summary, abiertoPor, cerradoPor, intervinientes, emisor, esCorteProvisional } = cuadre;
   const brand = getBrand();
   const logo = brand.logoUrl ? `<img class="logo" src="${escapeHtml(window.location.origin + brand.logoUrl)}" alt="">` : "";
 
@@ -229,9 +233,10 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   const direccion = emisor.direccion || "";
   const ruc = emisor.ruc || "20600000000";
 
+  const isProvisional = Boolean(esCorteProvisional || shift.estado === "ABIERTO");
   const turnoNombre = plantilla ? `${plantilla.nombre} (${plantilla.horaInicio} - ${plantilla.horaFin})` : "Turno General";
   const fechaTurno = shift.fecha;
-  const estadoTurno = shift.estado === "CERRADO" ? "CERRADO" : "ABIERTO";
+  const estadoTurno = isProvisional ? "TURNO EN CURSO (CORTE VIVO)" : "CERRADO";
 
   const aperturaMonto = (shift.aperturaCentimos / 100).toFixed(2);
   const ventasBrutas = (summary.ventasBrutasCentimos / 100).toFixed(2);
@@ -240,10 +245,12 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   const vueltos = (summary.vueltosCentimos / 100).toFixed(2);
 
   const esperado = (shift.efectivoEsperadoCentimos !== null ? shift.efectivoEsperadoCentimos / 100 : summary.efectivoEsperadoCentimos / 100).toFixed(2);
-  const declarado = shift.efectivoDeclaradoCentimos !== null ? (shift.efectivoDeclaradoCentimos / 100).toFixed(2) : "—";
+  const declarado = shift.efectivoDeclaradoCentimos !== null ? (shift.efectivoDeclaradoCentimos / 100).toFixed(2) : isProvisional ? "— (Sin arqueo)" : "—";
   const difCentimos = shift.diferenciaCentimos ?? 0;
   const difFormatted = (Math.abs(difCentimos) / 100).toFixed(2);
-  const estadoCuadre = difCentimos === 0 ? "CUADRADO (S/ 0.00)" : difCentimos < 0 ? `FALTANTE (-S/ ${difFormatted})` : `SOBRANTE (+S/ ${difFormatted})`;
+  const estadoCuadre = shift.efectivoDeclaradoCentimos === null && isProvisional
+    ? "EN CURSO (PENDIENTE DE ARQUEO)"
+    : difCentimos === 0 ? "CUADRADO (S/ 0.00)" : difCentimos < 0 ? `FALTANTE (-S/ ${difFormatted})` : `SOBRANTE (+S/ ${difFormatted})`;
 
   const intervinientesHtml =
     intervinientes.length > 0
@@ -340,7 +347,7 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   </div>
   <hr class="divider">
   <div class="title-block">
-    <div class="pre-cuenta">CUADRE DE CIERRE DE CAJA</div>
+    <div class="pre-cuenta">${isProvisional ? "CORTE PROVISIONAL DE CAJA (EN VIVO)" : "CUADRE DE CIERRE DE CAJA"}</div>
     <div class="no-fiscal">DOCUMENTO DE CONTROL INTERNO (NO FISCAL)</div>
   </div>
   <hr class="divider">
@@ -437,6 +444,179 @@ export async function printShiftClosureReceipt(shiftId: string, currentUser?: { 
 }
 
 /**
+ * Genera el HTML del ticket térmico de 80mm para el Arqueo Intermedio de Caja
+ * con auditoría completa de arqueo en vivo, corte de efectivo y desglose de denominaciones.
+ */
+export function buildArqueoReceiptHtml(data: ArqueoTicketDto, impresoPorNombre: string): string {
+  const { arqueo, shift, plantilla, summary, realizadoPor, abiertoPor, emisor } = data;
+  const brand = getBrand();
+  const logo = brand.logoUrl ? `<img class="logo" src="${escapeHtml(window.location.origin + brand.logoUrl)}" alt="">` : "";
+
+  const nombreComercial = emisor.nombreComercial || brand.nombre;
+  const razonSocial = emisor.razonSocial || "HOSPEDAJE CARLOS";
+  const direccion = emisor.direccion || "";
+  const ruc = emisor.ruc || "20600000000";
+
+  const turnoNombre = plantilla ? `${plantilla.nombre} (${plantilla.horaInicio} - ${plantilla.horaFin})` : "Turno General";
+  const fechaTurno = shift.fecha;
+
+  const esperado = (arqueo.efectivoEsperadoCentimos / 100).toFixed(2);
+  const contado = (arqueo.totalCentimos / 100).toFixed(2);
+  const difCentimos = arqueo.diferenciaCentimos;
+  const difFormatted = (Math.abs(difCentimos) / 100).toFixed(2);
+  const estadoArqueo = difCentimos === 0 ? "CUADRADO (S/ 0.00)" : difCentimos < 0 ? `FALTANTE (-S/ ${difFormatted})` : `SOBRANTE (+S/ ${difFormatted})`;
+
+  const orden = ["20000", "10000", "5000", "2000", "1000", "500", "200", "100", "50", "20", "10"];
+  const labels: Record<string, string> = {
+    "20000": "Billete S/ 200",
+    "10000": "Billete S/ 100",
+    "5000": "Billete S/ 50",
+    "2000": "Billete S/ 20",
+    "1000": "Billete S/ 10",
+    "500": "Moneda S/ 5",
+    "200": "Moneda S/ 2",
+    "100": "Moneda S/ 1",
+    "50": "Moneda S/ 0.50",
+    "20": "Moneda S/ 0.20",
+    "10": "Moneda S/ 0.10",
+  };
+  const denominaciones = (arqueo.denominaciones ?? {}) as Record<string, number>;
+  const rows = orden
+    .filter((k) => (denominaciones[k] ?? 0) > 0)
+    .map((k) => {
+      const cant = denominaciones[k]!;
+      const sub = ((Number(k) * cant) / 100).toFixed(2);
+      return `<div class="row"><span>${labels[k] || `S/ ${Number(k) / 100}`} x ${cant}</span><span>S/ ${sub}</span></div>`;
+    });
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Arqueo Intermedio - ${fechaTurno}</title>
+<style>
+  @page { size: 80mm auto; margin: 0; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    width: 72mm;
+    margin: 0 auto;
+    padding: 3mm 2mm 5mm 2mm;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.35;
+    font-weight: 700;
+    color: #000;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  * { box-sizing: border-box; font-weight: 700 !important; }
+  .logo-wrap { text-align: center; margin-bottom: 2mm; }
+  .logo { display: block; margin: 0 auto; max-width: 45mm; max-height: 20mm; object-fit: contain; }
+  .company-info { text-align: center; margin-bottom: 2mm; }
+  .company-title { font-size: 13px; font-weight: 900 !important; }
+  .company-sub { font-size: 10px; margin-top: 1px; }
+  .divider { border: none; border-top: 1px dashed #000; margin: 2mm 0; }
+  .title-block { text-align: center; margin: 2mm 0; }
+  .title-block .pre-cuenta { font-size: 13px; font-weight: 900 !important; }
+  .title-block .no-fiscal { font-size: 10px; }
+  .section-heading { font-size: 10.5px; font-weight: 900 !important; margin: 2mm 0 1mm 0; text-transform: uppercase; }
+  .row { display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 0.8mm; }
+  .row.highlight { font-size: 11.5px; font-weight: 900 !important; border-top: 1px dashed #000; padding-top: 1mm; margin-top: 1mm; }
+  .sub-text { font-size: 9.5px; margin: 0.8mm 0; }
+  .signatures { margin-top: 8mm; text-align: center; font-size: 9.5px; }
+  .sig-line { border-top: 1px solid #000; width: 85%; margin: 8mm auto 1mm auto; }
+  .footer-credit { text-align: center; margin-top: 4mm; padding-top: 2mm; border-top: 1px dashed #000; font-size: 9.5px; }
+</style>
+</head>
+<body>
+  ${logo ? `<div class="logo-wrap">${logo}</div>` : ""}
+  <div class="company-info">
+    <div class="company-title">${escapeHtml(nombreComercial.toUpperCase())}</div>
+    ${razonSocial && razonSocial !== nombreComercial ? `<div class="company-sub">${escapeHtml(razonSocial)}</div>` : ""}
+    ${direccion ? `<div class="company-sub">${escapeHtml(direccion)}</div>` : ""}
+    <div class="company-sub">RUC: ${escapeHtml(ruc)}</div>
+  </div>
+  <hr class="divider">
+  <div class="title-block">
+    <div class="pre-cuenta">ARQUEO INTERMEDIO DE CAJA</div>
+    <div class="no-fiscal">DOCUMENTO DE CONTROL INTERNO (NO FISCAL)</div>
+  </div>
+  <hr class="divider">
+  <div class="section-heading">DATOS DEL TURNO Y AUDITORIA:</div>
+  <div class="row"><span>Turno:</span><span>${escapeHtml(turnoNombre)}</span></div>
+  <div class="row"><span>Fecha:</span><span>${escapeHtml(fechaTurno)}</span></div>
+  <div class="sub-text"><b>Hora arqueo:</b> ${formatDateTime12h(arqueo.creadoEn)}</div>
+  <div class="sub-text"><b>Arqueo realizado por:</b> ${escapeHtml(realizadoPor.nombre)}</div>
+  <div class="sub-text"><b>Turno abierto por:</b> ${escapeHtml(abiertoPor.nombre)} (${formatDateTime12h(shift.abiertoEn)})</div>
+  <div class="sub-text"><b>Impreso por:</b> ${escapeHtml(impresoPorNombre)}</div>
+
+  <hr class="divider">
+  <div class="section-heading">RESUMEN VIVO AL MOMENTO:</div>
+  <div class="row"><span>Fondo de apertura:</span><span>S/ ${(shift.aperturaCentimos / 100).toFixed(2)}</span></div>
+  <div class="row"><span>Ventas brutas:</span><span>S/ ${(summary.ventasBrutasCentimos / 100).toFixed(2)}</span></div>
+  <div class="row"><span>Ingresos manuales:</span><span>+S/ ${(summary.ingresosManualesCentimos / 100).toFixed(2)}</span></div>
+  <div class="row"><span>Egresos manuales:</span><span>-S/ ${(summary.egresosManualesCentimos / 100).toFixed(2)}</span></div>
+
+  <hr class="divider">
+  <div class="section-heading">CONCILIACION DE EFECTIVO:</div>
+  <div class="row"><span>Efectivo esperado en sistema:</span><span>S/ ${esperado}</span></div>
+  <div class="row"><span>Efectivo contado físico:</span><span>S/ ${contado}</span></div>
+  <div class="row highlight">
+    <span>Resultado arqueo:</span>
+    <span>${estadoArqueo}</span>
+  </div>
+
+  ${
+    rows.length > 0
+      ? `
+  <hr class="divider">
+  <div class="section-heading">DESGLOSE DE ARQUEO EN CAJA:</div>
+  ${rows.join("")}
+  `
+      : ""
+  }
+
+  <div class="signatures">
+    <div class="sig-line"></div>
+    <div>ENTREGUÉ CONFORME</div>
+    <div>(Recepcionista en Turno)</div>
+
+    <div class="sig-line" style="margin-top: 8mm;"></div>
+    <div>RECIBÍ / VERIFICÓ CONFORME</div>
+    <div>(Auditor / Administración)</div>
+  </div>
+
+  <div class="footer-credit">
+    Sistema base HotelFast
+  </div>
+  <script>window.onload = () => setTimeout(() => window.print(), 80);</script>
+</body>
+</html>`;
+}
+
+/**
+ * Imprime el ticket de arqueo intermedio en 80mm.
+ */
+export async function printArqueoReceipt(arqueoId: string, currentUser?: { nombres: string; apellidos: string } | null): Promise<void> {
+  const data = await api.arqueoTicketData(arqueoId);
+  let impresoPor = currentUser ? `${currentUser.nombres} ${currentUser.apellidos}`.trim() : "";
+  if (!impresoPor) {
+    try {
+      const u = await api.me();
+      impresoPor = `${u.nombres} ${u.apellidos}`.trim();
+    } catch {
+      impresoPor = "Recepción";
+    }
+  }
+
+  const win = window.open("", "_blank", "width=420,height=640");
+  if (!win) return;
+  win.document.write(buildArqueoReceiptHtml(data, impresoPor));
+  win.document.close();
+}
+
+/**
  * Imprime lo que corresponda para una venta: si ya tiene comprobante SUNAT
  * aceptado abre su PDF real; si solo hay comprobante de pago (o ninguno)
  * imprime el borrador de 80mm en su propia ventana.
@@ -449,6 +629,20 @@ export async function printReceiptForSale(ventaId: string, cuarto?: string | nul
   }
 
   const [sale, pago, emisor] = await Promise.all([api.getSale(ventaId), api.comprobantePagoForSale(ventaId), getEmisorData()]);
+
+  let resolvedCuarto: string | null = cuarto ?? null;
+  if (!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) {
+    resolvedCuarto = sale.cuartoNumero ?? null;
+  }
+  if ((!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) && sale.cuartoId) {
+    try {
+      const room = await api.getRoom(sale.cuartoId);
+      if (room?.numero) resolvedCuarto = room.numero;
+    } catch {}
+  }
+  if (resolvedCuarto && UUID_REGEX.test(resolvedCuarto)) {
+    resolvedCuarto = null;
+  }
 
   let recepcionistaNombre: string | null = null;
   try {
@@ -464,7 +658,7 @@ export async function printReceiptForSale(ventaId: string, cuarto?: string | nul
     receptorRuc: pago?.receptorRuc,
     receptorRazonSocial: pago?.receptorRazonSocial,
     fecha: pago?.creadoEn ?? sale.creadoEn,
-    cuarto,
+    cuarto: resolvedCuarto,
     recepcionistaNombre,
     emisor,
   });
@@ -477,6 +671,17 @@ export async function printComprobantePago(item: ComprobantePago): Promise<void>
     return;
   }
   const [sale, emisor] = await Promise.all([api.getSale(item.ventaId), getEmisorData()]);
+
+  let resolvedCuarto: string | null = sale.cuartoNumero ?? null;
+  if ((!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) && sale.cuartoId) {
+    try {
+      const room = await api.getRoom(sale.cuartoId);
+      if (room?.numero) resolvedCuarto = room.numero;
+    } catch {}
+  }
+  if (resolvedCuarto && UUID_REGEX.test(resolvedCuarto)) {
+    resolvedCuarto = null;
+  }
 
   let recepcionistaNombre: string | null = null;
   try {
@@ -492,6 +697,7 @@ export async function printComprobantePago(item: ComprobantePago): Promise<void>
     receptorRuc: item.receptorRuc,
     receptorRazonSocial: item.receptorRazonSocial,
     fecha: item.creadoEn,
+    cuarto: resolvedCuarto,
     recepcionistaNombre,
     emisor,
   });

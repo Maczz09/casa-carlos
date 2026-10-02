@@ -136,15 +136,15 @@ export class StaysService implements StaysPort {
     return updated;
   }
 
-  async checkOut(stayId: string, usuarioId: string): Promise<Stay> {
+  async checkOut(stayId: string, usuarioId: string, horaSalida?: string | null): Promise<Stay> {
     const stay = await this.mustGet(stayId);
     if (!["EN_CURSO", "EN_TOLERANCIA", "EXCEDIDA"].includes(stay.estado)) {
       throw new Error(`La estadía ${stayId} no puede hacer check-out desde el estado ${stay.estado}.`);
     }
-    const now = new Date().toISOString();
-    const updated = await this.repo.updateStay(stayId, { estado: "FINALIZADA", checkoutReal: now });
+    const exitTime = horaSalida ? new Date(horaSalida).toISOString() : new Date().toISOString();
+    const updated = await this.repo.updateStay(stayId, { estado: "FINALIZADA", checkoutReal: exitTime });
     await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "CHECK_OUT", usuarioId, antes: stay, despues: updated });
-    await this.bus.publish("stay.checked_out", { stayId, roomId: updated.cuartoId, at: now });
+    await this.bus.publish("stay.checked_out", { stayId, roomId: updated.cuartoId, at: exitTime });
     return updated;
   }
 

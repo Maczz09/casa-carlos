@@ -74,6 +74,8 @@ class ApiError extends Error {}
 
 export type CashMovementView = CashMovement & { usuarioNombre: string };
 
+export type ArqueoView = Arqueo & { usuarioNombre: string };
+
 export interface ShiftCuadreDto {
   shift: Shift;
   plantilla: ShiftTemplate | null;
@@ -81,6 +83,18 @@ export interface ShiftCuadreDto {
   abiertoPor: { id: string; nombre: string };
   cerradoPor: { id: string; nombre: string } | null;
   intervinientes: Array<{ id: string; nombre: string; operaciones: number; montoTotalCentimos: number }>;
+  emisor: SunatEmisor;
+  esCorteProvisional?: boolean;
+  ultimoArqueo?: Arqueo | null;
+}
+
+export interface ArqueoTicketDto {
+  arqueo: Arqueo;
+  shift: Shift;
+  plantilla: ShiftTemplate | null;
+  summary: CashSummary;
+  realizadoPor: { id: string; nombre: string };
+  abiertoPor: { id: string; nombre: string };
   emisor: SunatEmisor;
 }
 
@@ -119,6 +133,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 const get = <T>(path: string) => request<T>(path);
 const post = <T>(path: string, body?: unknown) => request<T>(path, { method: "POST", body: body !== undefined ? JSON.stringify(body) : undefined });
+const put = <T>(path: string, body?: unknown) => request<T>(path, { method: "PUT", body: body !== undefined ? JSON.stringify(body) : undefined });
 const patch = <T>(path: string, body?: unknown) => request<T>(path, { method: "PATCH", body: body !== undefined ? JSON.stringify(body) : undefined });
 const del = <T>(path: string) => request<T>(path, { method: "DELETE" });
 
@@ -161,6 +176,7 @@ export const api = {
 
   rooms: () => get<Room[]>("/api/rooms"),
   allRooms: () => get<Room[]>("/api/rooms/all"),
+  getRoom: (id: string) => get<Room>(`/api/rooms/${encodeURIComponent(id)}`),
   createRoom: (input: { numero: string; pisoId: string; categoriaId: string; descripcion?: string | null; incluye?: string | null }) =>
     post<Room>("/api/rooms", input),
   updateRoom: (id: string, patchBody: { numero?: string; pisoId?: string; categoriaId?: string; descripcion?: string | null; incluye?: string | null; activo?: boolean }) =>
@@ -176,6 +192,9 @@ export const api = {
       checkoutFijo?: string | null;
       duracionHoras?: number;
       toleranciaMin?: number;
+      precioAdicionalCentimos?: number;
+      tiempoAdicionalMinutos?: number;
+      tiempoAdicionalHoras?: number;
     },
   ) => patch<Modality>(`/api/pricing/modalities/${id}`, patchBody),
   resolveRate: (categoriaId: string, modalidadId: string) =>
@@ -185,7 +204,8 @@ export const api = {
   setCategoryRates: (categoriaId: string, rates: { precioHorasCentimos: number; precioNocheCentimos: number; precioNocheBCentimos?: number }) =>
     post<{ ok: true }>(`/api/pricing/categories/${encodeURIComponent(categoriaId)}/rates`, rates),
 
-  checkOut: (stayId: string) => post<Stay>(`/api/reception/check-out/${stayId}`),
+  checkOut: (stayId: string, horaSalida?: string | null) =>
+    post<Stay>(`/api/reception/check-out/${stayId}`, { horaSalida }),
 
   startKiosk: (modalidadId: string, bloques: number, noches: number, horaEntrada?: string | null) =>
     post<KioskSession>("/api/reception/kiosk/start", { modalidadId, bloques, noches, horaEntrada }),
@@ -339,7 +359,11 @@ export const api = {
 
   // ---- cashbox ----
   shiftTemplates: () => get<ShiftTemplate[]>("/api/cashbox/templates"),
-  createShiftTemplate: (input: { nombre: string; horaInicio: string; horaFin: string }) => post<ShiftTemplate>("/api/cashbox/templates", input),
+  createShiftTemplate: (input: { nombre: string; horaInicio: string; horaFin: string; orden?: number }) =>
+    post<ShiftTemplate>("/api/cashbox/templates", input),
+  updateShiftTemplate: (id: string, input: { nombre?: string; horaInicio?: string; horaFin?: string; orden?: number; activa?: boolean }) =>
+    put<ShiftTemplate>(`/api/cashbox/templates/${id}`, input),
+  deleteShiftTemplate: (id: string) => del<void>(`/api/cashbox/templates/${id}`),
   myShift: () => get<Shift | null>("/api/cashbox/shifts/mine"),
   shifts: (range?: { desde: string; hasta: string }) =>
     get<Shift[]>(`/api/cashbox/shifts${range ? `?desde=${range.desde}&hasta=${range.hasta}` : ""}`),
@@ -361,7 +385,8 @@ export const api = {
   shiftCuadre: (id: string) => get<ShiftCuadreDto>(`/api/cashbox/shifts/${id}/cuadre`),
   rangeSummary: (range: { desde: string; hasta: string }) => get<CashSummary>(`/api/cashbox/summary?desde=${range.desde}&hasta=${range.hasta}`).then(normalizeCashSummary),
   registrarArqueo: (id: string, denominaciones: Denominaciones) => post<Arqueo>(`/api/cashbox/shifts/${id}/arqueo`, { denominaciones }),
-  arqueos: (id: string) => get<Arqueo[]>(`/api/cashbox/shifts/${id}/arqueos`),
+  arqueos: (id: string) => get<ArqueoView[]>(`/api/cashbox/shifts/${id}/arqueos`),
+  arqueoTicketData: (id: string) => get<ArqueoTicketDto>(`/api/cashbox/arqueos/${id}/ticket-data`),
 
   // ---- reporting ----
   dashboard: (range: DateRange) => get<DashboardReport>(`/api/reporting/dashboard?desde=${range.desde}&hasta=${range.hasta}`).then(normalizeDashboard),

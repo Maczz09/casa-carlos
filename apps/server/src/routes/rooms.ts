@@ -77,6 +77,14 @@ export function roomsRoutes(services: Services) {
       },
     );
 
+    app.get<{ Params: { id: string } }>("/api/rooms/:id", auth, async (request, reply) => {
+      try {
+        return await services.rooms.getRoom(request.params.id);
+      } catch (err) {
+        return reply.code(404).send({ error: (err as Error).message });
+      }
+    });
+
     app.patch<{
       Params: { id: string };
       Body: { numero?: string; pisoId?: string; categoriaId?: string; descripcion?: string | null; incluye?: string | null; activo?: boolean };

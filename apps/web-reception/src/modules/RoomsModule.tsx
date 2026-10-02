@@ -70,7 +70,16 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
 
   const handleSaveModality = async (
     id: string,
-    patch: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number }
+    patch: {
+      nombre?: string;
+      checkinFijo?: string | null;
+      checkoutFijo?: string | null;
+      duracionHoras?: number;
+      toleranciaMin?: number;
+      precioAdicionalCentimos?: number;
+      tiempoAdicionalMinutos?: number;
+      tiempoAdicionalHoras?: number;
+    }
   ) => {
     setError(null);
     setSuccess(null);
@@ -78,7 +87,7 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
       await api.updateModality(id, patch);
       await reload();
       onCatalogChanged();
-      setSuccess("Horarios del tipo de alquiler actualizados correctamente.");
+      setSuccess("Configuración del tipo de alquiler actualizada correctamente.");
       setTimeout(() => setSuccess(null), 4000);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo actualizar el tipo de alquiler.");
@@ -827,20 +836,32 @@ function TarifasTab({
   rates: Record<string, CategoryRatesDto>;
   modalities: Modality[] | null;
   onSaveRates: (catId: string, r: { precioHorasCentimos: number; precioNocheCentimos: number; precioNocheBCentimos?: number }) => Promise<void>;
-  onSaveModality: (id: string, patch: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number }) => Promise<void>;
+  onSaveModality: (
+    id: string,
+    patch: {
+      nombre?: string;
+      checkinFijo?: string | null;
+      checkoutFijo?: string | null;
+      duracionHoras?: number;
+      toleranciaMin?: number;
+      precioAdicionalCentimos?: number;
+      tiempoAdicionalMinutos?: number;
+      tiempoAdicionalHoras?: number;
+    }
+  ) => Promise<void>;
   onError: (msg: string | null) => void;
 }) {
   return (
     <div className="space-y-8">
-      {/* Sección 1: Horarios por tipo de alquiler (Por Día, Por Noche, Por Horas) */}
+      {/* Sección 1: Horarios y cobros por exceso por tipo de alquiler (Por Día, Por Noche, Por Horas) */}
       <Section
-        title="Horarios por Tipo de Alquiler (Por Día, Por Noche, Por Horas)"
-        subtitle="Modifica desde qué hora empieza (check-in) y a qué hora termina (check-out) cada modalidad. Los horarios se muestran en formato de 12 horas con AM/PM para mayor claridad."
+        title="Modalidades y Tipos de Alquiler (Horarios y Cobro por Exceso)"
+        subtitle="Modifica los horarios de inicio/término, duración, tolerancia y el monto adicional a cobrar por cada hora o bloque cuando un cuarto se excede de tiempo."
       >
         <div className="mb-4 rounded-xl bg-brand/5 p-3.5 border border-brand/20 text-xs text-brand leading-relaxed flex items-start gap-2">
           <span className="text-base select-none">🕒</span>
           <div>
-            <strong>Horarios de Check-in y Check-out:</strong> Define a qué hora empieza y a qué hora termina el alquiler por día o noche, y cuántas horas dura el alquiler por horas. Estos horarios rigen para las estadías en recepción y en el kiosco.
+            <strong>Horarios y Cobros por Exceso:</strong> Define los horarios de check-in y check-out, tiempo de tolerancia y el recargo adicional que se agregará automáticamente al saldo del cuarto si el huésped se pasa del tiempo acordado.
           </div>
         </div>
 
@@ -907,7 +928,7 @@ function parse24to12(time24?: string | null): { hour: number; minute: string; pe
     return { hour: 12, minute: "00", period: "PM" };
   }
   const parts = time24.split(":");
-  let h = parseInt(parts[0], 10);
+  let h = parseInt(parts[0] ?? "12", 10);
   const m = parts[1] ? parts[1].padStart(2, "0").slice(0, 2) : "00";
   if (isNaN(h)) h = 12;
   const period: "AM" | "PM" = h >= 12 ? "PM" : "AM";
@@ -1054,7 +1075,16 @@ function ModalityScheduleCard({
   onError,
 }: {
   modality: Modality;
-  onSave: (patch: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number }) => Promise<void>;
+  onSave: (patch: {
+    nombre?: string;
+    checkinFijo?: string | null;
+    checkoutFijo?: string | null;
+    duracionHoras?: number;
+    toleranciaMin?: number;
+    precioAdicionalCentimos?: number;
+    tiempoAdicionalMinutos?: number;
+    tiempoAdicionalHoras?: number;
+  }) => Promise<void>;
   onError: (msg: string | null) => void;
 }) {
   const [nombre, setNombre] = useState(modality.nombre);
@@ -1062,6 +1092,12 @@ function ModalityScheduleCard({
   const [checkoutFijo, setCheckoutFijo] = useState(modality.checkoutFijo ?? "");
   const [duracionHoras, setDuracionHoras] = useState(String(modality.duracionHoras));
   const [toleranciaMin, setToleranciaMin] = useState(String(modality.toleranciaMin));
+  const [precioAdicionalSoles, setPrecioAdicionalSoles] = useState(
+    modality.precioAdicionalCentimos !== undefined ? (modality.precioAdicionalCentimos / 100).toFixed(2) : "10.00"
+  );
+  const [tiempoAdicionalMinutos, setTiempoAdicionalMinutos] = useState(
+    String(modality.tiempoAdicionalMinutos || 60)
+  );
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -1071,6 +1107,10 @@ function ModalityScheduleCard({
     setCheckoutFijo(modality.checkoutFijo ?? "");
     setDuracionHoras(String(modality.duracionHoras));
     setToleranciaMin(String(modality.toleranciaMin));
+    setPrecioAdicionalSoles(
+      modality.precioAdicionalCentimos !== undefined ? (modality.precioAdicionalCentimos / 100).toFixed(2) : "10.00"
+    );
+    setTiempoAdicionalMinutos(String(modality.tiempoAdicionalMinutos || 60));
   }, [modality]);
 
   const isHours = modality.codigo === "HORAS_3";
@@ -1080,8 +1120,8 @@ function ModalityScheduleCard({
   // Calcular duración sugerida automáticamente si checkin y checkout están definidos
   const calculatedDuration = (() => {
     if (!checkinFijo || !checkoutFijo) return null;
-    const inH = parseInt(checkinFijo.split(":")[0], 10);
-    const outH = parseInt(checkoutFijo.split(":")[0], 10);
+    const inH = parseInt(checkinFijo.split(":")[0] ?? "0", 10);
+    const outH = parseInt(checkoutFijo.split(":")[0] ?? "0", 10);
     if (isNaN(inH) || isNaN(outH)) return null;
     let diff = outH - inH;
     if (diff <= 0) diff += 24;
@@ -1092,17 +1132,21 @@ function ModalityScheduleCard({
     setBusy(true);
     setSaved(false);
     try {
+      const addCents = Math.round((parseFloat(precioAdicionalSoles) || 0) * 100);
+      const addMinutes = Math.max(5, parseInt(tiempoAdicionalMinutos, 10) || 60);
       await onSave({
         nombre: nombre.trim() || modality.nombre,
         checkinFijo: checkinFijo.trim() ? checkinFijo.trim() : null,
         checkoutFijo: checkoutFijo.trim() ? checkoutFijo.trim() : null,
         duracionHoras: Number(duracionHoras) || modality.duracionHoras,
         toleranciaMin: Number(toleranciaMin) || modality.toleranciaMin,
+        precioAdicionalCentimos: addCents,
+        tiempoAdicionalMinutos: addMinutes,
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
-      onError("No se pudo guardar el horario de la modalidad.");
+      onError("No se pudo guardar la configuración de la modalidad.");
     } finally {
       setBusy(false);
     }
@@ -1301,19 +1345,146 @@ function ModalityScheduleCard({
             </div>
           </div>
         </div>
+
+        {/* Recargo por sobreestadía / tiempo excedido */}
+        {(() => {
+          const currentMin = Number(tiempoAdicionalMinutos) || 60;
+          const intervalSummary =
+            currentMin === 15
+              ? "cada 15 min"
+              : currentMin === 30
+              ? "cada 30 min (media hora)"
+              : currentMin === 45
+              ? "cada 45 min"
+              : currentMin === 60
+              ? "cada 1 hora"
+              : currentMin % 60 === 0
+              ? `cada ${currentMin / 60} horas`
+              : `cada ${currentMin} min`;
+
+          return (
+            <div className="rounded-xl border border-line-soft bg-inset/50 p-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">⏱️</span>
+                  <span className="text-xs font-bold text-ink">Cobro Adicional por Exceso</span>
+                </div>
+                <span className="text-[11px] font-semibold text-brand">
+                  {Number(precioAdicionalSoles) > 0
+                    ? `S/ ${Number(precioAdicionalSoles).toFixed(2)} ${intervalSummary}`
+                    : "Sin recargo"}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted leading-tight">
+                Al superarse el tiempo + tolerancia ({toleranciaMin} min), se sumará automáticamente este monto al saldo del cuarto {intervalSummary}.
+              </p>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                {/* Monto adicional */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-ink">Monto adicional (S/)</label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-bold text-muted pl-0.5">S/</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={precioAdicionalSoles}
+                      onChange={(e) => setPrecioAdicionalSoles(e.target.value)}
+                      className="tabular-nums font-bold text-center h-8 text-xs"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {[0, 5, 10, 15, 20, 30].map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setPrecioAdicionalSoles(s.toFixed(2))}
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold transition-all ${
+                          Number(precioAdicionalSoles) === s
+                            ? "bg-brand text-brand-ink"
+                            : "bg-surface border border-line text-muted hover:text-ink"
+                        }`}
+                      >
+                        {s === 0 ? "0" : `${s}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cada cuánto tiempo (minutos / horas) */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-ink">Cada cuánto tiempo</label>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setTiempoAdicionalMinutos((m) => String(Math.max(5, Number(m) - 15)))}
+                      className="h-8 w-8 rounded-lg border border-line bg-surface text-xs font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
+                      title="Restar 15 minutos"
+                    >
+                      −
+                    </button>
+                    <Input
+                      type="number"
+                      min="5"
+                      max="1440"
+                      step="5"
+                      value={tiempoAdicionalMinutos}
+                      onChange={(e) => setTiempoAdicionalMinutos(e.target.value)}
+                      className="tabular-nums font-bold text-center h-8 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setTiempoAdicionalMinutos((m) => String(Math.min(1440, Number(m) + 15)))}
+                      className="h-8 w-8 rounded-lg border border-line bg-surface text-xs font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
+                      title="Sumar 15 minutos"
+                    >
+                      +
+                    </button>
+                    <span className="text-[11px] font-semibold text-muted">min</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 pt-0.5">
+                    {[
+                      { m: 15, label: "15 min" },
+                      { m: 30, label: "30 min" },
+                      { m: 45, label: "45 min" },
+                      { m: 60, label: "1 hora" },
+                      { m: 90, label: "1h 30m" },
+                      { m: 120, label: "2 horas" },
+                    ].map((pill) => (
+                      <button
+                        key={pill.m}
+                        type="button"
+                        onClick={() => setTiempoAdicionalMinutos(String(pill.m))}
+                        className={`rounded px-1.5 py-0.5 text-[10px] font-semibold transition-all ${
+                          Number(tiempoAdicionalMinutos) === pill.m
+                            ? "bg-brand text-brand-ink"
+                            : "bg-surface border border-line text-muted hover:text-ink"
+                        }`}
+                      >
+                        {pill.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-line-soft">
         {saved ? (
           <span className="text-xs text-ok font-bold animate-fade flex items-center gap-1">
             <span>✓</span>
-            <span>Horario guardado correctamente</span>
+            <span>Configuración guardada correctamente</span>
           </span>
         ) : (
           <span className="text-[11px] text-muted">Aplica en recepción y kiosco</span>
         )}
         <Button variant="primary" size="sm" onClick={handleSave} disabled={busy} className="font-bold">
-          {busy ? "Guardando…" : "Guardar Horario"}
+          {busy ? "Guardando…" : "Guardar Configuración"}
         </Button>
       </div>
     </div>

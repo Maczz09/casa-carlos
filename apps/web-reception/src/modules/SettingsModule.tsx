@@ -6,6 +6,7 @@ import { api, ApiError } from "../api.js";
 import { setBrand, useBrand } from "../hooks/useBrand.js";
 import { useTheme } from "../hooks/useTheme.js";
 import { SunatTab } from "./SunatSettingsTab.js";
+import { ShiftTemplatesManager } from "./ShiftTemplatesManager.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Skeleton, Tabs, cx } from "../components/ui.js";
 
 /** Sugerencias, no una lista cerrada: el hotel puede cobrar en cualquier banco o caja. */
@@ -28,19 +29,20 @@ const BANCOS = [
 const WALLET_LABEL: Record<string, string> = { YAPE: "Yape", PLIN: "Plin", LEMON: "Lemon", AGORA: "Agora" };
 
 export function SettingsModule() {
-  const [tab, setTab] = useState<"marca" | "apariencia" | "cobros" | "sunat">("marca");
+  const [tab, setTab] = useState<"marca" | "apariencia" | "turnos" | "cobros" | "sunat">("marca");
 
   return (
     <>
       <PageHeader
         title="Ajustes"
-        subtitle="Logo y nombre del hotel, apariencia y horario del modo oscuro, cuentas de cobro y facturación electrónica SUNAT"
+        subtitle="Logo y nombre del hotel, apariencia y horario del modo oscuro, turnos de caja, cuentas de cobro y facturación electrónica SUNAT"
       />
       <div className="mb-5">
         <Tabs
           tabs={[
             { id: "marca" as const, label: "Marca" },
             { id: "apariencia" as const, label: "Tema y Apariencia" },
+            { id: "turnos" as const, label: "Turnos de Caja" },
             { id: "cobros" as const, label: "Cobros" },
             { id: "sunat" as const, label: "Facturación SUNAT" },
           ]}
@@ -52,6 +54,8 @@ export function SettingsModule() {
         <BrandTab />
       ) : tab === "apariencia" ? (
         <AppearanceTab />
+      ) : tab === "turnos" ? (
+        <ShiftTemplatesManager />
       ) : tab === "cobros" ? (
         <CollectionAccountsTab />
       ) : (

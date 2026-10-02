@@ -17,6 +17,7 @@ import type {
   RegistrarArqueoInput,
   Shift,
   ShiftTemplate,
+  UpdateShiftTemplateInput,
 } from "@casacarlos/contracts";
 import { cents, format, splitIncludedIgv } from "@casacarlos/money";
 import type { EventBus } from "@casacarlos/bus";
@@ -40,7 +41,51 @@ export class CashboxService implements CashboxPort {
   }
 
   async createShiftTemplate(input: CreateShiftTemplateInput): Promise<ShiftTemplate> {
-    return this.repo.insertTemplate({ id: newId(), nombre: input.nombre, horaInicio: input.horaInicio, horaFin: input.horaFin, orden: 0, activa: true });
+    if (!/^\d{2}:\d{2}$/.test(input.horaInicio) || !/^\d{2}:\d{2}$/.test(input.horaFin)) {
+      throw new Error("El formato de las horas debe ser HH:mm (ej. 09:00, 17:00).");
+    }
+    return this.repo.insertTemplate({
+      id: newId(),
+      nombre: input.nombre.trim(),
+      horaInicio: input.horaInicio,
+      horaFin: input.horaFin,
+      orden: input.orden ?? 0,
+      activa: true,
+    });
+  }
+
+  async updateShiftTemplate(id: string, input: UpdateShiftTemplateInput): Promise<ShiftTemplate> {
+    const existing = await this.repo.getTemplate(id);
+    if (!existing) throw new Error(`Plantilla de turno con id ${id} no encontrada.`);
+
+    if (input.horaInicio && !/^\d{2}:\d{2}$/.test(input.horaInicio)) {
+      throw new Error("El formato de hora de inicio debe ser HH:mm (ej. 09:00).");
+    }
+    if (input.horaFin && !/^\d{2}:\d{2}$/.test(input.horaFin)) {
+      throw new Error("El formato de hora de fin debe ser HH:mm (ej. 17:00).");
+    }
+
+    const patch: {
+      nombre?: string;
+      horaInicio?: string;
+      horaFin?: string;
+      orden?: number;
+      activa?: boolean;
+    } = {};
+
+    if (input.nombre !== undefined) patch.nombre = input.nombre.trim();
+    if (input.horaInicio !== undefined) patch.horaInicio = input.horaInicio;
+    if (input.horaFin !== undefined) patch.horaFin = input.horaFin;
+    if (input.orden !== undefined) patch.orden = input.orden;
+    if (input.activa !== undefined) patch.activa = input.activa;
+
+    return this.repo.updateTemplate(id, patch);
+  }
+
+  async deleteShiftTemplate(id: string): Promise<void> {
+    const existing = await this.repo.getTemplate(id);
+    if (!existing) throw new Error(`Plantilla de turno con id ${id} no encontrada.`);
+    await this.repo.deleteTemplate(id);
   }
 
   async listShiftTemplates(): Promise<ShiftTemplate[]> {
@@ -203,6 +248,10 @@ export class CashboxService implements CashboxPort {
 
   async listArqueos(turnoId: string): Promise<Arqueo[]> {
     return this.repo.listArqueos(turnoId);
+  }
+
+  async getArqueo(id: string): Promise<Arqueo | null> {
+    return this.repo.getArqueo(id);
   }
 
   async getShiftSummary(turnoId: string): Promise<CashSummary> {

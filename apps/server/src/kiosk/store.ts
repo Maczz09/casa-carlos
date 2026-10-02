@@ -232,11 +232,21 @@ export class KioskStore {
   private handlePaymentAccepted(saleId: string, paymentId: string): void {
     if (this.session?.saleId !== saleId) return;
     this.commit({ ...this.session, estado: "ACEPTADO", paymentId, error: null });
+    setTimeout(() => {
+      if (this.session?.estado === "ACEPTADO" && this.session.saleId === saleId) {
+        this.commit(null);
+      }
+    }, 90_000);
   }
 
   private handlePaymentRejected(saleId: string, motivo: string): void {
     if (this.session?.saleId !== saleId) return;
     this.commit({ ...this.session, estado: "RECHAZADO", error: motivo });
+    setTimeout(() => {
+      if (this.session?.estado === "RECHAZADO" && this.session.saleId === saleId) {
+        this.commit(null);
+      }
+    }, 90_000);
   }
 
   private mustGet(): KioskSession {

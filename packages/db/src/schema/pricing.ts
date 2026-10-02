@@ -27,6 +27,8 @@ export const pricingModalidades = sqliteTable("pricing_modalidades", {
   checkinFijo: text("checkin_fijo"),
   checkoutFijo: text("checkout_fijo"),
   toleranciaMin: integer("tolerancia_min").notNull().default(15),
+  precioAdicionalCentimos: integer("precio_adicional_centimos").notNull().default(1000),
+  tiempoAdicionalMinutos: integer("tiempo_adicional_min").notNull().default(60),
   activa: integer("activa", { mode: "boolean" }).notNull().default(true),
 });
 

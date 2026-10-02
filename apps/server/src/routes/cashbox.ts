@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import type { CashMovementFilter, CashMovementType, Denominaciones, PaymentMethod } from "@casacarlos/contracts";
+import type { CashMovementFilter, CashMovementType, Denominaciones, PaymentMethod, UpdateShiftTemplateInput } from "@casacarlos/contracts";
 import type { Services } from "../index.js";
 import { requirePermission } from "../auth.js";
 
@@ -9,9 +9,51 @@ export function cashboxRoutes(services: Services) {
 
     app.get("/api/cashbox/templates", auth, async () => services.cashbox.listShiftTemplates());
 
-    app.post<{ Body: { nombre: string; horaInicio: string; horaFin: string } }>("/api/cashbox/templates", auth, async (request, reply) => {
+    app.post<{ Body: { nombre: string; horaInicio: string; horaFin: string; orden?: number } }>("/api/cashbox/templates", auth, async (request, reply) => {
       try {
         return await services.cashbox.createShiftTemplate(request.body);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.put<{ Params: { id: string }; Body: UpdateShiftTemplateInput }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
+      try {
+        return await services.cashbox.updateShiftTemplate(request.params.id, request.body);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.patch<{ Params: { id: string }; Body: UpdateShiftTemplateInput }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
+      try {
+        return await services.cashbox.updateShiftTemplate(request.params.id, request.body);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.delete<{ Params: { id: string } }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
+      try {
+        await services.cashbox.deleteShiftTemplate(request.params.id);
+        return reply.code(204).send();
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post<{ Params: { id: string }; Body: UpdateShiftTemplateInput }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
+      try {
+        return await services.cashbox.updateShiftTemplate(request.params.id, request.body);
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
+
+    app.post<{ Params: { id: string } }>("/api/cashbox/templates/:id/delete", auth, async (request, reply) => {
+      try {
+        await services.cashbox.deleteShiftTemplate(request.params.id);
+        return reply.code(204).send();
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
@@ -89,7 +131,57 @@ export function cashboxRoutes(services: Services) {
       }
     });
 
-    app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/arqueos", auth, async (request) => services.cashbox.listArqueos(request.params.id));
+    app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/arqueos", auth, async (request) => {
+      const arqueos = await services.cashbox.listArqueos(request.params.id);
+      const userIds = [...new Set(arqueos.map((a) => a.usuarioId))];
+      const users = await Promise.all(userIds.map((uid) => services.identity.getUser(uid).catch(() => null)));
+      const userMap = new Map(users.filter(Boolean).map((u) => [u!.id, `${u!.nombres} ${u!.apellidos}`.trim()]));
+      return arqueos.map((a) => ({
+        ...a,
+        usuarioNombre: userMap.get(a.usuarioId) ?? "Recepcionista",
+      }));
+    });
+
+    app.get<{ Params: { id: string } }>("/api/cashbox/arqueos/:id/ticket-data", auth, async (request, reply) => {
+      try {
+        const arqueo = await services.cashbox.getArqueo(request.params.id);
+        if (!arqueo) return reply.code(404).send({ error: "Arqueo no encontrado" });
+
+        const shift = await services.cashbox.getShift(arqueo.turnoId);
+        const summary = await services.cashbox.getShiftSummary(arqueo.turnoId);
+        const templates = await services.cashbox.listShiftTemplates();
+        const plantilla = shift.plantillaId ? templates.find((t) => t.id === shift.plantillaId) ?? null : null;
+
+        const [realizadoUser, abiertoUser] = await Promise.all([
+          services.identity.getUser(arqueo.usuarioId).catch(() => null),
+          services.identity.getUser(shift.usuarioId).catch(() => null),
+        ]);
+
+        const realizadoPor = {
+          id: arqueo.usuarioId,
+          nombre: realizadoUser ? `${realizadoUser.nombres} ${realizadoUser.apellidos}`.trim() : "Recepcionista",
+        };
+
+        const abiertoPor = {
+          id: shift.usuarioId,
+          nombre: abiertoUser ? `${abiertoUser.nombres} ${abiertoUser.apellidos}`.trim() : "Recepcionista",
+        };
+
+        const emisor = services.sunatConfig.read(services.sunatModoActivo).emisor;
+
+        return {
+          arqueo,
+          shift,
+          plantilla,
+          summary,
+          realizadoPor,
+          abiertoPor,
+          emisor,
+        };
+      } catch (err) {
+        return reply.code(400).send({ error: (err as Error).message });
+      }
+    });
 
     app.get<{ Params: { id: string } }>("/api/cashbox/shifts/:id/summary", auth, async (request, reply) => {
       try {
@@ -139,14 +231,27 @@ export function cashboxRoutes(services: Services) {
 
         const emisor = services.sunatConfig.read(services.sunatModoActivo).emisor;
 
+        const arqueos = await services.cashbox.listArqueos(shiftId);
+        const ultimoArqueo = arqueos.length > 0 ? arqueos[0] : null;
+
+        const effectiveShift = {
+          ...shift,
+          efectivoEsperadoCentimos: shift.efectivoEsperadoCentimos ?? summary.efectivoEsperadoCentimos,
+          efectivoDeclaradoCentimos: shift.efectivoDeclaradoCentimos ?? (ultimoArqueo ? ultimoArqueo.totalCentimos : null),
+          diferenciaCentimos: shift.diferenciaCentimos ?? (ultimoArqueo ? ultimoArqueo.diferenciaCentimos : null),
+          denominacionesCierre: shift.denominacionesCierre ?? (ultimoArqueo ? ultimoArqueo.denominaciones : null),
+        };
+
         return {
-          shift,
+          shift: effectiveShift,
           plantilla,
           summary,
           abiertoPor,
           cerradoPor,
           intervinientes: Array.from(intervinientesMap.values()),
           emisor,
+          esCorteProvisional: shift.estado === "ABIERTO",
+          ultimoArqueo,
         };
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });

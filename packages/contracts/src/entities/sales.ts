@@ -21,6 +21,7 @@ export const SaleSchema = z.object({
   estado: SaleStateSchema,
   estadiaId: z.string().nullable(),
   cuartoId: z.string().nullable(),
+  cuartoNumero: z.string().nullable().optional(),
   clienteNombres: z.string().nullable(),
   clienteApellidos: z.string().nullable(),
   clienteDni: z.string().nullable(),

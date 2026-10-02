@@ -6,6 +6,15 @@ export interface CreateShiftTemplateInput {
   nombre: string;
   horaInicio: string;
   horaFin: string;
+  orden?: number;
+}
+
+export interface UpdateShiftTemplateInput {
+  nombre?: string;
+  horaInicio?: string;
+  horaFin?: string;
+  orden?: number;
+  activa?: boolean;
 }
 
 export interface OpenShiftInput {
@@ -51,6 +60,8 @@ export interface CashMovementFilter {
  */
 export interface CashboxPort {
   createShiftTemplate(input: CreateShiftTemplateInput): Promise<ShiftTemplate>;
+  updateShiftTemplate(id: string, input: UpdateShiftTemplateInput): Promise<ShiftTemplate>;
+  deleteShiftTemplate(id: string): Promise<void>;
   listShiftTemplates(): Promise<ShiftTemplate[]>;
 
   openShift(input: OpenShiftInput): Promise<Shift>;
@@ -69,4 +80,5 @@ export interface CashboxPort {
   /** Conteo de caja a mitad de turno — no cierra nada, solo deja un registro con la diferencia contra lo esperado en ese momento. */
   registrarArqueo(input: RegistrarArqueoInput): Promise<Arqueo>;
   listArqueos(turnoId: string): Promise<Arqueo[]>;
+  getArqueo(id: string): Promise<Arqueo | null>;
 }

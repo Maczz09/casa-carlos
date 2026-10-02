@@ -74,6 +74,15 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [entryMode, setEntryMode] = useState<"ahora" | "15min" | "30min" | "45min" | "60min" | "manual">("ahora");
   const [customTime, setCustomTime] = useState<string>("");
+  const [dismissedSessionId, setDismissedSessionId] = useState<string | null>(null);
+
+  const activeSession = session && session.id !== dismissedSessionId ? session : null;
+
+  useEffect(() => {
+    if (!session) {
+      setDismissedSessionId(null);
+    }
+  }, [session]);
 
   const calculateHoraEntrada = (): string | null => {
     if (entryMode === "ahora") return null;
@@ -83,7 +92,9 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
     if (entryMode === "45min") return new Date(now.getTime() - 45 * 60 * 1000).toISOString();
     if (entryMode === "60min") return new Date(now.getTime() - 60 * 60 * 1000).toISOString();
     if (entryMode === "manual" && customTime) {
-      const [h, m] = customTime.split(":").map(Number);
+      const parts = customTime.split(":");
+      const h = Number(parts[0]);
+      const m = Number(parts[1]);
       if (!isNaN(h) && !isNaN(m)) {
         const d = new Date();
         d.setHours(h, m, 0, 0);
@@ -104,58 +115,58 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!session) setPayment(null);
-  }, [session?.id]);
+    if (!activeSession) setPayment(null);
+  }, [activeSession?.id]);
 
   useEffect(() => {
-    if (session?.estado !== "SELECCION_PRODUCTOS") {
+    if (activeSession?.estado !== "SELECCION_PRODUCTOS") {
       setWantsProducts(null);
-    } else if (session?.wantsProducts === true) {
+    } else if (activeSession?.wantsProducts === true) {
       setWantsProducts(true);
     }
-  }, [session?.estado, session?.wantsProducts]);
+  }, [activeSession?.estado, activeSession?.wantsProducts]);
 
   const printedRef = useRef<string | null>(null);
 
   const roomNumber = useMemo(() => {
-    if (!session?.cuartoId) return null;
+    if (!activeSession?.cuartoId) return null;
     for (const fb of floors) {
-      const r = fb.rooms.find((x) => x.room.id === session.cuartoId);
+      const r = fb.rooms.find((x) => x.room.id === activeSession.cuartoId);
       if (r) return r.room.numero;
     }
     return null;
-  }, [floors, session?.cuartoId]);
+  }, [floors, activeSession?.cuartoId]);
 
   useEffect(() => {
-    if (session?.estado === "ACEPTADO" && session.saleId && printedRef.current !== session.id) {
-      printedRef.current = session.id;
-      void printReceiptForSale(session.saleId, roomNumber);
+    if (activeSession?.estado === "ACEPTADO" && activeSession.saleId && printedRef.current !== activeSession.id) {
+      printedRef.current = activeSession.id;
+      void printReceiptForSale(activeSession.saleId, roomNumber);
     }
-  }, [session?.estado, session?.saleId, session?.id, roomNumber]);
-
+  }, [activeSession?.estado, activeSession?.saleId, activeSession?.id, roomNumber]);
 
   useEffect(() => {
-    if (session?.estado !== "SELECCION_PRODUCTOS" || !session.saleId) {
+    if (activeSession?.estado !== "SELECCION_PRODUCTOS" || !activeSession.saleId) {
       setProductSale(null);
       return;
     }
-    api.getSale(session.saleId).then(setProductSale);
-  }, [session?.estado, session?.saleId, session?.totalCentimos]);
+    api.getSale(activeSession.saleId).then(setProductSale);
+  }, [activeSession?.estado, activeSession?.saleId, activeSession?.totalCentimos]);
 
   const cancel = async () => {
     setBusy(true);
     try {
-      await api.cancelKiosk();
+      if (session) setDismissedSessionId(session.id);
+      await api.cancelKiosk("Cancelado por recepción");
     } finally {
       setBusy(false);
     }
   };
 
   const selected = modalities.find((m) => m.id === modalidadId);
-  const current = stepIndex(session);
+  const current = stepIndex(activeSession);
 
   /* ---------- Paso 1: modalidad ---------- */
-  if (!session || session.estado === "ESPERA") {
+  if (!activeSession || activeSession.estado === "ESPERA") {
     return (
       <>
         <PageHeader title="Nueva venta" subtitle="Elegí la modalidad — esto carga la pantalla del cliente en el kiosco" />
@@ -284,8 +295,8 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   }
 
   /* ---------- Paso 2: piso / cuarto ---------- */
-  if (session.estado === "SELECCION_PISO" || session.estado === "SELECCION_CUARTO") {
-    const active = floors.find((f) => f.floor.id === session.pisoId) ?? floors[0];
+  if (activeSession.estado === "SELECCION_PISO" || activeSession.estado === "SELECCION_CUARTO") {
+    const active = floors.find((f) => f.floor.id === activeSession.pisoId) ?? floors[0];
 
     return (
       <>
@@ -324,13 +335,13 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
             ))}
           </div>
 
-          {session.pisoId ? (
+          {session?.pisoId ? (
             <div className="stagger grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
               {active?.rooms
                 .filter((r) => r.estado === "DISPONIBLE")
                 .map((entry, i) => {
                   const categoria = categories.find((c) => c.id === entry.room.categoriaId);
-                  const precio = session.preciosPorCategoria[entry.room.categoriaId];
+                  const precio = session?.preciosPorCategoria[entry.room.categoriaId];
                   return (
                     <button
                       key={entry.room.id}
@@ -375,7 +386,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   }
 
   /* ---------- Paso 3: datos del cliente ---------- */
-  if (session.estado === "DATOS_CLIENTE") {
+  if (activeSession.estado === "DATOS_CLIENTE") {
     const completo = customer.nombres && customer.apellidos && customer.dni;
     return (
       <>
@@ -435,7 +446,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   }
 
   /* ---------- Paso 4: productos ---------- */
-  if (session.estado === "SELECCION_PRODUCTOS") {
+  if (activeSession.estado === "SELECCION_PRODUCTOS") {
     const productLines = (productSale?.lineas ?? []).filter((l) => l.tipo === "PRODUCTO");
     const hasProducts = productLines.length > 0;
 
@@ -522,7 +533,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
                 setBusy(true);
                 try {
                   await api.addKioskProduct(productoId, 1);
-                  if (session.saleId) {
+                  if (session?.saleId) {
                     const updated = await api.getSale(session.saleId);
                     setProductSale(updated);
                   }
@@ -553,7 +564,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
                             setBusy(true);
                             try {
                               await api.removeKioskProduct(l.id);
-                              if (session.saleId) {
+                              if (session?.saleId) {
                                 const updated = await api.getSale(session.saleId);
                                 setProductSale(updated);
                               }
@@ -577,7 +588,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
             <div className="mt-4 border-t border-line pt-4">
               <div className="flex items-baseline justify-between mb-4">
                 <span className="text-sm font-medium text-subtle">Total</span>
-                <span className="text-2xl font-bold tabular-nums text-ink">{format(cents(session.totalCentimos ?? 0))}</span>
+                <span className="text-2xl font-bold tabular-nums text-ink">{format(cents(session?.totalCentimos ?? 0))}</span>
               </div>
 
               <div className="flex items-center justify-between gap-3">
@@ -616,12 +627,12 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   }
 
   /* ---------- Paso 5: pago ---------- */
-  if ((session.estado === "SELECCION_PAGO" || session.estado === "PAGO_PENDIENTE") && !payment) {
+  if ((activeSession.estado === "SELECCION_PAGO" || activeSession.estado === "PAGO_PENDIENTE") && !payment) {
     return (
       <>
         <PageHeader
           title="Registrar pago"
-          subtitle={session.propuestaPago ? "El cliente ya propuso cómo pagar — completá los códigos" : "Registrá cómo paga el cliente"}
+          subtitle={activeSession.propuestaPago ? "El cliente ya propuso cómo pagar — completá los códigos" : "Registrá cómo paga el cliente"}
           actions={
             <Button variant="danger" onClick={cancel} disabled={busy}>
               Cancelar venta
@@ -632,14 +643,14 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
 
         <Section title="Pago" className="mx-auto max-w-2xl">
           <PaymentForm
-            totalCentimos={session.totalCentimos ?? 0}
-            proposedSplit={session.propuestaPago}
+            totalCentimos={activeSession.totalCentimos ?? 0}
+            proposedSplit={activeSession.propuestaPago}
             busy={busy}
             onSubmit={async (detalles: PaymentDetailInput[]) => {
               setBusy(true);
               setError(null);
               try {
-                const created = await api.createPayment(session.saleId!, detalles);
+                const created = await api.createPayment(activeSession.saleId!, detalles);
                 await api.acceptPayment(created.id);
                 setPayment(created);
               } catch (err) {
@@ -659,7 +670,7 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
     );
   }
 
-  if ((session.estado === "SELECCION_PAGO" || session.estado === "PAGO_PENDIENTE") && payment) {
+  if ((activeSession.estado === "SELECCION_PAGO" || activeSession.estado === "PAGO_PENDIENTE") && payment) {
     return (
       <>
         <PageHeader title="Confirmar pago" subtitle="Revisá lo cobrado antes de aceptar" />
@@ -720,11 +731,37 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   }
 
   /* ---------- Resultado ---------- */
-  const aceptado = session.estado === "ACEPTADO";
+  const aceptado = activeSession.estado === "ACEPTADO";
+
+  const handleStartNewSale = async () => {
+    setBusy(true);
+    try {
+      if (session) setDismissedSessionId(session.id);
+      await api.cancelKiosk("Nueva venta iniciada");
+    } catch (err) {
+      console.error("Error iniciando nueva venta:", err);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDone = async () => {
+    setBusy(true);
+    try {
+      if (session) setDismissedSessionId(session.id);
+      await api.cancelKiosk("Venta finalizada");
+    } catch (err) {
+      console.error("Error finalizando venta:", err);
+    } finally {
+      setBusy(false);
+      onDone();
+    }
+  };
+
   return (
     <>
       <PageHeader title={aceptado ? "Venta confirmada" : "Pago rechazado"} />
-      <Card className="mx-auto max-w-md p-8 text-center">
+      <Card className="mx-auto max-w-md p-8 text-center shadow-lg">
         <span className={cx("mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full text-3xl", aceptado ? "tone-teal" : "tone-red")}>
           {aceptado ? "✓" : "!"}
         </span>
@@ -734,26 +771,42 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
         <p className="mt-1 text-sm text-muted">
           {aceptado
             ? "La venta quedó registrada y el comprobante se envió a la impresora automáticamente."
-            : (session.error ?? "El cuarto se liberó.")}
+            : (activeSession.error ?? "El cuarto se liberó.")}
         </p>
 
-        {aceptado && session.saleId && (
-          <div className="mt-6 flex flex-col gap-2.5">
+        <div className="mt-6 flex flex-col gap-2.5">
+          <Button
+            variant="primary"
+            size="lg"
+            className="w-full"
+            disabled={busy}
+            onClick={handleStartNewSale}
+          >
+            + Iniciar nueva venta
+          </Button>
+
+          {aceptado && activeSession.saleId && (
             <Button
               variant="secondary"
+              className="w-full"
               icon={<IconPrinter className="h-4 w-4" />}
               onClick={() => {
-                if (session.saleId) void printReceiptForSale(session.saleId, roomNumber);
+                if (activeSession.saleId) void printReceiptForSale(activeSession.saleId, roomNumber);
               }}
             >
               Imprimir comprobante de nuevo
             </Button>
-          </div>
-        )}
+          )}
 
-        <Button variant="primary" size="lg" className="mt-4" onClick={onDone}>
-          Volver al tablero
-        </Button>
+          <Button
+            variant="ghost"
+            className="w-full"
+            disabled={busy}
+            onClick={handleDone}
+          >
+            Volver al tablero
+          </Button>
+        </div>
       </Card>
     </>
   );

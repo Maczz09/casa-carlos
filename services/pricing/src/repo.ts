@@ -20,6 +20,8 @@ const toModality = (r: ModalityRow): Modality => ({
   checkinFijo: r.checkinFijo,
   checkoutFijo: r.checkoutFijo,
   toleranciaMin: r.toleranciaMin,
+  precioAdicionalCentimos: r.precioAdicionalCentimos ?? 1000,
+  tiempoAdicionalMinutos: r.tiempoAdicionalMinutos ?? 60,
   activa: r.activa,
 });
 const toRate = (r: RateRow): Rate => ({ id: r.id, franjaId: r.franjaId, categoriaId: r.categoriaId, modalidadId: r.modalidadId, precioCentimos: r.precioCentimos });

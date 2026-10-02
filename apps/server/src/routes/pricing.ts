@@ -10,7 +10,16 @@ export function pricingRoutes(services: Services) {
 
     app.patch<{
       Params: { id: string };
-      Body: { nombre?: string; checkinFijo?: string | null; checkoutFijo?: string | null; duracionHoras?: number; toleranciaMin?: number };
+      Body: {
+        nombre?: string;
+        checkinFijo?: string | null;
+        checkoutFijo?: string | null;
+        duracionHoras?: number;
+        toleranciaMin?: number;
+        precioAdicionalCentimos?: number;
+        tiempoAdicionalMinutos?: number;
+        tiempoAdicionalHoras?: number;
+      };
     }>("/api/pricing/modalities/:id", auth, async (request, reply) => {
       try {
         return await services.pricing.updateModality(request.params.id, request.body);

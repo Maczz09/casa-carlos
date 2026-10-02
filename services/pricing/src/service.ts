@@ -62,6 +62,7 @@ export class PricingService implements PricingPort {
   }
 
   async createModality(input: CreateModalityInput): Promise<Modality> {
+    const tiempoMin = input.tiempoAdicionalMinutos ?? (input.tiempoAdicionalHoras ? input.tiempoAdicionalHoras * 60 : 60);
     return this.repo.insertModality({
       id: newId(),
       codigo: input.codigo,
@@ -70,17 +71,27 @@ export class PricingService implements PricingPort {
       checkinFijo: input.checkinFijo ?? null,
       checkoutFijo: input.checkoutFijo ?? null,
       toleranciaMin: input.toleranciaMin ?? 15,
+      precioAdicionalCentimos: input.precioAdicionalCentimos ?? 1000,
+      tiempoAdicionalMinutos: tiempoMin,
       activa: true,
     });
   }
 
   async updateModality(id: string, input: UpdateModalityInput): Promise<Modality> {
+    const tiempoMin = input.tiempoAdicionalMinutos !== undefined
+      ? input.tiempoAdicionalMinutos
+      : input.tiempoAdicionalHoras !== undefined
+        ? input.tiempoAdicionalHoras * 60
+        : undefined;
+
     return this.repo.updateModality(id, {
       ...(input.nombre !== undefined && { nombre: input.nombre }),
       ...(input.duracionHoras !== undefined && { duracionHoras: input.duracionHoras }),
       ...(input.checkinFijo !== undefined && { checkinFijo: input.checkinFijo }),
       ...(input.checkoutFijo !== undefined && { checkoutFijo: input.checkoutFijo }),
       ...(input.toleranciaMin !== undefined && { toleranciaMin: input.toleranciaMin }),
+      ...(input.precioAdicionalCentimos !== undefined && { precioAdicionalCentimos: input.precioAdicionalCentimos }),
+      ...(tiempoMin !== undefined && { tiempoAdicionalMinutos: tiempoMin }),
     });
   }
 

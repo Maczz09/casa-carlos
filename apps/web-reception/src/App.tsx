@@ -20,7 +20,6 @@ import { UsersModule } from "./modules/UsersModule.js";
 import { Card, EmptyState } from "./components/ui.js";
 import { OperationalAlerts } from "./components/OperationalAlerts.js";
 import { useOperationalAlerts } from "./hooks/useOperationalAlerts.js";
-import { PaymentCelebration } from "./components/PaymentCelebration.js";
 
 // Calendario, gráficos y hoja de cálculo son módulos pesados. Se descargan
 // solo cuando el usuario entra a esas vistas para que el tablero inicial abra
@@ -86,7 +85,7 @@ export default function App() {
   // enlace directo (#/cuarto/…), mandarlo a /venta al recargar pisaría lo que el
   // usuario pidió ver.
   useEffect(() => {
-    if (!kioskSession || kioskSession.estado === "ESPERA") return;
+    if (!kioskSession || kioskSession.estado === "ESPERA" || kioskSession.estado === "ACEPTADO" || kioskSession.estado === "RECHAZADO") return;
     if (kioskSession.id === handledSessionId.current) return;
     const isFirst = !sawFirstSession.current;
     sawFirstSession.current = true;
@@ -152,11 +151,25 @@ export default function App() {
           <BoardModule
             floors={floors}
             categories={categories}
-            onSelectRoom={(entry) => (entry.estado === "DISPONIBLE" ? navigate("/venta") : navigate(`/cuarto/${entry.room.id}`))}
-            onNewSale={() => navigate("/venta")}
+            onSelectRoom={(entry) => (entry.estado === "DISPONIBLE" ? handleStartSale() : navigate(`/cuarto/${entry.room.id}`))}
+            onNewSale={handleStartSale}
           />
         ) : denied();
     }
+  };
+
+  const handleStartSale = async () => {
+    if (kioskSession && (kioskSession.estado === "ACEPTADO" || kioskSession.estado === "RECHAZADO")) {
+      await api.cancelKiosk("Nueva venta desde tablero").catch(() => {});
+    }
+    navigate("/venta");
+  };
+
+  const handleNavigate = async (id: string) => {
+    if (id === "venta" && kioskSession && (kioskSession.estado === "ACEPTADO" || kioskSession.estado === "RECHAZADO")) {
+      await api.cancelKiosk("Nueva venta desde menú").catch(() => {});
+    }
+    navigate(`/${id}`);
   };
 
   return (
@@ -168,7 +181,7 @@ export default function App() {
         connected={connected}
         theme={theme}
         onToggleTheme={toggle}
-        onNavigate={(id) => navigate(`/${id}`)}
+        onNavigate={handleNavigate}
         onLogout={logout}
         notificationsEnabled={operationalAlerts.notificationsEnabled}
         onEnableNotifications={() => void operationalAlerts.enableNotifications()}
@@ -191,7 +204,6 @@ export default function App() {
         </ModuleErrorBoundary>
       </AppShell>
       <OperationalAlerts alerts={operationalAlerts.alerts} onDismiss={operationalAlerts.dismiss} />
-      <PaymentCelebration />
     </>
   );
 }

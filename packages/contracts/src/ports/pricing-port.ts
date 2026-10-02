@@ -30,6 +30,9 @@ export interface CreateModalityInput {
   checkinFijo?: string | null;
   checkoutFijo?: string | null;
   toleranciaMin?: number;
+  precioAdicionalCentimos?: number;
+  tiempoAdicionalMinutos?: number;
+  tiempoAdicionalHoras?: number;
 }
 
 export interface UpdateModalityInput {
@@ -38,6 +41,9 @@ export interface UpdateModalityInput {
   checkinFijo?: string | null;
   checkoutFijo?: string | null;
   toleranciaMin?: number;
+  precioAdicionalCentimos?: number;
+  tiempoAdicionalMinutos?: number;
+  tiempoAdicionalHoras?: number;
 }
 
 export interface SetRateInput {

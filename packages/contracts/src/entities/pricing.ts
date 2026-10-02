@@ -31,6 +31,8 @@ export const ModalitySchema = z.object({
   checkinFijo: z.string().nullable(), // "HH:mm" for night modalities
   checkoutFijo: z.string().nullable(),
   toleranciaMin: z.number().int().nonnegative(),
+  precioAdicionalCentimos: z.number().int().nonnegative().default(1000),
+  tiempoAdicionalMinutos: z.number().int().positive().default(60),
   activa: z.boolean(),
 });
 export type Modality = z.infer<typeof ModalitySchema>;
