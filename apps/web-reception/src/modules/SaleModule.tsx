@@ -6,7 +6,7 @@ import { api, ApiError } from "../api.js";
 import { printReceiptForSale } from "../components/receipt.js";
 import { PaymentForm } from "../components/PaymentForm.js";
 import { ProductPicker } from "../components/ProductPicker.js";
-import { Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, cx } from "../components/ui.js";
+import { Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, cx } from "../components/ui.js";
 
 interface Props {
   floors: FloorBoard[];
@@ -107,11 +107,24 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
     return null;
   };
 
+  const [modalitiesLoading, setModalitiesLoading] = useState(true);
+
   useEffect(() => {
-    api.modalities().then((list) => {
-      setModalities(list);
-      if (list[0]) setModalidadId(list[0].id);
-    });
+    setModalitiesLoading(true);
+    api
+      .modalities()
+      .then((list) => {
+        if (list && list.length > 0) {
+          setModalities(list);
+          setModalidadId((prev) => prev || list[0]!.id);
+        }
+      })
+      .catch((err) => {
+        console.error("Error al cargar modalidades:", err);
+      })
+      .finally(() => {
+        setModalitiesLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -174,21 +187,36 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
 
         <Section title="Modalidad" className="mx-auto max-w-2xl">
           <div className="flex flex-col gap-4">
-            <div className="grid gap-2 sm:grid-cols-3">
-              {modalities.map((m) => (
-                <button
-                  key={m.id}
-                  onClick={() => setModalidadId(m.id)}
-                  className={cx(
-                    "rounded-xl border p-4 text-left transition-all duration-150 active:scale-[0.98]",
-                    modalidadId === m.id ? "border-brand bg-brand-soft" : "border-line hover:border-brand/50 hover:bg-inset",
-                  )}
-                >
-                  <p className={cx("font-medium", modalidadId === m.id ? "text-brand" : "text-ink")}>{m.nombre}</p>
-                  <p className="mt-0.5 text-xs text-muted">Tolerancia {m.toleranciaMin} min</p>
-                </button>
-              ))}
-            </div>
+            {modalitiesLoading && modalities.length === 0 ? (
+              <div className="grid gap-2 sm:grid-cols-3">
+                <Skeleton className="h-20 w-full rounded-xl" />
+                <Skeleton className="h-20 w-full rounded-xl" />
+                <Skeleton className="h-20 w-full rounded-xl" />
+              </div>
+            ) : modalities.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-3">
+                {modalities.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => setModalidadId(m.id)}
+                    className={cx(
+                      "rounded-xl border p-4 text-left transition-all duration-150 active:scale-[0.98]",
+                      modalidadId === m.id ? "border-brand bg-brand-soft shadow-xs" : "border-line hover:border-brand/50 hover:bg-inset",
+                    )}
+                  >
+                    <p className={cx("font-semibold text-sm", modalidadId === m.id ? "text-brand" : "text-ink")}>{m.nombre}</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {m.duracionHoras ? `${m.duracionHoras} hrs` : ""} {m.toleranciaMin ? `· Tol. ${m.toleranciaMin} min` : ""}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <Notice kind="warn">
+                No se encontraron modalidades configuradas en el sistema.
+              </Notice>
+            )}
 
             {selected && !selected.checkinFijo && (
               <Field label={`Bloques de ${selected.duracionHoras}h`}>
