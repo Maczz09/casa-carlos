@@ -101,9 +101,10 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
 
   const totalFormatted = (sale.totalCentimos / 100).toFixed(2);
 
+  const clienteNombreCompleto = [sale.clienteNombres, sale.clienteApellidos].filter(Boolean).join(" ").trim();
+
   let docLine = "";
   if (tipo === "BOLETA") {
-    // Por requerimiento expreso del cliente: para las boletas solo DNI (sin nombre) por discreción
     if (sale.clienteDni) {
       docLine = `<p>DOC: ${escapeHtml(sale.clienteDni)}</p>`;
     } else {
@@ -176,6 +177,7 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   </div>
   <div class="meta-info">
     ${displayCuarto ? `<p>CUARTO: ${escapeHtml(displayCuarto)}</p>` : ""}
+    ${clienteNombreCompleto ? `<p>CLIENTE: ${escapeHtml(clienteNombreCompleto)}</p>` : ""}
     ${docLine}
     <hr class="divider">
     <p>${formatDateTime12h(fecha)}</p>
