@@ -165,7 +165,6 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   ${logo ? `<div class="logo-wrap">${logo}</div>` : ""}
   <div class="company-info">
     <div class="company-title">${escapeHtml(nombreComercial.toUpperCase())}</div>
-    ${razonSocial && razonSocial !== nombreComercial ? `<div class="company-sub">${escapeHtml(razonSocial)}</div>` : ""}
     ${direccion ? `<div class="company-sub">${escapeHtml(direccion)}</div>` : ""}
     <div class="company-sub">RUC: ${escapeHtml(ruc)}</div>
   </div>
@@ -176,7 +175,6 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
     <div class="no-fiscal">NO FISCAL / NO FISCAL</div>
   </div>
   <div class="meta-info">
-    <p>RECEPCIONISTA: ${recepcionista}</p>
     ${displayCuarto ? `<p>CUARTO: ${escapeHtml(displayCuarto)}</p>` : ""}
     ${docLine}
     <hr class="divider">
@@ -341,7 +339,6 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   ${logo ? `<div class="logo-wrap">${logo}</div>` : ""}
   <div class="company-info">
     <div class="company-title">${escapeHtml(nombreComercial.toUpperCase())}</div>
-    ${razonSocial && razonSocial !== nombreComercial ? `<div class="company-sub">${escapeHtml(razonSocial)}</div>` : ""}
     ${direccion ? `<div class="company-sub">${escapeHtml(direccion)}</div>` : ""}
     <div class="company-sub">RUC: ${escapeHtml(ruc)}</div>
   </div>
@@ -533,7 +530,6 @@ export function buildArqueoReceiptHtml(data: ArqueoTicketDto, impresoPorNombre: 
   ${logo ? `<div class="logo-wrap">${logo}</div>` : ""}
   <div class="company-info">
     <div class="company-title">${escapeHtml(nombreComercial.toUpperCase())}</div>
-    ${razonSocial && razonSocial !== nombreComercial ? `<div class="company-sub">${escapeHtml(razonSocial)}</div>` : ""}
     ${direccion ? `<div class="company-sub">${escapeHtml(direccion)}</div>` : ""}
     <div class="company-sub">RUC: ${escapeHtml(ruc)}</div>
   </div>

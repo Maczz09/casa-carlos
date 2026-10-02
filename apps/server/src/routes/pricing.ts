@@ -1,12 +1,25 @@
 import type { FastifyInstance } from "fastify";
 import type { Services } from "../index.js";
 import { requireAnyPermission } from "../auth.js";
+import { ensurePricingDefaults } from "../seed.js";
 
 export function pricingRoutes(services: Services) {
   return async function (app: FastifyInstance) {
     const auth = { preHandler: requireAnyPermission(services.identity, ["SALES_MANAGE", "RESERVATIONS_MANAGE", "ROOMS_MANAGE"]) };
 
-    app.get("/api/pricing/modalities", auth, async () => services.pricing.listModalities());
+    app.get("/api/pricing/modalities", auth, async () => {
+      let list = await services.pricing.listModalities();
+      if (list.length === 0) {
+        await ensurePricingDefaults(services.pricing, services.rooms);
+        list = await services.pricing.listModalities();
+      }
+      return list;
+    });
+
+    app.post("/api/pricing/modalities/restore-defaults", auth, async () => {
+      await ensurePricingDefaults(services.pricing, services.rooms);
+      return services.pricing.listModalities();
+    });
 
     app.patch<{
       Params: { id: string };

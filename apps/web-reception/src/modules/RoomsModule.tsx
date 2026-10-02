@@ -94,6 +94,20 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
     }
   };
 
+  const handleRestoreModalities = async () => {
+    setError(null);
+    setSuccess(null);
+    try {
+      await api.restoreModalities();
+      await reload();
+      onCatalogChanged();
+      setSuccess("Modalidades restauradas correctamente.");
+      setTimeout(() => setSuccess(null), 4000);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "No se pudieron restaurar las modalidades.");
+    }
+  };
+
   const categoriesById = useMemo(() => new Map((categories ?? []).map((c) => [c.id, c])), [categories]);
   const floorsById = useMemo(() => new Map(floors.map((f) => [f.id, f])), [floors]);
 
@@ -156,6 +170,7 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
           modalities={modalities}
           onSaveRates={handleSaveRates}
           onSaveModality={handleSaveModality}
+          onRestoreModalities={handleRestoreModalities}
           onError={setError}
         />
       )}
@@ -830,6 +845,7 @@ function TarifasTab({
   modalities,
   onSaveRates,
   onSaveModality,
+  onRestoreModalities,
   onError,
 }: {
   categories: Category[] | null;
@@ -849,6 +865,7 @@ function TarifasTab({
       tiempoAdicionalHoras?: number;
     }
   ) => Promise<void>;
+  onRestoreModalities: () => Promise<void>;
   onError: (msg: string | null) => void;
 }) {
   return (
@@ -872,7 +889,12 @@ function TarifasTab({
             ))}
           </div>
         ) : modalities.length === 0 ? (
-          <EmptyState icon={<IconBed className="h-6 w-6" />} title="No hay modalidades registradas" hint="Las modalidades se cargan por defecto en el sistema." />
+          <div className="flex flex-col items-center justify-center p-8 gap-4 rounded-2xl border border-dashed border-line bg-card/50">
+            <EmptyState icon={<IconBed className="h-6 w-6" />} title="No hay modalidades registradas" hint="Las modalidades se cargan por defecto en el sistema." />
+            <Button variant="secondary" size="sm" onClick={onRestoreModalities}>
+              Restablecer modalidades por defecto
+            </Button>
+          </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {modalities.map((m) => (

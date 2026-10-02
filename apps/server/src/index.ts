@@ -23,7 +23,8 @@ import type { CertificateMaterial, EmisorInfo, SunatClient } from "@casacarlos/b
 import { MockSunatClient, RealSunatClient, createBillingService, ensureBillingCorrelativosSeeded, loadPfxCertificate } from "@casacarlos/billing";
 import { startScheduler } from "@casacarlos/scheduler";
 import { startBackupJob } from "@casacarlos/backup";
-import { seedIfEmpty } from "./seed.js";
+import { DatabaseSync } from "node:sqlite";
+import { seedIfEmpty, ensurePricingDefaults, ensureCashboxDefaults } from "./seed.js";
 import { registerAuth } from "./auth.js";
 import { registerWebSocketGateway } from "./ws.js";
 import { KioskStore } from "./kiosk/store.js";
@@ -108,11 +109,31 @@ function ensureAgentToken(dataDir: string): string {
   return token;
 }
 
+function ensureDatabaseSchema(sqlite: DatabaseSync): void {
+  try {
+    const table = sqlite.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='pricing_modalidades'").get();
+    if (table) {
+      const columns = sqlite.prepare("PRAGMA table_info(pricing_modalidades)").all() as Array<{ name: string }>;
+      const colNames = new Set(columns.map((c) => c.name));
+      if (!colNames.has("precio_adicional_centimos")) {
+        sqlite.exec("ALTER TABLE `pricing_modalidades` ADD COLUMN `precio_adicional_centimos` integer DEFAULT 1000 NOT NULL;");
+      }
+      if (!colNames.has("tiempo_adicional_min")) {
+        sqlite.exec("ALTER TABLE `pricing_modalidades` ADD COLUMN `tiempo_adicional_min` integer DEFAULT 60 NOT NULL;");
+      }
+    }
+  } catch (err) {
+    console.warn("[DB] Error asegurando columnas de pricing_modalidades:", err);
+  }
+}
+
 async function main() {
   const dataDir = resolve(__dirname, "../../../data");
   mkdirSync(dataDir, { recursive: true });
   const { db, sqlite } = openDatabase(resolve(dataDir, "casacarlos.db"));
+  ensureDatabaseSchema(sqlite);
   await runMigrations(db, sqlite);
+  ensureDatabaseSchema(sqlite);
 
   const bus = new InProcessBus();
 
@@ -168,6 +189,8 @@ async function main() {
   });
 
   await seedIfEmpty(rooms, pricing, identity, payments, inventory, cashbox);
+  await ensurePricingDefaults(pricing, rooms);
+  await ensureCashboxDefaults(cashbox);
 
   const scheduler = startScheduler(rooms, stays, sales);
   const backupJob = startBackupJob(sqlite, dataDir);

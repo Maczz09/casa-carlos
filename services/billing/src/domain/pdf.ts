@@ -61,7 +61,6 @@ function drawHeader(doc: PDFKit.PDFDocument, emisor: EmisorInfo, comprobante: Co
   }
   doc.fontSize(FONT_TITULO).font("Helvetica-Bold").text(emisor.nombreComercial, MARGIN, doc.y, centrado);
   doc.fontSize(FONT_BASE).font("Helvetica-Bold");
-  if (emisor.razonSocial !== emisor.nombreComercial) doc.text(emisor.razonSocial, MARGIN, doc.y, centrado);
   doc.text(`RUC ${emisor.ruc}`, MARGIN, doc.y, centrado);
   doc.text(`${emisor.direccion}`, MARGIN, doc.y, centrado);
   doc.text(`${emisor.distrito}, ${emisor.provincia}, ${emisor.departamento}`, MARGIN, doc.y, centrado);
@@ -80,7 +79,9 @@ function drawParty(doc: PDFKit.PDFDocument, comprobante: Comprobante, fechaEmisi
   doc.fontSize(FONT_BASE).font("Helvetica-Bold");
   doc.text(`Fecha: ${fechaEmision}`, MARGIN, doc.y, { width: CONTENT_WIDTH });
   doc.text(`${comprobante.receptorTipoDoc}: ${comprobante.receptorNumeroDoc}`, MARGIN, doc.y, { width: CONTENT_WIDTH });
-  doc.text(`Cliente: ${comprobante.receptorRazonSocial}`, MARGIN, doc.y, { width: CONTENT_WIDTH });
+  if (comprobante.tipo !== "BOLETA" && comprobante.receptorRazonSocial) {
+    doc.text(`Cliente: ${comprobante.receptorRazonSocial}`, MARGIN, doc.y, { width: CONTENT_WIDTH });
+  }
   separador(doc);
 }
 

@@ -184,6 +184,7 @@ export const api = {
   deleteRoom: (id: string) => del<void>(`/api/rooms/${id}`),
 
   modalities: () => get<Modality[]>("/api/pricing/modalities"),
+  restoreModalities: () => post<Modality[]>("/api/pricing/modalities/restore-defaults"),
   updateModality: (
     id: string,
     patchBody: {

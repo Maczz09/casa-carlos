@@ -108,8 +108,9 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   };
 
   const [modalitiesLoading, setModalitiesLoading] = useState(true);
+  const [restoringModalities, setRestoringModalities] = useState(false);
 
-  useEffect(() => {
+  const loadModalities = () => {
     setModalitiesLoading(true);
     api
       .modalities()
@@ -125,6 +126,25 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
       .finally(() => {
         setModalitiesLoading(false);
       });
+  };
+
+  const handleRestoreModalities = async () => {
+    try {
+      setRestoringModalities(true);
+      const list = await api.restoreModalities();
+      if (list && list.length > 0) {
+        setModalities(list);
+        setModalidadId(list[0]!.id);
+      }
+    } catch (err) {
+      console.error("Error al restaurar modalidades:", err);
+    } finally {
+      setRestoringModalities(false);
+    }
+  };
+
+  useEffect(() => {
+    loadModalities();
   }, []);
 
   useEffect(() => {
@@ -213,9 +233,17 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
                 ))}
               </div>
             ) : (
-              <Notice kind="warn">
-                No se encontraron modalidades configuradas en el sistema.
-              </Notice>
+              <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <span>No se encontraron modalidades configuradas en el sistema.</span>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleRestoreModalities}
+                  disabled={restoringModalities}
+                >
+                  {restoringModalities ? "Cargando..." : "Cargar modalidades por defecto"}
+                </Button>
+              </div>
             )}
 
             {selected && !selected.checkinFijo && (

@@ -15,6 +15,131 @@ const NOCHE_B_SCALE = {
   doble: [10000, 19000, 27500],
 };
 
+/** Garantiza que existan las 3 modalidades, temporadas, franjas horarias y cargos en cualquier base de datos (incluso si ya tenía cuartos). */
+export async function ensurePricingDefaults(pricing: PricingPort, rooms: RoomsPort): Promise<void> {
+  const modalities = await pricing.listModalities();
+  const existingCodes = new Set(modalities.map((m) => m.codigo));
+
+  let modalidadHoras = modalities.find((m) => m.codigo === "HORAS_3");
+  if (!modalidadHoras) {
+    try {
+      modalidadHoras = await pricing.getModalityByCode("HORAS_3");
+    } catch {
+      modalidadHoras = await pricing.createModality({
+        codigo: "HORAS_3",
+        nombre: "Por horas",
+        duracionHoras: 3,
+        toleranciaMin: 15,
+        precioAdicionalCentimos: 1000,
+        tiempoAdicionalMinutos: 60,
+      });
+    }
+  }
+
+  let modalidadNocheA = modalities.find((m) => m.codigo === "NOCHE_A");
+  if (!modalidadNocheA) {
+    try {
+      modalidadNocheA = await pricing.getModalityByCode("NOCHE_A");
+    } catch {
+      modalidadNocheA = await pricing.createModality({
+        codigo: "NOCHE_A",
+        nombre: "Día — check-in 14:00",
+        duracionHoras: 20,
+        checkinFijo: "14:00",
+        checkoutFijo: "10:00",
+        toleranciaMin: 15,
+        precioAdicionalCentimos: 1000,
+        tiempoAdicionalMinutos: 60,
+      });
+    }
+  }
+
+  let modalidadNocheB = modalities.find((m) => m.codigo === "NOCHE_B");
+  if (!modalidadNocheB) {
+    try {
+      modalidadNocheB = await pricing.getModalityByCode("NOCHE_B");
+    } catch {
+      modalidadNocheB = await pricing.createModality({
+        codigo: "NOCHE_B",
+        nombre: "Noche — check-in 20:00",
+        duracionHoras: 12,
+        checkinFijo: "20:00",
+        checkoutFijo: "08:00",
+        toleranciaMin: 15,
+        precioAdicionalCentimos: 1000,
+        tiempoAdicionalMinutos: 60,
+      });
+    }
+  }
+
+  const seasons = await pricing.listSeasons();
+  let temporada = seasons.find((s) => s.activa) ?? seasons[0];
+  if (!temporada) {
+    temporada = await pricing.createSeason({
+      nombre: "Temporada general",
+      desde: "2020-01-01",
+      hasta: "2099-12-31",
+      prioridad: 0,
+    });
+  }
+
+  let bandas = await pricing.listBands(temporada.id);
+  if (bandas.length === 0) {
+    const bandaManana = await pricing.createBand({ temporadaId: temporada.id, horaInicio: "10:00", etiqueta: "Mañana" });
+    const bandaTarde = await pricing.createBand({ temporadaId: temporada.id, horaInicio: "16:00", etiqueta: "Tarde" });
+    const bandaNoche = await pricing.createBand({ temporadaId: temporada.id, horaInicio: "23:00", etiqueta: "Noche" });
+    bandas = [bandaManana, bandaTarde, bandaNoche];
+  }
+
+  const categories = await rooms.listCategories();
+  for (const cat of categories) {
+    const existingRates = await pricing.getCategoryRates(cat.id);
+    if (!existingRates) {
+      for (const banda of bandas) {
+        await pricing.setRate({
+          franjaId: banda.id,
+          categoriaId: cat.id,
+          modalidadId: modalidadHoras.id,
+          precioCentimos: 4000,
+        });
+      }
+      await pricing.setNightScale({ modalidadId: modalidadNocheA.id, categoriaId: cat.id, noches: 1, precioTotalCentimos: 9500 });
+      await pricing.setNightScale({ modalidadId: modalidadNocheA.id, categoriaId: cat.id, noches: 2, precioTotalCentimos: 18500 });
+      await pricing.setNightScale({ modalidadId: modalidadNocheA.id, categoriaId: cat.id, noches: 3, precioTotalCentimos: 27000 });
+
+      await pricing.setNightScale({ modalidadId: modalidadNocheB.id, categoriaId: cat.id, noches: 1, precioTotalCentimos: 8500 });
+      await pricing.setNightScale({ modalidadId: modalidadNocheB.id, categoriaId: cat.id, noches: 2, precioTotalCentimos: 16500 });
+      await pricing.setNightScale({ modalidadId: modalidadNocheB.id, categoriaId: cat.id, noches: 3, precioTotalCentimos: 24000 });
+    }
+  }
+
+  try {
+    await pricing.getCharge("EARLY_CHECKIN");
+  } catch {
+    await pricing.createCharge({ codigo: "EARLY_CHECKIN", nombre: "Check-in anticipado", precioCentimos: 500, unidad: "HORA" });
+  }
+  try {
+    await pricing.getCharge("EXCESO");
+  } catch {
+    await pricing.createCharge({ codigo: "EXCESO", nombre: "Exceso de tiempo", precioCentimos: 2000, unidad: "FIJO" });
+  }
+  try {
+    await pricing.getCharge("EXTENSION_3H");
+  } catch {
+    await pricing.createCharge({ codigo: "EXTENSION_3H", nombre: "Extensión de 3 horas", precioCentimos: 4000, unidad: "BLOQUE" });
+  }
+}
+
+/** Garantiza que existan las 3 plantillas de turnos solicitadas por Carlos en cualquier base de datos. */
+export async function ensureCashboxDefaults(cashbox: CashboxPort): Promise<void> {
+  const templates = await cashbox.listShiftTemplates();
+  if (templates.length === 0) {
+    await cashbox.createShiftTemplate({ nombre: "Turno Mañana", horaInicio: "09:00", horaFin: "17:00" });
+    await cashbox.createShiftTemplate({ nombre: "Turno Tarde", horaInicio: "17:00", horaFin: "01:00" });
+    await cashbox.createShiftTemplate({ nombre: "Turno Noche", horaInicio: "01:00", horaFin: "09:00" });
+  }
+}
+
 /** Populates a fresh database with enough real data to run the reception screen end to end. */
 export async function seedIfEmpty(
   rooms: RoomsPort,
@@ -25,7 +150,12 @@ export async function seedIfEmpty(
   cashbox: CashboxPort,
 ): Promise<void> {
   const existingFloors = await rooms.listFloors();
-  if (existingFloors.length > 0) return;
+  if (existingFloors.length > 0) {
+    // Si ya existían cuartos/pisos, de todas formas nos aseguramos de que existan modalidades y turnos
+    await ensurePricingDefaults(pricing, rooms);
+    await ensureCashboxDefaults(cashbox);
+    return;
+  }
 
   console.log("[seed] base de datos vacía — cargando datos iniciales…");
 
@@ -91,9 +221,6 @@ export async function seedIfEmpty(
   });
 
   const temporada = await pricing.createSeason({ nombre: "Temporada general", desde: "2020-01-01", hasta: "2099-12-31", prioridad: 0 });
-  // Deliberately no "madrugada" band starting at 00:00 — before 10:00, resolution wraps around
-  // to bandaNoche of the *previous* day. See REGLAS-DE-NEGOCIO.md §3: the case that always
-  // breaks tariff engines if it isn't handled explicitly. This seed exercises it on purpose.
   const bandaManana = await pricing.createBand({ temporadaId: temporada.id, horaInicio: "10:00", etiqueta: "Mañana" });
   const bandaTarde = await pricing.createBand({ temporadaId: temporada.id, horaInicio: "16:00", etiqueta: "Tarde" });
   const bandaNoche = await pricing.createBand({ temporadaId: temporada.id, horaInicio: "23:00", etiqueta: "Noche" });
@@ -153,8 +280,6 @@ export async function seedIfEmpty(
     cci: "00219400123456789012",
     orden: 0,
   }, admin.id);
-  // La foto del QR de cada billetera la carga el hotel desde Ajustes → Cobros:
-  // el QR que cobra de verdad sale de la app de la billetera, no se puede sembrar.
   await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "YAPE", titular: "Hospedaje Carlos", telefono: "999 888 777", orden: 1 }, admin.id);
   await payments.createCollectionAccount({ tipo: "BILLETERA", proveedor: "PLIN", titular: "Hospedaje Carlos", telefono: "999 888 777", orden: 2 }, admin.id);
 
@@ -168,10 +293,9 @@ export async function seedIfEmpty(
   await inventory.createProduct({ codigoBarras: "7750182004010", nombre: "Papas Lays", categoriaId: catSnacks.id, precioCentimos: 600, costoCentimos: 300, stockInicial: 20, stockMinimo: 5, usuarioId: admin.id });
   await inventory.createProduct({ codigoBarras: "7750182005017", nombre: "Preservativos (unidad)", categoriaId: catHigiene.id, precioCentimos: 500, costoCentimos: 200, stockInicial: 40, stockMinimo: 10, usuarioId: admin.id });
 
-  await cashbox.createShiftTemplate({ nombre: "Turno día", horaInicio: "07:00", horaFin: "19:00" });
-  await cashbox.createShiftTemplate({ nombre: "Turno noche", horaInicio: "19:00", horaFin: "07:00" });
+  await ensureCashboxDefaults(cashbox);
 
   console.log(
-    "[seed] listo: 2 pisos, 9 cuartos, 3 modalidades, tarifas, cuentas de cobro, 5 productos, 2 plantillas de turno y usuarios (admin/admin123, recepcion/recepcion123).",
+    "[seed] listo: 2 pisos, 9 cuartos, 3 modalidades, tarifas, cuentas de cobro, 5 productos, plantillas de turno y usuarios.",
   );
 }
