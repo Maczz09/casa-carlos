@@ -42,6 +42,9 @@ export class KioskStore {
 
 
   async start(usuarioId: string, modalidadId: string, bloques: number, noches: number, horaEntrada?: string | null): Promise<KioskSession> {
+    if (this.session?.stayId && this.session.estado !== "ACEPTADO") {
+      await this.stays.cancel(this.session.stayId, "Nueva venta iniciada", this.session.usuarioId).catch(() => {});
+    }
     const modality = await this.pricing.getModality(modalidadId);
     const categories = await this.rooms.listCategories();
     const now = new Date();
@@ -236,7 +239,7 @@ export class KioskStore {
       if (this.session?.estado === "ACEPTADO" && this.session.saleId === saleId) {
         this.commit(null);
       }
-    }, 90_000);
+    }, 15_000);
   }
 
   private handlePaymentRejected(saleId: string, motivo: string): void {
@@ -246,7 +249,7 @@ export class KioskStore {
       if (this.session?.estado === "RECHAZADO" && this.session.saleId === saleId) {
         this.commit(null);
       }
-    }, 90_000);
+    }, 15_000);
   }
 
   private mustGet(): KioskSession {

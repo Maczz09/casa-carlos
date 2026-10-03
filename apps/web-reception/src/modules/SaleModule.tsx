@@ -13,6 +13,7 @@ interface Props {
   categories: Category[];
   session: KioskSession | null;
   onDone: () => void;
+  onDismissSession?: (sessionId: string) => void;
 }
 
 const STEPS = ["Modalidad", "Cuarto", "Datos", "Productos", "Pago"] as const;
@@ -61,7 +62,7 @@ function Stepper({ current }: { current: number }) {
   );
 }
 
-export function SaleModule({ floors, categories, session, onDone }: Props) {
+export function SaleModule({ floors, categories, session, onDone, onDismissSession }: Props) {
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [modalidadId, setModalidadId] = useState("");
   const [bloques, setBloques] = useState(1);
@@ -75,6 +76,19 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   const [entryMode, setEntryMode] = useState<"ahora" | "15min" | "30min" | "45min" | "60min" | "manual">("ahora");
   const [customTime, setCustomTime] = useState<string>("");
   const [dismissedSessionId, setDismissedSessionId] = useState<string | null>(null);
+
+  const resetForm = () => {
+    setCustomer({ nombres: "", apellidos: "", dni: "", telefono: "" });
+    setBloques(1);
+    setNoches(1);
+    setPayment(null);
+    setProductSale(null);
+    setWantsProducts(null);
+    setError(null);
+    setEntryMode("ahora");
+    setCustomTime("");
+    setBusy(false);
+  };
 
   const activeSession = session && session.id !== dismissedSessionId ? session : null;
 
@@ -186,13 +200,12 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   }, [activeSession?.estado, activeSession?.saleId, activeSession?.totalCentimos]);
 
   const cancel = async () => {
-    setBusy(true);
-    try {
-      if (session) setDismissedSessionId(session.id);
-      await api.cancelKiosk("Cancelado por recepción");
-    } finally {
-      setBusy(false);
+    if (session) {
+      onDismissSession?.(session.id);
+      setDismissedSessionId(session.id);
     }
+    resetForm();
+    void api.cancelKiosk("Cancelado por recepción").catch(console.error);
   };
 
   const selected = modalities.find((m) => m.id === modalidadId);
@@ -202,7 +215,15 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   if (!activeSession || activeSession.estado === "ESPERA") {
     return (
       <>
-        <PageHeader title="Nueva venta" subtitle="Elegí la modalidad — esto carga la pantalla del cliente en el kiosco" />
+        <PageHeader
+          title="Nueva venta"
+          subtitle="Elegí la modalidad — esto carga la pantalla del cliente en el kiosco"
+          actions={
+            <Button variant="ghost" onClick={onDone}>
+              Volver al tablero
+            </Button>
+          }
+        />
         <Stepper current={0} />
 
         <Section title="Modalidad" className="mx-auto max-w-2xl">
@@ -789,34 +810,35 @@ export function SaleModule({ floors, categories, session, onDone }: Props) {
   /* ---------- Resultado ---------- */
   const aceptado = activeSession.estado === "ACEPTADO";
 
-  const handleStartNewSale = async () => {
-    setBusy(true);
-    try {
-      if (session) setDismissedSessionId(session.id);
-      await api.cancelKiosk("Nueva venta iniciada");
-    } catch (err) {
-      console.error("Error iniciando nueva venta:", err);
-    } finally {
-      setBusy(false);
+  const handleStartNewSale = () => {
+    if (session) {
+      onDismissSession?.(session.id);
+      setDismissedSessionId(session.id);
     }
+    resetForm();
+    void api.cancelKiosk("Nueva venta iniciada").catch(console.error);
   };
 
-  const handleDone = async () => {
-    setBusy(true);
-    try {
-      if (session) setDismissedSessionId(session.id);
-      await api.cancelKiosk("Venta finalizada");
-    } catch (err) {
-      console.error("Error finalizando venta:", err);
-    } finally {
-      setBusy(false);
-      onDone();
+  const handleDone = () => {
+    if (session) {
+      onDismissSession?.(session.id);
+      setDismissedSessionId(session.id);
     }
+    resetForm();
+    void api.cancelKiosk("Venta finalizada").catch(console.error);
+    onDone();
   };
 
   return (
     <>
-      <PageHeader title={aceptado ? "Venta confirmada" : "Pago rechazado"} />
+      <PageHeader
+        title={aceptado ? "Venta confirmada" : "Pago rechazado"}
+        actions={
+          <Button variant="secondary" onClick={handleDone}>
+            Volver al tablero
+          </Button>
+        }
+      />
       <Card className="mx-auto max-w-md p-8 text-center shadow-lg">
         <span className={cx("mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full text-3xl", aceptado ? "tone-teal" : "tone-red")}>
           {aceptado ? "✓" : "!"}

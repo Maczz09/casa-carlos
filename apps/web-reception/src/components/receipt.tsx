@@ -214,7 +214,22 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   <div class="footer-credit">
     Sistema base HotelFast
   </div>
-  <script>window.onload = () => setTimeout(() => window.print(), 80);</script>
+  <script>
+    window.onload = () => {
+      setTimeout(() => {
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setTimeout(() => {
+            try { window.close(); } catch (e) {}
+          }, 500);
+        }
+      }, 120);
+    };
+  </script>
 </body>
 </html>`;
 }
@@ -408,17 +423,42 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   <div class="footer-credit">
     Sistema base HotelFast
   </div>
-  <script>window.onload = () => setTimeout(() => window.print(), 80);</script>
+  <script>
+    window.onload = () => {
+      setTimeout(() => {
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setTimeout(() => {
+            try { window.close(); } catch (e) {}
+          }, 500);
+        }
+      }, 120);
+    };
+  </script>
 </body>
 </html>`;
 }
 
 /** Abre el ticket de 80mm en una ventana nueva y dispara la impresión ahí. */
 function printDraftReceipt(draft: DraftReceipt): void {
-  const win = window.open("", "_blank", "width=420,height=640");
-  if (!win) return;
-  win.document.write(buildDraftReceiptHtml(draft));
-  win.document.close();
+  try {
+    const win = window.open("", "_blank", "width=420,height=640");
+    if (!win) {
+      console.warn("No se pudo abrir ventana de impresión");
+      return;
+    }
+    win.document.write(buildDraftReceiptHtml(draft));
+    win.document.close();
+    try {
+      win.focus();
+    } catch {}
+  } catch (err) {
+    console.error("Error al abrir diálogo de impresión:", err);
+  }
 }
 
 /**
@@ -588,7 +628,22 @@ export function buildArqueoReceiptHtml(data: ArqueoTicketDto, impresoPorNombre: 
   <div class="footer-credit">
     Sistema base HotelFast
   </div>
-  <script>window.onload = () => setTimeout(() => window.print(), 80);</script>
+  <script>
+    window.onload = () => {
+      setTimeout(() => {
+        try {
+          window.focus();
+          window.print();
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setTimeout(() => {
+            try { window.close(); } catch (e) {}
+          }, 500);
+        }
+      }, 120);
+    };
+  </script>
 </body>
 </html>`;
 }
@@ -620,46 +675,54 @@ export async function printArqueoReceipt(arqueoId: string, currentUser?: { nombr
  * imprime el borrador de 80mm en su propia ventana.
  */
 export async function printReceiptForSale(ventaId: string, cuarto?: string | null): Promise<void> {
-  const comprobante = await api.comprobanteForSale(ventaId);
-  if (comprobante && comprobante.estadoSunat === "ACEPTADO") {
-    await openComprobantePdf(comprobante.id);
-    return;
-  }
-
-  const [sale, pago, emisor] = await Promise.all([api.getSale(ventaId), api.comprobantePagoForSale(ventaId), getEmisorData()]);
-
-  let resolvedCuarto: string | null = cuarto ?? null;
-  if (!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) {
-    resolvedCuarto = sale.cuartoNumero ?? null;
-  }
-  if ((!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) && sale.cuartoId) {
-    try {
-      const room = await api.getRoom(sale.cuartoId);
-      if (room?.numero) resolvedCuarto = room.numero;
-    } catch {}
-  }
-  if (resolvedCuarto && UUID_REGEX.test(resolvedCuarto)) {
-    resolvedCuarto = null;
-  }
-
-  let recepcionistaNombre: string | null = null;
   try {
-    const me = await api.me();
-    recepcionistaNombre = `${me.nombres} ${me.apellidos}`.trim();
-  } catch {
-    // ignore
-  }
+    const comprobante = await api.comprobanteForSale(ventaId).catch(() => null);
+    if (comprobante && comprobante.estadoSunat === "ACEPTADO") {
+      await openComprobantePdf(comprobante.id).catch(() => {});
+      return;
+    }
 
-  printDraftReceipt({
-    sale,
-    tipo: pago?.tipo ?? "BOLETA",
-    receptorRuc: pago?.receptorRuc,
-    receptorRazonSocial: pago?.receptorRazonSocial,
-    fecha: pago?.creadoEn ?? sale.creadoEn,
-    cuarto: resolvedCuarto,
-    recepcionistaNombre,
-    emisor,
-  });
+    const [sale, pago, emisor] = await Promise.all([
+      api.getSale(ventaId),
+      api.comprobantePagoForSale(ventaId).catch(() => null),
+      getEmisorData().catch(() => null),
+    ]);
+
+    let resolvedCuarto: string | null = cuarto ?? null;
+    if (!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) {
+      resolvedCuarto = sale.cuartoNumero ?? null;
+    }
+    if ((!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) && sale.cuartoId) {
+      try {
+        const room = await api.getRoom(sale.cuartoId);
+        if (room?.numero) resolvedCuarto = room.numero;
+      } catch {}
+    }
+    if (resolvedCuarto && UUID_REGEX.test(resolvedCuarto)) {
+      resolvedCuarto = null;
+    }
+
+    let recepcionistaNombre: string | null = null;
+    try {
+      const me = await api.me();
+      recepcionistaNombre = `${me.nombres} ${me.apellidos}`.trim();
+    } catch {
+      // ignore
+    }
+
+    printDraftReceipt({
+      sale,
+      tipo: pago?.tipo ?? "BOLETA",
+      receptorRuc: pago?.receptorRuc,
+      receptorRazonSocial: pago?.receptorRazonSocial,
+      fecha: pago?.creadoEn ?? sale.creadoEn,
+      cuarto: resolvedCuarto,
+      recepcionistaNombre,
+      emisor,
+    });
+  } catch (err) {
+    console.error("Error al imprimir comprobante para venta:", err);
+  }
 }
 
 /** Igual que `printReceiptForSale`, pero partiendo de un ComprobantePago ya en mano. */

@@ -110,6 +110,16 @@ export default function App() {
   const active = segment === "" ? "tablero" : segment === "cuarto" ? "tablero" : segment;
   const title = segment === "cuarto" ? "Detalle del cuarto" : (NAV_LABEL[active] ?? "Tablero de cuartos");
 
+  const [dismissedSessionId, setDismissedSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!kioskSession) {
+      setDismissedSessionId(null);
+    }
+  }, [kioskSession]);
+
+  const effectiveSession = kioskSession && kioskSession.id !== dismissedSessionId ? kioskSession : null;
+
   const render = () => {
     const can = (permission: AppPermission) => user.permisos.includes(permission);
     const denied = () => (
@@ -121,7 +131,18 @@ export default function App() {
       case "cuarto":
         return can("BOARD_VIEW") ? <RoomDetailModule roomId={param} floors={floors} onBack={() => navigate("/tablero")} /> : denied();
       case "venta":
-        return can("SALES_MANAGE") ? <SaleModule floors={floors} categories={categories} session={kioskSession} onDone={() => navigate("/tablero")} /> : denied();
+        return can("SALES_MANAGE") ? (
+          <SaleModule
+            floors={floors}
+            categories={categories}
+            session={effectiveSession}
+            onDismissSession={(id) => setDismissedSessionId(id)}
+            onDone={() => {
+              if (kioskSession) setDismissedSessionId(kioskSession.id);
+              navigate("/tablero");
+            }}
+          />
+        ) : denied();
       case "reservas":
         return can("RESERVATIONS_MANAGE") ? <ReservationsModule floors={floors} /> : denied();
       case "caja":
@@ -158,16 +179,18 @@ export default function App() {
     }
   };
 
-  const handleStartSale = async () => {
+  const handleStartSale = () => {
     if (kioskSession && (kioskSession.estado === "ACEPTADO" || kioskSession.estado === "RECHAZADO")) {
-      await api.cancelKiosk("Nueva venta desde tablero").catch(() => {});
+      setDismissedSessionId(kioskSession.id);
+      void api.cancelKiosk("Nueva venta desde tablero").catch(() => {});
     }
     navigate("/venta");
   };
 
-  const handleNavigate = async (id: string) => {
-    if (id === "venta" && kioskSession && (kioskSession.estado === "ACEPTADO" || kioskSession.estado === "RECHAZADO")) {
-      await api.cancelKiosk("Nueva venta desde menú").catch(() => {});
+  const handleNavigate = (id: string) => {
+    if (kioskSession && (kioskSession.estado === "ACEPTADO" || kioskSession.estado === "RECHAZADO")) {
+      setDismissedSessionId(kioskSession.id);
+      void api.cancelKiosk(`Navegación a ${id}`).catch(() => {});
     }
     navigate(`/${id}`);
   };
