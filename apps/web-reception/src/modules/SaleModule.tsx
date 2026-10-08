@@ -754,9 +754,25 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
         <Stepper current={4} />
 
         <Section title="Detalle del pago" className="mx-auto max-w-lg">
-          <div className="mb-4 rounded-xl bg-inset p-4">
+          <div className="mb-4 rounded-xl bg-inset p-4 space-y-3">
             {payment.detalles.map((d) => (
-              <Row key={d.id} label={`${d.metodo}${d.codigoOperacion ? ` · ${d.codigoOperacion}` : ""}`} value={format(cents(d.montoCentimos))} />
+              <div key={d.id} className="space-y-1">
+                <Row label={`${d.metodo}${d.codigoOperacion ? ` · ${d.codigoOperacion}` : ""}`} value={format(cents(d.montoCentimos))} />
+                {d.metodo === "EFECTIVO" && d.recibidoCentimos && d.recibidoCentimos > d.montoCentimos && (
+                  <div className="mt-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs flex items-center justify-between">
+                    <div>
+                      <span className="text-muted">Recibido: </span>
+                      <span className="font-semibold text-ink">{format(cents(d.recibidoCentimos))}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-emerald-400">Vuelto a entregar: </span>
+                      <span className="text-sm font-extrabold text-emerald-400">
+                        {format(cents(d.vueltoCentimos ?? (d.recibidoCentimos - d.montoCentimos)))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
 
@@ -851,6 +867,15 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
             ? "La venta quedó registrada y el comprobante se envió a la impresora automáticamente."
             : (activeSession.error ?? "El cuarto se liberó.")}
         </p>
+
+        {payment && payment.detalles.some((d) => d.metodo === "EFECTIVO" && (d.vueltoCentimos ?? (d.recibidoCentimos ? d.recibidoCentimos - d.montoCentimos : 0)) > 0) && (
+          <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-300">
+            <span>💵 Vuelto entregado: </span>
+            <span className="font-bold text-emerald-200">
+              {format(cents(payment.detalles.reduce((acc, d) => acc + (d.vueltoCentimos ?? (d.recibidoCentimos ? Math.max(0, d.recibidoCentimos - d.montoCentimos) : 0)), 0)))}
+            </span>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col gap-2.5">
           <Button

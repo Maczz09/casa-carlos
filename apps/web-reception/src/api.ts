@@ -256,6 +256,7 @@ export const api = {
   },
 
   createPayment: (saleId: string, detalles: PaymentDetailInput[]) => post<PaymentWithDetails>("/api/payments", { saleId, detalles }),
+  paymentForSale: (saleId: string) => get<PaymentWithDetails | null>(`/api/payments/for-sale/${saleId}`),
   acceptPayment: async (id: string) => {
     const payment = await post<PaymentWithDetails>(`/api/payments/${id}/accept`);
     window.dispatchEvent(new Event("casacarlos:payment-success"));

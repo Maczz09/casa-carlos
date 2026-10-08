@@ -21,6 +21,8 @@ export interface DraftReceipt {
   cuarto?: string | null;
   recepcionistaNombre?: string | null;
   emisor?: SunatEmisor | null;
+  recibidoCentimos?: number | null;
+  vueltoCentimos?: number | null;
 }
 
 function escapeHtml(value: string): string {
@@ -100,6 +102,8 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
     .join("");
 
   const totalFormatted = (sale.totalCentimos / 100).toFixed(2);
+  const recibidoFormatted = draft.recibidoCentimos && draft.recibidoCentimos > sale.totalCentimos ? (draft.recibidoCentimos / 100).toFixed(2) : null;
+  const vueltoFormatted = draft.vueltoCentimos && draft.vueltoCentimos > 0 ? (draft.vueltoCentimos / 100).toFixed(2) : (draft.recibidoCentimos && draft.recibidoCentimos > sale.totalCentimos ? ((draft.recibidoCentimos - sale.totalCentimos) / 100).toFixed(2) : null);
 
   const clienteNombreCompleto = [sale.clienteNombres, sale.clienteApellidos].filter(Boolean).join(" ").trim();
 
@@ -206,6 +210,19 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
       <span>Total a pagar:</span>
       <span>S/ ${totalFormatted}</span>
     </div>
+    ${
+      recibidoFormatted
+        ? `
+    <div class="totals-row" style="margin-top: 1.5mm;">
+      <span>Efectivo recibido:</span>
+      <span>S/ ${recibidoFormatted}</span>
+    </div>
+    <div class="totals-row" style="font-weight: 900 !important; font-size: 12px;">
+      <span>Vuelto:</span>
+      <span>S/ ${vueltoFormatted ?? "0.00"}</span>
+    </div>`
+        : ""
+    }
   </div>
   <div class="blank-lines">
     <div>RUC: _ _ _ _ _ _ _ _ _ _ _ _ _ _ _</div>
@@ -682,11 +699,16 @@ export async function printReceiptForSale(ventaId: string, cuarto?: string | nul
       return;
     }
 
-    const [sale, pago, emisor] = await Promise.all([
+    const [sale, pago, emisor, payment] = await Promise.all([
       api.getSale(ventaId),
       api.comprobantePagoForSale(ventaId).catch(() => null),
       getEmisorData().catch(() => null),
+      api.paymentForSale(ventaId).catch(() => null),
     ]);
+
+    const cashDetail = payment?.detalles?.find((d) => d.metodo === "EFECTIVO");
+    const recibidoCentimos = cashDetail?.recibidoCentimos ?? null;
+    const vueltoCentimos = cashDetail?.vueltoCentimos ?? null;
 
     let resolvedCuarto: string | null = cuarto ?? null;
     if (!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) {
@@ -719,6 +741,8 @@ export async function printReceiptForSale(ventaId: string, cuarto?: string | nul
       cuarto: resolvedCuarto,
       recepcionistaNombre,
       emisor,
+      recibidoCentimos,
+      vueltoCentimos,
     });
   } catch (err) {
     console.error("Error al imprimir comprobante para venta:", err);
@@ -731,7 +755,15 @@ export async function printComprobantePago(item: ComprobantePago): Promise<void>
     await openComprobantePdf(item.comprobanteId);
     return;
   }
-  const [sale, emisor] = await Promise.all([api.getSale(item.ventaId), getEmisorData()]);
+  const [sale, emisor, payment] = await Promise.all([
+    api.getSale(item.ventaId),
+    getEmisorData(),
+    api.paymentForSale(item.ventaId).catch(() => null),
+  ]);
+
+  const cashDetail = payment?.detalles?.find((d) => d.metodo === "EFECTIVO");
+  const recibidoCentimos = cashDetail?.recibidoCentimos ?? null;
+  const vueltoCentimos = cashDetail?.vueltoCentimos ?? null;
 
   let resolvedCuarto: string | null = sale.cuartoNumero ?? null;
   if ((!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) && sale.cuartoId) {
@@ -761,5 +793,7 @@ export async function printComprobantePago(item: ComprobantePago): Promise<void>
     cuarto: resolvedCuarto,
     recepcionistaNombre,
     emisor,
+    recibidoCentimos,
+    vueltoCentimos,
   });
 }
