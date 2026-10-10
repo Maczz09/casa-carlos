@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import type { Arqueo, CancelledSale, CashMovementType, CashSummary, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import type { Arqueo, CancelledSale, CashMovementType, CashSummary, RoomBoardEntry, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
 import { formatDateTime12h, formatTime12h, formatTimeOnly12h } from "@casacarlos/contracts";
 import { cents, format, soles, splitIncludedIgv } from "@casacarlos/money";
-import { IconAlertTriangle, IconCash, IconCheck, IconFileX, IconPrinter, IconReceipt, IconSliders, IconTrash } from "@casacarlos/ui";
+import { IconAlertTriangle, IconCash, IconCheck, IconFileX, IconPrinter, IconReceipt, IconSliders, IconTrash, IconX } from "@casacarlos/ui";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip as ChartTooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
-import { api, ApiError, type CashMovementView, type ArqueoView } from "../api.js";
+import { api, ApiError, type CashMovementView, type ArqueoView, type ShiftCuadreDto } from "../api.js";
 import { DenominationCounter, sumDenominaciones } from "../components/DenominationCounter.js";
 import { printArqueoReceipt, printReceiptForSale, printShiftClosureReceipt } from "../components/receipt.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, StatCard, Tabs, Textarea, cx } from "../components/ui.js";
@@ -103,6 +103,9 @@ export function CashboxModule() {
   const [showMovForm, setShowMovForm] = useState(false);
 
   const [closing, setClosing] = useState(false);
+  const [pendingRoomsToWarn, setPendingRoomsToWarn] = useState<RoomBoardEntry[]>([]);
+  const [showPendingRoomsWarning, setShowPendingRoomsWarning] = useState(false);
+  const [cuadre, setCuadre] = useState<ShiftCuadreDto | null>(null);
   const [denominacionesCierre, setDenominacionesCierre] = useState<Record<string, number>>({});
   const [justificacion, setJustificacion] = useState("");
 
@@ -145,8 +148,18 @@ export function CashboxModule() {
     const current = await api.myShift();
     setShift(current);
     if (current) {
-      setSummary(await api.shiftSummary(current.id));
-      setArqueos(await api.arqueos(current.id));
+      const [sum, arqs, cdr] = await Promise.all([
+        api.shiftSummary(current.id),
+        api.arqueos(current.id),
+        api.shiftCuadre(current.id).catch(() => null),
+      ]);
+      setSummary(sum);
+      setArqueos(arqs);
+      setCuadre(cdr);
+    } else {
+      setSummary(null);
+      setArqueos([]);
+      setCuadre(null);
     }
   };
 
@@ -275,6 +288,27 @@ export function CashboxModule() {
       setSummary(await api.shiftSummary(shift.id));
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo registrar el movimiento.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleInitiateClosing = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const board = await api.board();
+      const occupied = board
+        .flatMap((f) => f.rooms)
+        .filter((r) => ["OCUPADO", "EN_TOLERANCIA", "EXCEDIDO"].includes(r.estado));
+      if (occupied.length > 0) {
+        setPendingRoomsToWarn(occupied);
+        setShowPendingRoomsWarning(true);
+        return;
+      }
+      setClosing(true);
+    } catch {
+      setClosing(true);
     } finally {
       setBusy(false);
     }
@@ -516,6 +550,18 @@ export function CashboxModule() {
                     </div>
                   </Section>
 
+                  {cuadre?.totalesConceptos && (
+                    <Section title="Desglose por conceptos" subtitle="Detalle de habitaciones, horas extra, productos y vueltos" delay={40}>
+                      <Row label="Hospedaje / Habitaciones" value={format(cents(cuadre.totalesConceptos.totalHospedajeCentimos))} />
+                      <Row label="Horas extra / Excesos" value={format(cents(cuadre.totalesConceptos.totalHorasExtraCentimos))} strong tone="text-brand" />
+                      <Row label="Productos / Consumo" value={format(cents(cuadre.totalesConceptos.totalProductosCentimos))} />
+                      {cuadre.totalesConceptos.totalOtrosCargosCentimos > 0 && (
+                        <Row label="Otros cargos" value={format(cents(cuadre.totalesConceptos.totalOtrosCargosCentimos))} />
+                      )}
+                      <Row label="Vueltos entregados" value={`−${format(cents(cuadre.totalesConceptos.totalVueltosCentimos))}`} tone="text-danger" />
+                    </Section>
+                  )}
+
                   {summary.porMetodo.length > 0 && (
                     <Section title="Cobros por método" subtitle="Importes recibidos, incluido el IGV" delay={60}>
                       <div className="grid items-center gap-4 md:grid-cols-[260px_1fr]">
@@ -601,7 +647,7 @@ export function CashboxModule() {
                       </span>
                     </Button>
 
-                    <Button block variant="warn" onClick={() => setClosing(true)}>
+                    <Button block variant="warn" onClick={handleInitiateClosing}>
                       Cerrar turno
                     </Button>
                   </div>
@@ -637,6 +683,88 @@ export function CashboxModule() {
                 )}
                 </div>
               </div>
+
+              {cuadre?.ventasDetalle && cuadre.ventasDetalle.length > 0 && (
+                <Section
+                  title="Cuartos y ventas de este turno"
+                  subtitle={`${cuadre.ventasDetalle.length} venta(s) registradas con desglose de cliente, cuarto, productos y horas extra`}
+                  delay={140}
+                >
+                  <div className="flex flex-col gap-2.5">
+                    {cuadre.ventasDetalle.map((v) => (
+                      <div
+                        key={v.ventaId}
+                        className="rounded-xl border border-line bg-surface p-3.5 shadow-xs transition-colors hover:border-brand/40"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-lg bg-brand/10 px-2.5 py-0.5 font-bold text-xs text-brand">
+                              {v.cuartoNumero ? `Hab. ${v.cuartoNumero}` : "Mostrador"}
+                            </span>
+                            <span className="font-semibold text-sm text-ink">{v.clienteNombre}</span>
+                            {v.clienteDni && <span className="text-xs text-muted">DNI {v.clienteDni}</span>}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-bold text-sm text-ink">{format(cents(v.totalCentimos))}</span>
+                            <Badge tone={v.saldoCentimos > 0 ? "tone-amber" : "tone-teal"}>
+                              {v.saldoCentimos > 0 ? `Saldo: ${format(cents(v.saldoCentimos))}` : "Pagado"}
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="mt-2 space-y-1 text-xs">
+                          {v.hospedajeDescripcion && (
+                            <div className="flex justify-between text-muted">
+                              <span>• Hospedaje: {v.hospedajeDescripcion}</span>
+                              <span className="font-mono">{format(cents(v.hospedajeMontoCentimos))}</span>
+                            </div>
+                          )}
+                          {v.horasExtra.map((h, idx) => (
+                            <div key={idx} className="flex justify-between font-semibold text-brand">
+                              <span>• [HORA EXTRA] {h.descripcion} x{h.cantidad}</span>
+                              <span className="font-mono">{format(cents(h.subtotalCentimos))}</span>
+                            </div>
+                          ))}
+                          {v.productos.map((p, idx) => (
+                            <div key={idx} className="flex justify-between text-ink">
+                              <span>• [PRODUCTO] {p.descripcion} x{p.cantidad}</span>
+                              <span className="font-mono">{format(cents(p.subtotalCentimos))}</span>
+                            </div>
+                          ))}
+                          {v.otrosCargos.map((c, idx) => (
+                            <div key={idx} className="flex justify-between text-muted">
+                              <span>• [CARGO] {c.descripcion} x{c.cantidad}</span>
+                              <span className="font-mono">{format(cents(c.subtotalCentimos))}</span>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="mt-2.5 flex flex-wrap items-center justify-between border-t border-line-soft pt-2 text-[11px] text-muted">
+                          <div>
+                            <span>Pago: {v.metodosPago.map((m) => METHOD_LABEL[m] || m).join(", ") || "Efectivo"}</span>
+                            {v.vueltoCentimos && v.vueltoCentimos > 0 ? (
+                              <span className="ml-2 font-semibold text-rose-600 dark:text-rose-400">
+                                (Vuelto entregado: {format(cents(v.vueltoCentimos))})
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span>{v.serie}-{String(v.correlativo).padStart(8, "0")} · {formatDateTime12h(v.creadoEn)}</span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              icon={<IconPrinter className="h-3 w-3" />}
+                              onClick={() => printReceiptForSale(v.ventaId, v.cuartoNumero ?? undefined)}
+                            >
+                              Ticket
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Section>
+              )}
             </div>
           )}
 
@@ -668,6 +796,62 @@ export function CashboxModule() {
                 </Button>
               </div>
             </Card>
+          )}
+
+          {/* Modal de advertencia si hay cuartos ocupados al cerrar turno */}
+          {showPendingRoomsWarning && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
+              <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-500">
+                    <IconAlertTriangle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-ink">¿Deseas cerrar caja con cuartos aún abiertos?</h3>
+                    <p className="text-xs text-muted">Existen habitaciones con huéspedes activos en el hotel</p>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3.5 space-y-2">
+                  <p className="text-xs font-semibold text-ink">
+                    Hay {pendingRoomsToWarn.length} cuarto(s) ocupados actualmente:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {pendingRoomsToWarn.map((r) => (
+                      <span
+                        key={r.room.id}
+                        className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400"
+                      >
+                        Hab. {r.room.numero}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-muted">
+                    Al cerrar esta caja, estos cuartos y sus consumos o saldos pendientes permanecerán abiertos y se transferirán automáticamente al siguiente turno de caja que se aperture.
+                  </p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                  <Button
+                    block
+                    variant="secondary"
+                    onClick={() => setShowPendingRoomsWarning(false)}
+                  >
+                    Cancelar y revisar cuartos
+                  </Button>
+                  <Button
+                    block
+                    variant="warn"
+                    onClick={() => {
+                      setShowPendingRoomsWarning(false);
+                      setClosing(true);
+                    }}
+                  >
+                    Traspasar a la siguiente caja y cerrar
+                  </Button>
+                </div>
+              </div>
+            </div>
           )}
         </>
       )}
@@ -788,9 +972,14 @@ export function CashboxModule() {
                     style={{ ["--i" as string]: i }}
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-ink">
-                        {v.clienteNombres ? `${v.clienteNombres} ${v.clienteApellidos ?? ""}`.trim() : "Sin cliente"}
-                        {v.clienteDni ? <span className="ml-2 text-xs font-normal text-subtle">DNI {v.clienteDni}</span> : null}
+                      <p className="truncate text-sm font-medium text-ink flex items-center gap-2">
+                        {v.cuartoNumero ? (
+                          <span className="rounded-md bg-brand-soft px-1.5 py-0.5 text-xs font-bold text-brand">
+                            Hab. {v.cuartoNumero}
+                          </span>
+                        ) : null}
+                        <span>{v.clienteNombres ? `${v.clienteNombres} ${v.clienteApellidos ?? ""}`.trim() : "Sin cliente"}</span>
+                        {v.clienteDni ? <span className="text-xs font-normal text-subtle">DNI {v.clienteDni}</span> : null}
                       </p>
                       <p className="truncate text-xs text-muted">
                         {v.serie}-{v.correlativo} · {formatDateTime12h(v.creadoEn)}

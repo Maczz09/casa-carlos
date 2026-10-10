@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails, SaleWithLines } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconCheck, IconPrinter, IconX, RoomIllustration } from "@casacarlos/ui";
+import { IconAlertTriangle, IconCheck, IconPrinter, IconX, RoomIllustration } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
 import { printReceiptForSale } from "../components/receipt.js";
 import { PaymentForm } from "../components/PaymentForm.js";
@@ -14,6 +14,7 @@ interface Props {
   session: KioskSession | null;
   onDone: () => void;
   onDismissSession?: (sessionId: string) => void;
+  onGoToCashbox?: () => void;
 }
 
 const STEPS = ["Modalidad", "Cuarto", "Datos", "Productos", "Pago"] as const;
@@ -62,7 +63,8 @@ function Stepper({ current }: { current: number }) {
   );
 }
 
-export function SaleModule({ floors, categories, session, onDone, onDismissSession }: Props) {
+export function SaleModule({ floors, categories, session, onDone, onDismissSession, onGoToCashbox }: Props) {
+  const [shift, setShift] = useState<{ id: string; estado: string } | null | undefined>(undefined);
   const [modalities, setModalities] = useState<Modality[]>([]);
   const [modalidadId, setModalidadId] = useState("");
   const [bloques, setBloques] = useState(1);
@@ -199,6 +201,10 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
     api.getSale(activeSession.saleId).then(setProductSale);
   }, [activeSession?.estado, activeSession?.saleId, activeSession?.totalCentimos]);
 
+  useEffect(() => {
+    api.myShift().then(setShift).catch(() => setShift(null));
+  }, []);
+
   const cancel = async () => {
     if (session) {
       onDismissSession?.(session.id);
@@ -210,6 +216,32 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
 
   const selected = modalities.find((m) => m.id === modalidadId);
   const current = stepIndex(activeSession);
+
+  if (shift === null || (shift && shift.estado !== "ABIERTO")) {
+    return (
+      <div className="mx-auto max-w-lg pt-8 animate-fade">
+        <Card className="p-6 text-center">
+          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-warn/15 text-warn">
+            <IconAlertTriangle className="h-8 w-8" />
+          </div>
+          <h2 className="text-lg font-bold text-ink">Caja cerrada</h2>
+          <p className="mt-2 text-sm text-muted">
+            No tienes un turno de caja abierto en este momento. Para realizar ventas, registrar huéspedes y cobrar, debes abrir un turno de caja primero.
+          </p>
+          <div className="mt-6 flex flex-col gap-2.5">
+            {onGoToCashbox && (
+              <Button variant="primary" size="lg" block onClick={onGoToCashbox}>
+                Ir a Caja / Abrir turno
+              </Button>
+            )}
+            <Button variant="ghost" block onClick={onDone}>
+              Volver al tablero
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   /* ---------- Paso 1: modalidad ---------- */
   if (!activeSession || activeSession.estado === "ESPERA") {

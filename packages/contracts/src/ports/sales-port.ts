@@ -20,6 +20,13 @@ export interface AddProductLineInput {
   usuarioId: string;
 }
 
+export interface AddExtraHoursInput {
+  saleId: string;
+  horas: number;
+  precioUnitarioCentimos?: number;
+  usuarioId: string;
+}
+
 export interface CancelSaleInput {
   saleId: string;
   motivo: string;
@@ -40,6 +47,7 @@ export interface CancelSaleInput {
 export interface SalesPort {
   openSaleForStay(input: OpenSaleForStayInput): Promise<Sale>;
   addExtraCharge(input: AddExtraChargeInput): Promise<SaleLine>;
+  addExtraHours(input: AddExtraHoursInput): Promise<SaleLine>;
   addProductLine(input: AddProductLineInput): Promise<SaleLine>;
   cancelLine(saleId: string, lineId: string, motivo: string, usuarioId: string): Promise<void>;
 

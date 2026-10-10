@@ -76,6 +76,27 @@ export type CashMovementView = CashMovement & { usuarioNombre: string };
 
 export type ArqueoView = Arqueo & { usuarioNombre: string };
 
+export interface ShiftSaleDetail {
+  ventaId: string;
+  serie: string;
+  correlativo: number;
+  cuartoNumero: string | null;
+  clienteNombre: string;
+  clienteDni: string | null;
+  totalCentimos: number;
+  pagadoCentimos: number;
+  saldoCentimos: number;
+  metodosPago: string[];
+  recibidoCentimos: number | null;
+  vueltoCentimos: number | null;
+  hospedajeDescripcion: string | null;
+  hospedajeMontoCentimos: number;
+  horasExtra: Array<{ descripcion: string; cantidad: number; subtotalCentimos: number }>;
+  productos: Array<{ descripcion: string; cantidad: number; subtotalCentimos: number }>;
+  otrosCargos: Array<{ descripcion: string; cantidad: number; subtotalCentimos: number }>;
+  creadoEn: string;
+}
+
 export interface ShiftCuadreDto {
   shift: Shift;
   plantilla: ShiftTemplate | null;
@@ -86,6 +107,14 @@ export interface ShiftCuadreDto {
   emisor: SunatEmisor;
   esCorteProvisional?: boolean;
   ultimoArqueo?: Arqueo | null;
+  ventasDetalle?: ShiftSaleDetail[];
+  totalesConceptos?: {
+    totalHospedajeCentimos: number;
+    totalHorasExtraCentimos: number;
+    totalProductosCentimos: number;
+    totalOtrosCargosCentimos: number;
+    totalVueltosCentimos: number;
+  };
 }
 
 export interface ArqueoTicketDto {
@@ -245,6 +274,8 @@ export const api = {
   getSaleForStay: (stayId: string) => get<SaleWithLines | null>(`/api/sales/for-stay/${stayId}`),
   salesByRange: (range: { desde: string; hasta: string }) => get<Sale[]>(`/api/sales?desde=${range.desde}&hasta=${range.hasta}`),
   addExtraCharge: (saleId: string, codigo: ChargeCode, cantidad: number) => post<SaleLine>(`/api/sales/${saleId}/extra-charge`, { codigo, cantidad }),
+  addExtraHours: (saleId: string, horas: number, precioUnitarioCentimos?: number) =>
+    post<SaleLine>(`/api/sales/${saleId}/extra-hours`, { horas, precioUnitarioCentimos }),
   addProductLine: (saleId: string, productoId: string, cantidad: number) =>
     post<SaleLine>(`/api/sales/${saleId}/product-line`, { productoId, cantidad }),
   cancelLine: (saleId: string, lineId: string, motivo: string) => post<{ ok: true }>(`/api/sales/${saleId}/lines/${lineId}/cancel`, { motivo }),

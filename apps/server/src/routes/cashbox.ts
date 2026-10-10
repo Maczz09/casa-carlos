@@ -242,6 +242,105 @@ export function cashboxRoutes(services: Services) {
           denominacionesCierre: shift.denominacionesCierre ?? (ultimoArqueo ? ultimoArqueo.denominaciones : null),
         };
 
+        const saleMovements = movements.filter((m) => m.tipo === "VENTA" && m.ventaId);
+        const ventaIds = [...new Set(saleMovements.map((m) => m.ventaId!))];
+
+        const rawVentasDetalle = await Promise.all(
+          ventaIds.map(async (ventaId) => {
+            const sale = await services.sales.getSale(ventaId).catch(() => null);
+            if (!sale) return null;
+
+            const payments = (await services.payments.getForSale(ventaId).catch(() => [])) ?? [];
+            const allDetalles = payments.flatMap((p) => p.detalles);
+
+            const metodosPago = [...new Set(allDetalles.map((d) => d.metodo))];
+
+            const cashDetails = allDetalles.filter((d) => d.metodo === "EFECTIVO");
+            const recibidoCentimos = cashDetails.reduce((sum, d) => sum + (d.recibidoCentimos ?? d.montoCentimos), 0);
+            const vueltoCentimos = cashDetails.reduce((sum, d) => sum + (d.vueltoCentimos ?? 0), 0);
+
+            const activeLines = sale.lineas.filter((l) => !l.anulada);
+
+            const hospedajeLines = activeLines.filter((l) => l.tipo === "HOSPEDAJE");
+            const hospedajeDescripcion = hospedajeLines.map((l) => l.descripcion).join(", ") || null;
+            const hospedajeMontoCentimos = hospedajeLines.reduce((sum, l) => sum + l.subtotalCentimos, 0);
+
+            const horasExtra = activeLines
+              .filter(
+                (l) =>
+                  l.tipo === "CARGO_EXTRA" &&
+                  (l.referenciaId === "EXCESO_TIEMPO" ||
+                    /exceso|hora.*extra/i.test(l.descripcion)),
+              )
+              .map((l) => ({
+                descripcion: l.descripcion,
+                cantidad: l.cantidad,
+                subtotalCentimos: l.subtotalCentimos,
+              }));
+
+            const productos = activeLines
+              .filter((l) => l.tipo === "PRODUCTO")
+              .map((l) => ({
+                descripcion: l.descripcion,
+                cantidad: l.cantidad,
+                subtotalCentimos: l.subtotalCentimos,
+              }));
+
+            const otrosCargos = activeLines
+              .filter(
+                (l) =>
+                  l.tipo === "CARGO_EXTRA" &&
+                  l.referenciaId !== "EXCESO_TIEMPO" &&
+                  !/exceso|hora.*extra/i.test(l.descripcion),
+              )
+              .map((l) => ({
+                descripcion: l.descripcion,
+                cantidad: l.cantidad,
+                subtotalCentimos: l.subtotalCentimos,
+              }));
+
+            return {
+              ventaId: sale.id,
+              serie: sale.serie,
+              correlativo: sale.correlativo,
+              cuartoNumero: sale.cuartoNumero ?? null,
+              clienteNombre: [sale.clienteNombres, sale.clienteApellidos].filter(Boolean).join(" ").trim() || "Cliente",
+              clienteDni: sale.clienteDni ?? null,
+              totalCentimos: sale.totalCentimos,
+              pagadoCentimos: sale.pagadoCentimos,
+              saldoCentimos: sale.saldoCentimos,
+              metodosPago,
+              recibidoCentimos: recibidoCentimos > 0 ? recibidoCentimos : null,
+              vueltoCentimos: vueltoCentimos > 0 ? vueltoCentimos : null,
+              hospedajeDescripcion,
+              hospedajeMontoCentimos,
+              horasExtra,
+              productos,
+              otrosCargos,
+              creadoEn: sale.creadoEn,
+            };
+          }),
+        );
+
+        const ventasDetalle = rawVentasDetalle.filter(Boolean) as NonNullable<(typeof rawVentasDetalle)[number]>[];
+
+        const totalesConceptos = {
+          totalHospedajeCentimos: ventasDetalle.reduce((sum, v) => sum + v.hospedajeMontoCentimos, 0),
+          totalHorasExtraCentimos: ventasDetalle.reduce(
+            (sum, v) => sum + v.horasExtra.reduce((s, h) => s + h.subtotalCentimos, 0),
+            0,
+          ),
+          totalProductosCentimos: ventasDetalle.reduce(
+            (sum, v) => sum + v.productos.reduce((s, p) => s + p.subtotalCentimos, 0),
+            0,
+          ),
+          totalOtrosCargosCentimos: ventasDetalle.reduce(
+            (sum, v) => sum + v.otrosCargos.reduce((s, c) => s + c.subtotalCentimos, 0),
+            0,
+          ),
+          totalVueltosCentimos: summary.vueltosCentimos,
+        };
+
         return {
           shift: effectiveShift,
           plantilla,
@@ -252,6 +351,8 @@ export function cashboxRoutes(services: Services) {
           emisor,
           esCorteProvisional: shift.estado === "ABIERTO",
           ultimoArqueo,
+          ventasDetalle,
+          totalesConceptos,
         };
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });

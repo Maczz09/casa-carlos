@@ -10,6 +10,10 @@ export function kioskReceptionRoutes(services: Services) {
       "/api/reception/kiosk/start",
       auth,
       async (request, reply) => {
+        const shift = await services.cashbox.getOpenShiftForUser(request.user!.id);
+        if (!shift) {
+          return reply.code(400).send({ error: "La caja está cerrada. Debes abrir un turno de caja para iniciar una venta." });
+        }
         try {
           return await services.kiosk.start(
             request.user!.id,

@@ -329,6 +329,67 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
     }
   }
 
+  let ventasDetalleHtml = "";
+  if (cuadre.ventasDetalle && cuadre.ventasDetalle.length > 0) {
+    const list = cuadre.ventasDetalle
+      .map((v) => {
+        const roomLabel = v.cuartoNumero ? `HAB. ${escapeHtml(v.cuartoNumero)}` : "VENTA MOSTRADOR";
+        const totalSoles = (v.totalCentimos / 100).toFixed(2);
+        const doc = v.clienteDni ? ` · DNI ${escapeHtml(v.clienteDni)}` : "";
+
+        let items = "";
+        if (v.hospedajeDescripcion) {
+          items += `<div class="sub-row"><span>• Hospedaje: ${escapeHtml(v.hospedajeDescripcion)}</span><span>S/ ${(v.hospedajeMontoCentimos / 100).toFixed(2)}</span></div>`;
+        }
+        for (const h of v.horasExtra) {
+          items += `<div class="sub-row" style="font-weight: 900 !important;"><span>• [HORA EXTRA] ${escapeHtml(h.descripcion)}</span><span>S/ ${(h.subtotalCentimos / 100).toFixed(2)}</span></div>`;
+        }
+        for (const p of v.productos) {
+          items += `<div class="sub-row"><span>• [PROD] ${escapeHtml(p.descripcion)}</span><span>S/ ${(p.subtotalCentimos / 100).toFixed(2)}</span></div>`;
+        }
+        for (const c of v.otrosCargos) {
+          items += `<div class="sub-row"><span>• [EXTRA] ${escapeHtml(c.descripcion)}</span><span>S/ ${(c.subtotalCentimos / 100).toFixed(2)}</span></div>`;
+        }
+
+        const pagoText = v.metodosPago.map((m) => METHOD_LABEL[m] || m).join(", ");
+        const vueltoText = v.vueltoCentimos && v.vueltoCentimos > 0 ? ` · Vuelto: S/ ${(v.vueltoCentimos / 100).toFixed(2)}` : "";
+
+        return `
+        <div class="sale-item">
+          <div class="row" style="font-weight: 900 !important; font-size: 11px;">
+            <span>${roomLabel} - ${escapeHtml(v.clienteNombre)}</span>
+            <span>S/ ${totalSoles}</span>
+          </div>
+          <div class="sub-text">${v.serie}-${String(v.correlativo).padStart(8, "0")}${doc} · ${formatDateTime12h(v.creadoEn)}</div>
+          <div style="padding-left: 1.5mm;">
+            ${items}
+          </div>
+          <div class="sub-text" style="font-size: 9px; margin-top: 0.5mm;">Pago: ${escapeHtml(pagoText || "Efectivo")}${vueltoText}</div>
+        </div>`;
+      })
+      .join("");
+
+    ventasDetalleHtml = `
+    <hr class="divider">
+    <div class="section-heading">DETALLE DE CUARTOS Y VENTAS DEL TURNO (${cuadre.ventasDetalle.length}):</div>
+    ${list}
+    `;
+  }
+
+  let conceptosHtml = "";
+  if (cuadre.totalesConceptos) {
+    const t = cuadre.totalesConceptos;
+    conceptosHtml = `
+    <hr class="divider">
+    <div class="section-heading">DESGLOSE POR CONCEPTOS DEL TURNO:</div>
+    <div class="row"><span>Hospedajes / Habitaciones:</span><span>S/ ${(t.totalHospedajeCentimos / 100).toFixed(2)}</span></div>
+    <div class="row" style="font-weight: 900 !important;"><span>Horas extra / Excesos:</span><span>S/ ${(t.totalHorasExtraCentimos / 100).toFixed(2)}</span></div>
+    <div class="row"><span>Productos / Consumo:</span><span>S/ ${(t.totalProductosCentimos / 100).toFixed(2)}</span></div>
+    ${t.totalOtrosCargosCentimos > 0 ? `<div class="row"><span>Otros cargos adicionales:</span><span>S/ ${(t.totalOtrosCargosCentimos / 100).toFixed(2)}</span></div>` : ""}
+    <div class="row" style="color: #900;"><span>Vueltos entregados:</span><span>-S/ ${(t.totalVueltosCentimos / 100).toFixed(2)}</span></div>
+    `;
+  }
+
   return `<!doctype html>
 <html lang="es">
 <head>
@@ -363,7 +424,9 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   .section-heading { font-size: 10.5px; font-weight: 900 !important; margin: 2mm 0 1mm 0; text-transform: uppercase; }
   .row { display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 0.8mm; }
   .row.highlight { font-size: 11.5px; font-weight: 900 !important; border-top: 1px dashed #000; padding-top: 1mm; margin-top: 1mm; }
+  .sub-row { display: flex; justify-content: space-between; font-size: 9.5px; margin-bottom: 0.6mm; }
   .sub-text { font-size: 9.5px; margin: 0.8mm 0; }
+  .sale-item { margin-bottom: 2mm; padding-bottom: 1.5mm; border-bottom: 1px dotted #000; }
   .signatures { margin-top: 8mm; text-align: center; font-size: 9.5px; }
   .sig-line { border-top: 1px solid #000; width: 85%; margin: 8mm auto 1mm auto; }
   .footer-credit { text-align: center; margin-top: 4mm; padding-top: 2mm; border-top: 1px dashed #000; font-size: 9.5px; }
@@ -414,6 +477,9 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   <hr class="divider">
   <div class="section-heading">COBROS POR METODO DE PAGO:</div>
   ${metodosHtml}
+
+  ${ventasDetalleHtml}
+  ${conceptosHtml}
 
   <hr class="divider">
   <div class="section-heading">CONCILIACION EN EFECTIVO:</div>
@@ -693,18 +759,18 @@ export async function printArqueoReceipt(arqueoId: string, currentUser?: { nombr
  */
 export async function printReceiptForSale(ventaId: string, cuarto?: string | null): Promise<void> {
   try {
-    const comprobante = await api.comprobanteForSale(ventaId).catch(() => null);
-    if (comprobante && comprobante.estadoSunat === "ACEPTADO") {
-      await openComprobantePdf(comprobante.id).catch(() => {});
-      return;
-    }
-
-    const [sale, pago, emisor, payment] = await Promise.all([
+    const [comprobante, sale, pago, emisor, payment] = await Promise.all([
+      api.comprobanteForSale(ventaId).catch(() => null),
       api.getSale(ventaId),
       api.comprobantePagoForSale(ventaId).catch(() => null),
       getEmisorData().catch(() => null),
       api.paymentForSale(ventaId).catch(() => null),
     ]);
+
+    if (comprobante && comprobante.estadoSunat === "ACEPTADO" && sale.totalCentimos <= comprobante.totalCentimos) {
+      await openComprobantePdf(comprobante.id).catch(() => {});
+      return;
+    }
 
     const cashDetail = payment?.detalles?.find((d) => d.metodo === "EFECTIVO");
     const recibidoCentimos = cashDetail?.recibidoCentimos ?? null;

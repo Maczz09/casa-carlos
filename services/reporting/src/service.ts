@@ -259,20 +259,21 @@ export class ReportingService implements ReportingPort {
   }
 
   private byCargo(chargeLines: LineRow[], charges: Awaited<ReturnType<ReportingRepo["charges"]>>): CargoExtraTotal[] {
-    const agg = new Map<string, { qty: number; total: number }>();
+    const agg = new Map<string, { qty: number; total: number; nombre?: string }>();
     for (const line of chargeLines) {
-      if (!line.referenciaId) continue;
-      const entry = agg.get(line.referenciaId) ?? { qty: 0, total: 0 };
+      const key = line.referenciaId || "EXCESO_TIEMPO";
+      const entry = agg.get(key) ?? { qty: 0, total: 0, nombre: line.descripcion };
       entry.qty += line.cantidad;
       entry.total += line.subtotalCentimos;
-      agg.set(line.referenciaId, entry);
+      agg.set(key, entry);
     }
     const chargeMap = new Map(charges.map((c) => [c.id, c]));
     return [...agg.entries()].map(([chargeId, v]) => {
       const charge = chargeMap.get(chargeId);
+      const isOverstay = chargeId === "EXCESO_TIEMPO" || charge?.codigo === "EXCESO" || Boolean(v.nombre && /exceso|hora.*extra/i.test(v.nombre));
       return {
         codigo: (charge?.codigo ?? "EXCESO") as CargoExtraTotal["codigo"],
-        nombre: charge?.nombre ?? "Cargo eliminado",
+        nombre: charge?.nombre ?? (isOverstay ? "Horas extra / Exceso de estadía" : (v.nombre ?? "Cargo extra")),
         cantidad: v.qty,
         totalCentimos: v.total,
       };

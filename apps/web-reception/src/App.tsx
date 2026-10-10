@@ -141,6 +141,7 @@ export default function App() {
               if (kioskSession) setDismissedSessionId(kioskSession.id);
               navigate("/tablero");
             }}
+            onGoToCashbox={() => navigate("/caja")}
           />
         ) : denied();
       case "reservas":

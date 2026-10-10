@@ -11,6 +11,10 @@ export function paymentsRoutes(services: Services) {
     const admin = { preHandler: requirePermission(services.identity, "SETTINGS_MANAGE") };
 
     app.post<{ Body: { saleId: string; detalles: PaymentDetailInput[] } }>("/api/payments", auth, async (request, reply) => {
+      const shift = await services.cashbox.getOpenShiftForUser(request.user!.id);
+      if (!shift) {
+        return reply.code(400).send({ error: "La caja está cerrada. Debes abrir un turno de caja para registrar pagos." });
+      }
       try {
         return await services.payments.create(request.body);
       } catch (err) {
@@ -19,6 +23,10 @@ export function paymentsRoutes(services: Services) {
     });
 
     app.post<{ Params: { id: string } }>("/api/payments/:id/accept", auth, async (request, reply) => {
+      const shift = await services.cashbox.getOpenShiftForUser(request.user!.id);
+      if (!shift) {
+        return reply.code(400).send({ error: "La caja está cerrada. Debes abrir un turno de caja para aceptar pagos." });
+      }
       try {
         return await services.payments.accept(request.params.id, request.user!.id);
       } catch (err) {

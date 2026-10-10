@@ -56,6 +56,9 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
   const [busy, setBusy] = useState(false);
   const [payingBalance, setPayingBalance] = useState(false);
   const [addingProduct, setAddingProduct] = useState(false);
+  const [addingExtraHours, setAddingExtraHours] = useState(false);
+  const [extraHoursCount, setExtraHoursCount] = useState(1);
+  const [extraHoursPriceSoles, setExtraHoursPriceSoles] = useState("10.00");
   const [productToCharge, setProductToCharge] = useState<Product | null>(null);
   const [productQty, setProductQty] = useState(1);
   const [productMetodo, setProductMetodo] = useState<PaymentMethod>("EFECTIVO");
@@ -186,6 +189,43 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
       setAddingProduct(false);
       await reload();
     }, "No se pudo agregar el producto a la cuenta.");
+  };
+
+  const handleAddExtraHoursAndPay = async (metodo: PaymentMethod) => {
+    if (!sale) return;
+    const precioUnitarioCentimos = Math.round(parseFloat(extraHoursPriceSoles) * 100);
+    if (!Number.isFinite(precioUnitarioCentimos) || precioUnitarioCentimos <= 0) return;
+    const subtotalCentimos = precioUnitarioCentimos * extraHoursCount;
+
+    run(async () => {
+      await api.addExtraHours(sale.id, extraHoursCount, precioUnitarioCentimos);
+      const payment = await api.createPayment(sale.id, [
+        {
+          metodo,
+          montoCentimos: subtotalCentimos,
+        },
+      ]);
+      await api.acceptPayment(payment.id);
+
+      setAddingExtraHours(false);
+      setExtraHoursCount(1);
+      await reload();
+
+      void printReceiptForSale(sale.id, entry.room.numero);
+    }, "No se pudo cobrar la hora extra.");
+  };
+
+  const handleAddExtraHoursToRoomOnly = async () => {
+    if (!sale) return;
+    const precioUnitarioCentimos = Math.round(parseFloat(extraHoursPriceSoles) * 100);
+    if (!Number.isFinite(precioUnitarioCentimos) || precioUnitarioCentimos <= 0) return;
+
+    run(async () => {
+      await api.addExtraHours(sale.id, extraHoursCount, precioUnitarioCentimos);
+      setAddingExtraHours(false);
+      setExtraHoursCount(1);
+      await reload();
+    }, "No se pudo agregar la hora extra a la cuenta.");
   };
 
   const download = async (url: string, filename: string, asText: boolean) => {
@@ -651,7 +691,16 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {canAddProducts && <Button block onClick={() => setAddingProduct(true)}>+ Agregar producto</Button>}
+                {canAddProducts && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button block onClick={() => setAddingProduct(true)}>
+                      + Agregar producto
+                    </Button>
+                    <Button block variant="secondary" onClick={() => setAddingExtraHours(true)}>
+                      + Hora extra
+                    </Button>
+                  </div>
+                )}
 
                 {(entry.estado === "OCUPADO" || entry.estado === "EN_TOLERANCIA" || entry.estado === "EXCEDIDO") && (
                   <>
@@ -861,6 +910,127 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                   className="text-xs text-muted hover:text-ink justify-center"
                   disabled={busy}
                   onClick={handleAddProductToRoomOnly}
+                >
+                  🏨 Cargar a la habitación (paga al salir en check-out)
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para cobrar hora(s) extra al momento de agregarlas a la habitación */}
+      {addingExtraHours && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
+          <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-line-soft">
+              <div>
+                <h3 className="text-lg font-bold text-ink">Agregar hora(s) extra · Cuarto {entry.room.numero}</h3>
+                <p className="text-xs text-muted">Cobra de inmediato o cárgalo a la cuenta de la habitación</p>
+              </div>
+              <button
+                onClick={() => setAddingExtraHours(false)}
+                className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-inset hover:text-ink transition-colors"
+              >
+                <IconX className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="rounded-xl bg-inset p-4 space-y-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted font-medium">Cantidad de horas:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors disabled:opacity-40"
+                    disabled={extraHoursCount <= 1}
+                    onClick={() => setExtraHoursCount((c) => Math.max(1, c - 1))}
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-bold text-base text-ink">{extraHoursCount}</span>
+                  <button
+                    type="button"
+                    className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors"
+                    onClick={() => setExtraHoursCount((c) => c + 1)}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted font-medium">Precio por hora (S/):</span>
+                <div className="w-28">
+                  <input
+                    type="number"
+                    step="0.50"
+                    min="0"
+                    value={extraHoursPriceSoles}
+                    onChange={(e) => setExtraHoursPriceSoles(e.target.value)}
+                    className="w-full rounded-lg border border-line bg-surface px-2.5 py-1.5 text-right font-mono font-bold text-ink focus:border-brand focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-line/60 pt-2">
+                <span className="font-medium text-muted">Total a cobrar:</span>
+                <span className="font-mono text-xl font-black text-brand">
+                  {format(cents(Math.round((parseFloat(extraHoursPriceSoles) || 0) * extraHoursCount * 100)))}
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                ¿Cómo paga el huésped ahora?
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="primary"
+                  className="py-3 font-semibold justify-center"
+                  disabled={busy || !extraHoursPriceSoles}
+                  onClick={() => handleAddExtraHoursAndPay("EFECTIVO")}
+                >
+                  💵 Efectivo
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="py-3 font-semibold justify-center text-[#742384] hover:bg-[#742384]/10 border-[#742384]/30"
+                  disabled={busy || !extraHoursPriceSoles}
+                  onClick={() => handleAddExtraHoursAndPay("YAPE")}
+                >
+                  📱 Yape
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="py-3 font-semibold justify-center text-[#00c8b3] hover:bg-[#00c8b3]/10 border-[#00c8b3]/30"
+                  disabled={busy || !extraHoursPriceSoles}
+                  onClick={() => handleAddExtraHoursAndPay("PLIN")}
+                >
+                  🟣 Plin
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="py-3 font-semibold justify-center"
+                  disabled={busy || !extraHoursPriceSoles}
+                  onClick={() => handleAddExtraHoursAndPay("POS_DEBITO")}
+                >
+                  💳 Tarjeta / POS
+                </Button>
+              </div>
+
+              <div className="pt-2 border-t border-line-soft">
+                <Button
+                  block
+                  variant="ghost"
+                  className="text-xs text-muted hover:text-ink justify-center"
+                  disabled={busy || !extraHoursPriceSoles}
+                  onClick={handleAddExtraHoursToRoomOnly}
                 >
                   🏨 Cargar a la habitación (paga al salir en check-out)
                 </Button>

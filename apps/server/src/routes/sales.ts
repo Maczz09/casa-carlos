@@ -44,6 +44,23 @@ export function salesRoutes(services: Services) {
       },
     );
 
+    app.post<{ Params: { id: string }; Body: { horas: number; precioUnitarioCentimos?: number } }>(
+      "/api/sales/:id/extra-hours",
+      auth,
+      async (request, reply) => {
+        try {
+          return await services.sales.addExtraHours({
+            saleId: request.params.id,
+            horas: request.body.horas,
+            precioUnitarioCentimos: request.body.precioUnitarioCentimos,
+            usuarioId: request.user!.id,
+          });
+        } catch (err) {
+          return reply.code(400).send({ error: (err as Error).message });
+        }
+      },
+    );
+
     app.post<{ Params: { id: string }; Body: { productoId: string; cantidad: number } }>(
       "/api/sales/:id/product-line",
       auth,

@@ -4,6 +4,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import { newId } from "@casacarlos/contracts";
 import type {
   AddExtraChargeInput,
+  AddExtraHoursInput,
   AddProductLineInput,
   CancelledSale,
   CancelSaleInput,
@@ -140,6 +141,34 @@ export class SalesService implements SalesPort {
     });
   }
 
+  async addExtraHours(input: AddExtraHoursInput): Promise<SaleLine> {
+    const sale = await this.mustGet(input.saleId);
+    let unitPrice = input.precioUnitarioCentimos;
+    if (!unitPrice && sale.estadiaId) {
+      const stay = await this.stays.getStay(sale.estadiaId).catch(() => null);
+      if (stay) {
+        const modality = await this.pricing.getModality(stay.modalidadId).catch(() => null);
+        if (modality?.precioAdicionalCentimos) {
+          unitPrice = modality.precioAdicionalCentimos;
+        }
+      }
+    }
+    if (!unitPrice) unitPrice = 1000;
+    const subtotal = unitPrice * input.horas;
+    const descripcion = `Hora(s) extra (${input.horas}h × S/ ${(unitPrice / 100).toFixed(2)})`;
+
+    return this.appendLine(sale, {
+      tipo: "CARGO_EXTRA",
+      referenciaId: "EXCESO_TIEMPO",
+      descripcion,
+      cantidad: input.horas,
+      precioUnitarioCentimos: unitPrice,
+      subtotalCentimos: subtotal,
+      usuarioId: input.usuarioId,
+      auditAccion: "AGREGAR_HORA_EXTRA",
+    });
+  }
+
   async addProductLine(input: AddProductLineInput): Promise<SaleLine> {
     const sale = await this.mustGet(input.saleId);
     const product = await this.inventory.getProduct(input.productoId);
@@ -190,6 +219,13 @@ export class SalesService implements SalesPort {
 
   async getSale(id: string): Promise<SaleWithLines> {
     const sale = await this.mustGet(id);
+    if (sale.estadiaId) {
+      try {
+        await this.syncOverstayCharge(sale.estadiaId);
+      } catch {
+        // non-fatal
+      }
+    }
     let cuartoNumero: string | null = null;
     if (sale.cuartoId) {
       try {
