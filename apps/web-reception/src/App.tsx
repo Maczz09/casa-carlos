@@ -68,6 +68,7 @@ export default function App() {
   const operationalAlerts = useOperationalAlerts(floors, !!user);
   const handledSessionId = useRef<string | null>(null);
   const sawFirstSession = useRef(false);
+  const [dismissedSessionId, setDismissedSessionId] = useState<string | null>(null);
 
   const reloadCategories = () => api.categories().then(setCategories);
 
@@ -76,6 +77,12 @@ export default function App() {
     reloadCategories();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
+  useEffect(() => {
+    if (!kioskSession) {
+      setDismissedSessionId(null);
+    }
+  }, [kioskSession]);
 
   // Una sesión de kiosco nueva trae al recepcionista al módulo de venta: es la
   // contraparte de que el cliente ya está operando la otra pantalla. Solo una vez
@@ -109,14 +116,6 @@ export default function App() {
 
   const active = segment === "" ? "tablero" : segment === "cuarto" ? "tablero" : segment;
   const title = segment === "cuarto" ? "Detalle del cuarto" : (NAV_LABEL[active] ?? "Tablero de cuartos");
-
-  const [dismissedSessionId, setDismissedSessionId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!kioskSession) {
-      setDismissedSessionId(null);
-    }
-  }, [kioskSession]);
 
   const effectiveSession = kioskSession && kioskSession.id !== dismissedSessionId ? kioskSession : null;
 
