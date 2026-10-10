@@ -217,15 +217,8 @@ export class SalesService implements SalesPort {
     await recordAudit(this.db, { entidad: "sales_lineas", entidadId: lineId, accion: "ANULAR_LINEA", usuarioId, antes: line, motivo });
   }
 
-  async getSale(id: string): Promise<SaleWithLines> {
+  private async loadSaleDetails(id: string): Promise<SaleWithLines> {
     const sale = await this.mustGet(id);
-    if (sale.estadiaId) {
-      try {
-        await this.syncOverstayCharge(sale.estadiaId);
-      } catch {
-        // non-fatal
-      }
-    }
     let cuartoNumero: string | null = null;
     if (sale.cuartoId) {
       try {
@@ -238,6 +231,18 @@ export class SalesService implements SalesPort {
     return { ...sale, cuartoNumero, lineas: await this.repo.listLines(id) };
   }
 
+  async getSale(id: string): Promise<SaleWithLines> {
+    const sale = await this.mustGet(id);
+    if (sale.estadiaId) {
+      try {
+        await this.syncOverstayCharge(sale.estadiaId);
+      } catch {
+        // non-fatal
+      }
+    }
+    return this.loadSaleDetails(id);
+  }
+
   async getSaleForStay(stayId: string): Promise<SaleWithLines | null> {
     try {
       await this.syncOverstayCharge(stayId);
@@ -246,16 +251,7 @@ export class SalesService implements SalesPort {
     }
     const sale = await this.repo.getSaleByStay(stayId);
     if (!sale) return null;
-    let cuartoNumero: string | null = null;
-    if (sale.cuartoId) {
-      try {
-        const room = await this.rooms.getRoom(sale.cuartoId);
-        cuartoNumero = room?.numero ?? null;
-      } catch {
-        // ignore
-      }
-    }
-    return { ...sale, cuartoNumero, lineas: await this.repo.listLines(sale.id) };
+    return this.loadSaleDetails(sale.id);
   }
 
   async syncOverstayCharge(stayId: string, atTime?: Date): Promise<SaleWithLines | null> {
@@ -286,11 +282,11 @@ export class SalesService implements SalesPort {
         });
         await this.recalcularTotales(sale.id);
       }
-      return this.getSale(sale.id);
+      return this.loadSaleDetails(sale.id);
     }
 
     if (precioAdicional <= 0) {
-      return this.getSale(sale.id);
+      return this.loadSaleDetails(sale.id);
     }
 
     const diffMs = refTime.getTime() - deadline.getTime();
@@ -301,7 +297,7 @@ export class SalesService implements SalesPort {
       (l) => l.tipo === "CARGO_EXTRA" && l.referenciaId === "EXCESO_TIEMPO" && l.anulada && l.motivoAnulacion !== "Check-out dentro de tolerancia",
     );
     if (wasCancelledByStaff && !existingOverstayLine) {
-      return this.getSale(sale.id);
+      return this.loadSaleDetails(sale.id);
     }
 
     const subtotal = blocks * precioAdicional;
@@ -344,7 +340,7 @@ export class SalesService implements SalesPort {
       await this.bus.publish("sale.line_added", { saleId: sale.id, lineId, phase: "POST_PAGO" });
     }
 
-    return this.getSale(sale.id);
+    return this.loadSaleDetails(sale.id);
   }
 
   async syncAllActiveOverstays(atTime?: Date): Promise<void> {

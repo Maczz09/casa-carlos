@@ -10,7 +10,17 @@ export async function runMigrations(db: Db, sqlite: DatabaseSync): Promise<void>
   await migrate(
     db,
     async (queries) => {
-      for (const query of queries) sqlite.exec(query);
+      for (const query of queries) {
+        try {
+          sqlite.exec(query);
+        } catch (err: any) {
+          if (err?.message?.includes("duplicate column name")) {
+            console.warn("[DB Migration] Ignorando columna ya existente:", err.message);
+            continue;
+          }
+          throw err;
+        }
+      }
     },
     { migrationsFolder: resolve(__dirname, "../migrations") },
   );
