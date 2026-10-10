@@ -164,9 +164,47 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   .grand-total { font-size: 13px; font-weight: 900 !important; border-top: 1px dashed #000; padding-top: 1.5mm; margin-top: 1.5mm; }
   .blank-lines { margin-top: 4mm; font-size: 10.5px; line-height: 2.2; }
   .footer-credit { text-align: center; margin-top: 4mm; padding-top: 2mm; border-top: 1px dashed #000; font-size: 9.5px; }
+  @media print {
+    .actions-bar { display: none !important; }
+  }
+  .actions-bar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 4px;
+    margin-bottom: 3mm;
+    background: #f1f5f9;
+    border-bottom: 1px solid #cbd5e1;
+    border-radius: 6px;
+    z-index: 9999;
+  }
+  .act-btn {
+    cursor: pointer;
+    border: none;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700 !important;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .act-btn:hover { opacity: 0.85; }
+  .act-print { background: #0f172a; color: #fff; }
+  .act-close { background: #e2e8f0; color: #334155; }
 </style>
 </head>
 <body>
+  <div class="actions-bar">
+    <button onclick="window.print()" class="act-btn act-print">🖨️ Imprimir</button>
+    <button onclick="handleClose()" class="act-btn act-close">✖ Cerrar</button>
+  </div>
   ${logo ? `<div class="logo-wrap">${logo}</div>` : ""}
   <div class="company-info">
     <div class="company-title">${escapeHtml(nombreComercial.toUpperCase())}</div>
@@ -232,6 +270,19 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
     Sistema base HotelFast
   </div>
   <script>
+    function handleClose() {
+      try {
+        if (typeof window.__closeWindow === 'function') {
+          window.__closeWindow();
+        } else if (window.__TAURI_INTERNALS__) {
+          window.__TAURI_INTERNALS__.invoke('close_window');
+        } else {
+          window.close();
+        }
+      } catch (e) {
+        try { window.close(); } catch (err) {}
+      }
+    }
     window.onload = () => {
       setTimeout(() => {
         try {
@@ -239,13 +290,12 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
           window.print();
         } catch (e) {
           console.error(e);
-        } finally {
-          setTimeout(() => {
-            try { window.close(); } catch (e) {}
-          }, 500);
         }
-      }, 120);
+      }, 150);
     };
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') handleClose();
+    });
   </script>
 </body>
 </html>`;
@@ -430,9 +480,47 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   .signatures { margin-top: 8mm; text-align: center; font-size: 9.5px; }
   .sig-line { border-top: 1px solid #000; width: 85%; margin: 8mm auto 1mm auto; }
   .footer-credit { text-align: center; margin-top: 4mm; padding-top: 2mm; border-top: 1px dashed #000; font-size: 9.5px; }
+  @media print {
+    .actions-bar { display: none !important; }
+  }
+  .actions-bar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 4px;
+    margin-bottom: 3mm;
+    background: #f1f5f9;
+    border-bottom: 1px solid #cbd5e1;
+    border-radius: 6px;
+    z-index: 9999;
+  }
+  .act-btn {
+    cursor: pointer;
+    border: none;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700 !important;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .act-btn:hover { opacity: 0.85; }
+  .act-print { background: #0f172a; color: #fff; }
+  .act-close { background: #e2e8f0; color: #334155; }
 </style>
 </head>
 <body>
+  <div class="actions-bar">
+    <button onclick="window.print()" class="act-btn act-print">🖨️ Imprimir</button>
+    <button onclick="handleClose()" class="act-btn act-close">✖ Cerrar</button>
+  </div>
   ${logo ? `<div class="logo-wrap">${logo}</div>` : ""}
   <div class="company-info">
     <div class="company-title">${escapeHtml(nombreComercial.toUpperCase())}</div>
@@ -507,6 +595,19 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
     Sistema base HotelFast
   </div>
   <script>
+    function handleClose() {
+      try {
+        if (typeof window.__closeWindow === 'function') {
+          window.__closeWindow();
+        } else if (window.__TAURI_INTERNALS__) {
+          window.__TAURI_INTERNALS__.invoke('close_window');
+        } else {
+          window.close();
+        }
+      } catch (e) {
+        try { window.close(); } catch (err) {}
+      }
+    }
     window.onload = () => {
       setTimeout(() => {
         try {
@@ -514,13 +615,12 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
           window.print();
         } catch (e) {
           console.error(e);
-        } finally {
-          setTimeout(() => {
-            try { window.close(); } catch (e) {}
-          }, 500);
         }
-      }, 120);
+      }, 150);
     };
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') handleClose();
+    });
   </script>
 </body>
 </html>`;
@@ -649,9 +749,47 @@ export function buildArqueoReceiptHtml(data: ArqueoTicketDto, impresoPorNombre: 
   .signatures { margin-top: 8mm; text-align: center; font-size: 9.5px; }
   .sig-line { border-top: 1px solid #000; width: 85%; margin: 8mm auto 1mm auto; }
   .footer-credit { text-align: center; margin-top: 4mm; padding-top: 2mm; border-top: 1px dashed #000; font-size: 9.5px; }
+  @media print {
+    .actions-bar { display: none !important; }
+  }
+  .actions-bar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 4px;
+    margin-bottom: 3mm;
+    background: #f1f5f9;
+    border-bottom: 1px solid #cbd5e1;
+    border-radius: 6px;
+    z-index: 9999;
+  }
+  .act-btn {
+    cursor: pointer;
+    border: none;
+    padding: 6px 14px;
+    font-size: 11px;
+    font-weight: 700 !important;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .act-btn:hover { opacity: 0.85; }
+  .act-print { background: #0f172a; color: #fff; }
+  .act-close { background: #e2e8f0; color: #334155; }
 </style>
 </head>
 <body>
+  <div class="actions-bar">
+    <button onclick="window.print()" class="act-btn act-print">🖨️ Imprimir</button>
+    <button onclick="handleClose()" class="act-btn act-close">✖ Cerrar</button>
+  </div>
   ${logo ? `<div class="logo-wrap">${logo}</div>` : ""}
   <div class="company-info">
     <div class="company-title">${escapeHtml(nombreComercial.toUpperCase())}</div>
@@ -712,6 +850,19 @@ export function buildArqueoReceiptHtml(data: ArqueoTicketDto, impresoPorNombre: 
     Sistema base HotelFast
   </div>
   <script>
+    function handleClose() {
+      try {
+        if (typeof window.__closeWindow === 'function') {
+          window.__closeWindow();
+        } else if (window.__TAURI_INTERNALS__) {
+          window.__TAURI_INTERNALS__.invoke('close_window');
+        } else {
+          window.close();
+        }
+      } catch (e) {
+        try { window.close(); } catch (err) {}
+      }
+    }
     window.onload = () => {
       setTimeout(() => {
         try {
@@ -719,13 +870,12 @@ export function buildArqueoReceiptHtml(data: ArqueoTicketDto, impresoPorNombre: 
           window.print();
         } catch (e) {
           console.error(e);
-        } finally {
-          setTimeout(() => {
-            try { window.close(); } catch (e) {}
-          }, 500);
         }
-      }, 120);
+      }, 150);
     };
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') handleClose();
+    });
   </script>
 </body>
 </html>`;

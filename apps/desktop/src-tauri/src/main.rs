@@ -260,6 +260,11 @@ fn move_to_secondary_screen(window: WebviewWindow) -> Result<String, String> {
     move_window_to_monitor_internal(&window, None, true)
 }
 
+#[tauri::command]
+fn close_window(window: WebviewWindow) -> Result<(), String> {
+    window.close().map_err(|e| e.to_string())
+}
+
 fn write_log(message: impl AsRef<str>) {
     let directory = app_data_dir();
     if fs::create_dir_all(&directory).is_err() {
@@ -429,6 +434,18 @@ fn build_main_window(
             .center()
             .devtools(false)
             .zoom_hotkeys_enabled(false)
+            .initialization_script(
+                "window.__closeWindow = function() {\
+                    try {\
+                        if (window.__TAURI_INTERNALS__) {\
+                            window.__TAURI_INTERNALS__.invoke('close_window');\
+                        } else {\
+                            window.close();\
+                        }\
+                    } catch(e) {}\
+                };\
+                window.close = window.__closeWindow;",
+            )
             .on_navigation(move |popup_url| {
                 internal_navigation(&popup_navigation_server, popup_url)
             })
@@ -482,7 +499,8 @@ fn run() -> Result<(), String> {
             save_export_file,
             move_to_screen,
             move_to_secondary_screen,
-            get_screens_info
+            get_screens_info,
+            close_window
         ])
         .setup(move |app| {
             app.manage(instance_lock);
