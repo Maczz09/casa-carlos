@@ -1,4 +1,4 @@
-import type { ComprobantePago, SaleWithLines, SunatEmisor } from "@casacarlos/contracts";
+import type { ComprobantePago, PaymentWithDetails, SaleWithLines, SunatEmisor } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
 import { api, getToken, type ShiftCuadreDto, type ArqueoTicketDto } from "../api.js";
 import { getBrand } from "../hooks/useBrand.js";
@@ -23,6 +23,7 @@ export interface DraftReceipt {
   emisor?: SunatEmisor | null;
   recibidoCentimos?: number | null;
   vueltoCentimos?: number | null;
+  devueltoCentimos?: number;
 }
 
 function escapeHtml(value: string): string {
@@ -87,6 +88,7 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   const recepcionista = recepcionistaNombre ? escapeHtml(recepcionistaNombre) : "Recepción";
 
   const lineas = sale.lineas
+    .filter((l) => !l.anulada)
     .map(
       (l) => `
       <tr>
@@ -102,8 +104,8 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
     .join("");
 
   const totalFormatted = (sale.totalCentimos / 100).toFixed(2);
-  const recibidoFormatted = draft.recibidoCentimos && draft.recibidoCentimos > sale.totalCentimos ? (draft.recibidoCentimos / 100).toFixed(2) : null;
-  const vueltoFormatted = draft.vueltoCentimos && draft.vueltoCentimos > 0 ? (draft.vueltoCentimos / 100).toFixed(2) : (draft.recibidoCentimos && draft.recibidoCentimos > sale.totalCentimos ? ((draft.recibidoCentimos - sale.totalCentimos) / 100).toFixed(2) : null);
+  const recibidoFormatted = draft.recibidoCentimos != null ? (draft.recibidoCentimos / 100).toFixed(2) : null;
+  const vueltoFormatted = draft.vueltoCentimos && draft.vueltoCentimos > 0 ? (draft.vueltoCentimos / 100).toFixed(2) : null;
 
   const clienteNombreCompleto = [sale.clienteNombres, sale.clienteApellidos].filter(Boolean).join(" ").trim();
 
@@ -240,12 +242,13 @@ function buildDraftReceiptHtml(draft: DraftReceipt): string {
   </table>
   <hr class="divider">
   <div class="totals-block">
+    ${draft.devueltoCentimos ? `<div class="totals-row"><span>Devuelto por corrección:</span><span>S/ ${(draft.devueltoCentimos / 100).toFixed(2)}</span></div>` : ""}
     <div class="totals-row">
       <span>Total Consumo:</span>
       <span>S/ ${totalFormatted}</span>
     </div>
     <div class="totals-row grand-total">
-      <span>Total a pagar:</span>
+      <span>Total de la cuenta:</span>
       <span>S/ ${totalFormatted}</span>
     </div>
     ${
@@ -379,64 +382,17 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
     }
   }
 
-  let ventasDetalleHtml = "";
-  if (cuadre.ventasDetalle && cuadre.ventasDetalle.length > 0) {
-    const list = cuadre.ventasDetalle
-      .map((v) => {
-        const roomLabel = v.cuartoNumero ? `HAB. ${escapeHtml(v.cuartoNumero)}` : "VENTA MOSTRADOR";
-        const totalSoles = (v.totalCentimos / 100).toFixed(2);
-        const doc = v.clienteDni ? ` · DNI ${escapeHtml(v.clienteDni)}` : "";
-
-        let items = "";
-        if (v.hospedajeDescripcion) {
-          items += `<div class="sub-row"><span>• Hospedaje: ${escapeHtml(v.hospedajeDescripcion)}</span><span>S/ ${(v.hospedajeMontoCentimos / 100).toFixed(2)}</span></div>`;
-        }
-        for (const h of v.horasExtra) {
-          items += `<div class="sub-row" style="font-weight: 900 !important;"><span>• [HORA EXTRA] ${escapeHtml(h.descripcion)}</span><span>S/ ${(h.subtotalCentimos / 100).toFixed(2)}</span></div>`;
-        }
-        for (const p of v.productos) {
-          items += `<div class="sub-row"><span>• [PROD] ${escapeHtml(p.descripcion)}</span><span>S/ ${(p.subtotalCentimos / 100).toFixed(2)}</span></div>`;
-        }
-        for (const c of v.otrosCargos) {
-          items += `<div class="sub-row"><span>• [EXTRA] ${escapeHtml(c.descripcion)}</span><span>S/ ${(c.subtotalCentimos / 100).toFixed(2)}</span></div>`;
-        }
-
-        const pagoText = v.metodosPago.map((m) => METHOD_LABEL[m] || m).join(", ");
-        const vueltoText = v.vueltoCentimos && v.vueltoCentimos > 0 ? ` · Vuelto: S/ ${(v.vueltoCentimos / 100).toFixed(2)}` : "";
-
-        return `
-        <div class="sale-item">
-          <div class="row" style="font-weight: 900 !important; font-size: 11px;">
-            <span>${roomLabel} - ${escapeHtml(v.clienteNombre)}</span>
-            <span>S/ ${totalSoles}</span>
-          </div>
-          <div class="sub-text">${v.serie}-${String(v.correlativo).padStart(8, "0")}${doc} · ${formatDateTime12h(v.creadoEn)}</div>
-          <div style="padding-left: 1.5mm;">
-            ${items}
-          </div>
-          <div class="sub-text" style="font-size: 9px; margin-top: 0.5mm;">Pago: ${escapeHtml(pagoText || "Efectivo")}${vueltoText}</div>
-        </div>`;
-      })
-      .join("");
-
-    ventasDetalleHtml = `
-    <hr class="divider">
-    <div class="section-heading">DETALLE DE CUARTOS Y VENTAS DEL TURNO (${cuadre.ventasDetalle.length}):</div>
-    ${list}
-    `;
-  }
-
   let conceptosHtml = "";
   if (cuadre.totalesConceptos) {
     const t = cuadre.totalesConceptos;
     conceptosHtml = `
     <hr class="divider">
-    <div class="section-heading">DESGLOSE POR CONCEPTOS DEL TURNO:</div>
+    <div class="section-heading">COMPOSICIÓN DE VENTAS:</div>
     <div class="row"><span>Hospedajes / Habitaciones:</span><span>S/ ${(t.totalHospedajeCentimos / 100).toFixed(2)}</span></div>
     <div class="row" style="font-weight: 900 !important;"><span>Horas extra / Excesos:</span><span>S/ ${(t.totalHorasExtraCentimos / 100).toFixed(2)}</span></div>
     <div class="row"><span>Productos / Consumo:</span><span>S/ ${(t.totalProductosCentimos / 100).toFixed(2)}</span></div>
     ${t.totalOtrosCargosCentimos > 0 ? `<div class="row"><span>Otros cargos adicionales:</span><span>S/ ${(t.totalOtrosCargosCentimos / 100).toFixed(2)}</span></div>` : ""}
-    <div class="row" style="color: #900;"><span>Vueltos entregados:</span><span>-S/ ${(t.totalVueltosCentimos / 100).toFixed(2)}</span></div>
+    <div class="row" style="color: #900;"><span>Vueltos entregados (informativo):</span><span>-S/ ${(t.totalVueltosCentimos / 100).toFixed(2)}</span></div>
     `;
   }
 
@@ -557,16 +513,14 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   <hr class="divider">
   <div class="section-heading">RESUMEN DEL MOVIMIENTO:</div>
   <div class="row"><span>Fondo de apertura:</span><span>S/ ${aperturaMonto}</span></div>
-  <div class="row"><span>Ventas brutas:</span><span>S/ ${ventasBrutas}</span></div>
+  <div class="row"><span>Cobros menos anulaciones:</span><span>S/ ${ventasBrutas}</span></div>
   <div class="row"><span>Ingresos manuales:</span><span>+S/ ${ingresos}</span></div>
   <div class="row"><span>Egresos manuales:</span><span>-S/ ${egresos}</span></div>
-  <div class="row"><span>Vueltos entregados:</span><span>-S/ ${vueltos}</span></div>
+  <div class="row"><span>Vueltos entregados (informativo):</span><span>-S/ ${vueltos}</span></div>
 
   <hr class="divider">
   <div class="section-heading">COBROS POR METODO DE PAGO:</div>
   ${metodosHtml}
-
-  ${ventasDetalleHtml}
   ${conceptosHtml}
 
   <hr class="divider">
@@ -813,7 +767,7 @@ export function buildArqueoReceiptHtml(data: ArqueoTicketDto, impresoPorNombre: 
   <hr class="divider">
   <div class="section-heading">RESUMEN VIVO AL MOMENTO:</div>
   <div class="row"><span>Fondo de apertura:</span><span>S/ ${(shift.aperturaCentimos / 100).toFixed(2)}</span></div>
-  <div class="row"><span>Ventas brutas:</span><span>S/ ${(summary.ventasBrutasCentimos / 100).toFixed(2)}</span></div>
+  <div class="row"><span>Cobros menos anulaciones:</span><span>S/ ${(summary.ventasBrutasCentimos / 100).toFixed(2)}</span></div>
   <div class="row"><span>Ingresos manuales:</span><span>+S/ ${(summary.ingresosManualesCentimos / 100).toFixed(2)}</span></div>
   <div class="row"><span>Egresos manuales:</span><span>-S/ ${(summary.egresosManualesCentimos / 100).toFixed(2)}</span></div>
 
@@ -914,7 +868,7 @@ export async function printReceiptForSale(ventaId: string, cuarto?: string | nul
       api.getSale(ventaId),
       api.comprobantePagoForSale(ventaId).catch(() => null),
       getEmisorData().catch(() => null),
-      api.paymentForSale(ventaId).catch(() => null),
+      api.paymentsForSale(ventaId).catch(() => null),
     ]);
 
     if (comprobante && comprobante.estadoSunat === "ACEPTADO" && sale.totalCentimos <= comprobante.totalCentimos) {
@@ -922,9 +876,7 @@ export async function printReceiptForSale(ventaId: string, cuarto?: string | nul
       return;
     }
 
-    const cashDetail = payment?.detalles?.find((d) => d.metodo === "EFECTIVO");
-    const recibidoCentimos = cashDetail?.recibidoCentimos ?? null;
-    const vueltoCentimos = cashDetail?.vueltoCentimos ?? null;
+    const { recibidoCentimos, vueltoCentimos } = cashReceiptTotals(payment);
 
     let resolvedCuarto: string | null = cuarto ?? null;
     if (!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) {
@@ -959,6 +911,7 @@ export async function printReceiptForSale(ventaId: string, cuarto?: string | nul
       emisor,
       recibidoCentimos,
       vueltoCentimos,
+      devueltoCentimos: Math.max(0, (payment ?? []).filter((p) => p.estado === "ACEPTADO").reduce((sum, p) => sum + p.totalCentimos, 0) - sale.pagadoCentimos),
     });
   } catch (err) {
     console.error("Error al imprimir comprobante para venta:", err);
@@ -974,12 +927,10 @@ export async function printComprobantePago(item: ComprobantePago): Promise<void>
   const [sale, emisor, payment] = await Promise.all([
     api.getSale(item.ventaId),
     getEmisorData(),
-    api.paymentForSale(item.ventaId).catch(() => null),
+    api.paymentsForSale(item.ventaId).catch(() => null),
   ]);
 
-  const cashDetail = payment?.detalles?.find((d) => d.metodo === "EFECTIVO");
-  const recibidoCentimos = cashDetail?.recibidoCentimos ?? null;
-  const vueltoCentimos = cashDetail?.vueltoCentimos ?? null;
+  const { recibidoCentimos, vueltoCentimos } = cashReceiptTotals(payment);
 
   let resolvedCuarto: string | null = sale.cuartoNumero ?? null;
   if ((!resolvedCuarto || UUID_REGEX.test(resolvedCuarto)) && sale.cuartoId) {
@@ -1011,5 +962,11 @@ export async function printComprobantePago(item: ComprobantePago): Promise<void>
     emisor,
     recibidoCentimos,
     vueltoCentimos,
+    devueltoCentimos: Math.max(0, (payment ?? []).filter((p) => p.estado === "ACEPTADO").reduce((sum, p) => sum + p.totalCentimos, 0) - sale.pagadoCentimos),
   });
+}
+
+function cashReceiptTotals(payments: PaymentWithDetails[] | null) {
+  const details = (payments ?? []).filter((p) => p.estado === "ACEPTADO").flatMap((p) => p.detalles).filter((d) => d.metodo === "EFECTIVO");
+  return { recibidoCentimos: details.length ? details.reduce((sum, d) => sum + (d.recibidoCentimos ?? d.montoCentimos), 0) : null, vueltoCentimos: details.length ? details.reduce((sum, d) => sum + (d.vueltoCentimos ?? 0), 0) : null };
 }
