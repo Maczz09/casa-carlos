@@ -1,8 +1,11 @@
+import { IconBell as ModuleIcon, IconBell } from "@casacarlos/ui";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+
 import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
 import type { NotificationEventCode, NotificationQueueItem, NotificationRecipient, NotificationState, NotificationTemplate } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
-import { IconBell } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Tabs, Textarea, cx } from "../components/ui.js";
 
@@ -195,7 +198,7 @@ type Tab = "destinatarios" | "plantillas" | "cola" | "whatsapp";
 /** Chip que se puede prender/apagar — se usa para suscribir a cada evento. */
 function EventChip({ label, on, onClick }: { label: string; on: boolean; onClick: () => void }) {
   return (
-    <button
+    <ActionButton
       onClick={onClick}
       className={cx(
         "rounded-full px-2.5 py-1 text-xs font-medium transition-all duration-150 active:scale-95",
@@ -203,7 +206,7 @@ function EventChip({ label, on, onClick }: { label: string; on: boolean; onClick
       )}
     >
       {label}
-    </button>
+    </ActionButton>
   );
 }
 
@@ -293,7 +296,7 @@ export function NotificationsModule() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Notificaciones"
         subtitle="A quién se avisa por WhatsApp, con qué texto y qué pasó con cada envío"
         actions={
@@ -360,10 +363,10 @@ export function NotificationsModule() {
           <Section title="Nuevo destinatario" delay={80}>
             <div className="flex flex-col gap-4">
               <Field label="Nombre">
-                <Input placeholder="Nombre completo" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+                <Input aria-label="Nombre completo" placeholder="Nombre completo" value={nombre} onChange={(e) => setNombre(e.target.value)} />
               </Field>
               <Field label="WhatsApp" hint="Con código de país, ej. 51987654321">
-                <Input placeholder="51987654321" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+                <Input aria-label="51987654321" placeholder="51987654321" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
               </Field>
               <div>
                 <p className="mb-2 text-xs font-medium text-muted">Eventos a los que se suscribe</p>
@@ -405,7 +408,7 @@ export function NotificationsModule() {
         <Section
           title="Cola de envíos"
           actions={
-            <Select value={queueFilter} onChange={(e) => setQueueFilter(e.target.value as NotificationState | "")} className="w-48">
+            <Select aria-label="Filtrar envíos por estado" value={queueFilter} onChange={(e) => setQueueFilter(e.target.value as NotificationState | "")} className="w-48">
               <option value="">Todos los estados</option>
               <option value="PENDIENTE">Pendiente</option>
               <option value="ENVIADO">Enviado</option>

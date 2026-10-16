@@ -15,7 +15,7 @@ const regeneratorRuntime = fileURLToPath(new URL("./node_modules/regenerator-run
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
-    alias: { "regenerator-runtime": regeneratorRuntime },
+    alias: { "@": fileURLToPath(new URL("./src", import.meta.url)), "regenerator-runtime": regeneratorRuntime },
   },
   server: {
     port: 5173,

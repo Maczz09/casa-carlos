@@ -1,3 +1,4 @@
+import { Badge } from "@casacarlos/ui/components/badge";
 import type { Brand } from "@casacarlos/contracts";
 import { KioskAmbient } from "./KioskAmbient.js";
 
@@ -17,8 +18,9 @@ export function IdleScreen({ brand }: { brand: Brand }) {
       {brand.logoUrl && (
         <img src={brand.logoUrl} alt="" className="animate-pop mb-6 h-28 max-w-[16rem] object-contain" />
       )}
-      <p className="animate-fade-up font-serif text-xl italic text-brand/70">{greeting()}</p>
-      <h1 className="animate-fade-up mt-3 font-serif text-6xl text-ink" style={{ animationDelay: "80ms" }}>
+      <Badge variant="secondary" className="mb-4 bg-brand-soft text-brand">Registro asistido por recepción</Badge>
+      <p className="animate-fade-up font-sans text-xl text-brand">{greeting()}</p>
+      <h1 className="animate-fade-up mt-3 font-sans text-4xl sm:text-6xl text-ink" style={{ animationDelay: "80ms" }}>
         {brand.nombre}
       </h1>
       <div className="animate-fade-up mt-8 h-px w-24 bg-subtle/50" style={{ animationDelay: "160ms" }} />

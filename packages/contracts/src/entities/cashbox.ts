@@ -21,11 +21,14 @@ export type Denominaciones = z.infer<typeof DenominacionesSchema>;
 export const ShiftSchema = z.object({
   id: z.string(),
   plantillaId: z.string().nullable(),
+  programadoHasta: z.string().nullable(),
+  tipoCierre: z.enum(["MANUAL", "AUTOMATICO", "UNIFICACION"]).nullable(),
+  turnoAnteriorId: z.string().nullable(),
   usuarioId: z.string(),
   fecha: z.string(), // ISO date
   abiertoEn: z.string(),
   cerradoEn: z.string().nullable(),
-  aperturaCentimos: z.number().int().nonnegative(),
+  aperturaCentimos: z.number().int(),
   efectivoEsperadoCentimos: z.number().int().nullable(),
   efectivoDeclaradoCentimos: z.number().int().nullable(),
   denominacionesCierre: DenominacionesSchema.nullable(),
@@ -48,7 +51,7 @@ export const ArqueoSchema = z.object({
 });
 export type Arqueo = z.infer<typeof ArqueoSchema>;
 
-export const CashMovementTypeSchema = z.enum(["APERTURA", "VENTA", "INGRESO", "EGRESO", "AJUSTE", "VUELTO", "CIERRE"]);
+export const CashMovementTypeSchema = z.enum(["APERTURA", "VENTA", "ANULACION", "CORRECCION", "DEVOLUCION", "INGRESO", "EGRESO", "AJUSTE", "VUELTO", "CIERRE", "TRASPASO_SALIDA"]);
 export type CashMovementType = z.infer<typeof CashMovementTypeSchema>;
 
 export const CashMovementSchema = z.object({
@@ -81,3 +84,11 @@ export const CashSummarySchema = z.object({
   igvCentimos: z.number().int(),
 });
 export type CashSummary = z.infer<typeof CashSummarySchema>;
+
+export interface CashboxAutomation {
+  habilitado: boolean;
+  zonaHoraria: "America/Lima";
+  horarioValido: boolean;
+  problema: string | null;
+  proximoCambio: string | null;
+}

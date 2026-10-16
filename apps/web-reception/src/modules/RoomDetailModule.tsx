@@ -1,3 +1,7 @@
+import { IconCash, IconBed, IconPrinter, IconX, STATUS_STYLE } from "@casacarlos/ui";
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { ModalFrame } from "@casacarlos/ui/components/modal-frame";
 import { useEffect, useState } from "react";
 import type {
   Comprobante,
@@ -12,13 +16,15 @@ import type {
   Product,
   RoomBoardEntry,
   SaleWithLines,
+  SaleLine,
   StayWithCustomer,
 } from "@casacarlos/contracts";
 import { MOTIVOS_NOTA_CREDITO, MOTIVOS_NOTA_DEBITO, formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format, splitIncludedIgv } from "@casacarlos/money";
-import { IconPrinter, IconX, STATUS_STYLE } from "@casacarlos/ui";
+
 import { api, ApiError, getToken } from "../api.js";
 import { formatDuration, useCountdown } from "../hooks/useCountdown.js";
+import { CheckoutDialog } from "../components/CheckoutDialog.js";
 import { PaymentForm } from "../components/PaymentForm.js";
 import { ProductPicker } from "../components/ProductPicker.js";
 import { printReceiptForSale } from "../components/receipt.js";
@@ -52,6 +58,8 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
 
   const [stay, setStay] = useState<StayWithCustomer | null>(null);
   const [sale, setSale] = useState<SaleWithLines | null>(null);
+  const [lineToCancel, setLineToCancel] = useState<SaleLine | null>(null);
+  const [lineCancelReason, setLineCancelReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [payingBalance, setPayingBalance] = useState(false);
@@ -77,6 +85,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
   const [notaMontoSoles, setNotaMontoSoles] = useState("");
 
   const [checkingOut, setCheckingOut] = useState(false);
+  const [checkoutReview, setCheckoutReview] = useState<{ horaSalida: string; retroactiva: boolean } | null>(null);
   const [checkoutMode, setCheckoutMode] = useState<"ahora" | "15min" | "30min" | "45min" | "60min" | "manual">("ahora");
   const [checkoutCustomTime, setCheckoutCustomTime] = useState<string>("");
 
@@ -191,40 +200,19 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
     }, "No se pudo agregar el producto a la cuenta.");
   };
 
-  const handleAddExtraHoursAndPay = async (metodo: PaymentMethod) => {
+  const handleAddExtraHours = async (collect: boolean) => {
     if (!sale) return;
-    const precioUnitarioCentimos = Math.round(parseFloat(extraHoursPriceSoles) * 100);
-    if (!Number.isFinite(precioUnitarioCentimos) || precioUnitarioCentimos <= 0) return;
-    const subtotalCentimos = precioUnitarioCentimos * extraHoursCount;
-
-    run(async () => {
-      await api.addExtraHours(sale.id, extraHoursCount, precioUnitarioCentimos);
-      const payment = await api.createPayment(sale.id, [
-        {
-          metodo,
-          montoCentimos: subtotalCentimos,
-        },
-      ]);
-      await api.acceptPayment(payment.id);
-
-      setAddingExtraHours(false);
-      setExtraHoursCount(1);
-      await reload();
-
-      void printReceiptForSale(sale.id, entry.room.numero);
-    }, "No se pudo cobrar la hora extra.");
-  };
-
-  const handleAddExtraHoursToRoomOnly = async () => {
-    if (!sale) return;
-    const precioUnitarioCentimos = Math.round(parseFloat(extraHoursPriceSoles) * 100);
-    if (!Number.isFinite(precioUnitarioCentimos) || precioUnitarioCentimos <= 0) return;
-
-    run(async () => {
+    const precioUnitarioCentimos = Math.round(Number(extraHoursPriceSoles.replace(",", ".")) * 100);
+    if (!Number.isSafeInteger(precioUnitarioCentimos) || precioUnitarioCentimos <= 0) {
+      setError("Ingresa un precio por hora mayor que cero.");
+      return;
+    }
+    await run(async () => {
       await api.addExtraHours(sale.id, extraHoursCount, precioUnitarioCentimos);
       setAddingExtraHours(false);
       setExtraHoursCount(1);
       await reload();
+      setPayingBalance(collect);
     }, "No se pudo agregar la hora extra a la cuenta.");
   };
 
@@ -328,7 +316,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         {/* ---------- Columna principal ---------- */}
         <div className="flex flex-col gap-5">
           {stay ? (
@@ -356,28 +344,36 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
           {sale && (
             <Section title="Cargos">
               <div className="mb-3">
+                {stay?.salidaDeclaradaEn && <Notice kind="info">Salida registrada: {formatDateTime12h(stay.salidaDeclaradaEn)}. Horas fijadas; pendiente completar checkout.</Notice>}
                 {sale.lineas.map((linea) => (
-                  <div key={linea.id} className="flex items-center justify-between gap-2 py-1">
+                  <div key={linea.id} className={cx("flex items-center justify-between gap-2 py-1", linea.anulada && "opacity-60 line-through")}>
                     <span className="min-w-0 truncate text-sm text-muted">
                       {linea.descripcion}
+                      {linea.anulada && <span className="ml-1 text-xs">(anulado)</span>}
                       {linea.fase === "POST_PAGO" && <span className="ml-1 text-xs text-warn">(post-pago)</span>}
                     </span>
                     <span className="flex shrink-0 items-center gap-2">
                       <span className="text-sm tabular-nums text-ink">{format(cents(linea.subtotalCentimos))}</span>
-                      {linea.tipo !== "HOSPEDAJE" && (
-                        <button
-                          onClick={() => run(() => api.cancelLine(sale.id, linea.id, "Anulado por recepción"), "No se pudo anular la línea.", reload)}
+                      {!linea.anulada && linea.tipo !== "HOSPEDAJE" && (
+                        <ActionButton
+                          onClick={() => { setLineToCancel(linea); setLineCancelReason(""); }}
                           disabled={busy}
                           title="Anular línea"
                           className="text-danger transition-opacity hover:opacity-70 disabled:opacity-40"
                         >
                           ✕
-                        </button>
+                        </ActionButton>
                       )}
                     </span>
                   </div>
                 ))}
               </div>
+              {lineToCancel && <div className="mb-3 space-y-2 rounded-xl border border-line p-3">
+                <p className="text-sm text-ink">Anular {lineToCancel.descripcion}</p>
+                <Field label="Motivo obligatorio"><Textarea value={lineCancelReason} onChange={(e) => setLineCancelReason(e.target.value)} /></Field>
+                <p className="text-xs text-muted">Quedará registrado tu usuario y el motivo. Si hay un saldo a favor por un cargo ya pagado, revisa la devolución en checkout.</p>
+                <div className="flex gap-2"><Button disabled={busy} onClick={() => setLineToCancel(null)}>Volver</Button><Button variant="warn" disabled={busy || !lineCancelReason.trim()} onClick={() => run(async () => { await api.cancelLine(sale.id, lineToCancel.id, lineCancelReason.trim()); setLineToCancel(null); await reload(); }, "No se pudo anular el cargo.")}>Confirmar anulación</Button></div>
+              </div>}
               <div className="border-t border-line pt-2">
                 {impuestos && (
                   <>
@@ -388,7 +384,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                 <Row label="Total" value={format(cents(sale.totalCentimos))} />
                 <Row label="Pagado" value={format(cents(sale.pagadoCentimos))} />
                 <Row
-                  label="Saldo pendiente"
+                  label={sale.saldoCentimos < 0 ? "Saldo a favor (devolver al salir)" : "Saldo pendiente"}
                   value={format(cents(sale.saldoCentimos))}
                   strong
                   tone={sale.saldoCentimos > 0 ? "text-warn" : "text-ok"}
@@ -533,7 +529,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                     <div className="animate-fade flex flex-col gap-2 rounded-xl bg-inset p-3">
                       <div className="flex gap-2">
                         {(["NOTA_CREDITO", "NOTA_DEBITO"] as const).map((t) => (
-                          <button
+                          <ActionButton
                             key={t}
                             onClick={() => {
                               setEmitiendoNota(t);
@@ -542,7 +538,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                             className={cx("flex-1 rounded-lg py-1.5 text-xs font-medium transition-colors", emitiendoNota === t ? "bg-warn text-white" : "bg-surface text-muted hover:text-ink")}
                           >
                             {t === "NOTA_CREDITO" ? "Nota de crédito" : "Nota de débito"}
-                          </button>
+                          </ActionButton>
                         ))}
                       </div>
                       <Select value={notaMotivoCodigo} onChange={(e) => setNotaMotivoCodigo(e.target.value)}>
@@ -553,7 +549,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                           </option>
                         ))}
                       </Select>
-                      <Input type="number" min="0.01" step="0.01" placeholder="Monto (S/)" value={notaMontoSoles} onChange={(e) => setNotaMontoSoles(e.target.value)} />
+                      <Input aria-label="Monto (S/)" type="number" min="0.01" step="0.01" placeholder="Monto (S/)" value={notaMontoSoles} onChange={(e) => setNotaMontoSoles(e.target.value)} />
                       <div className="flex gap-2">
                         <Button block size="sm" onClick={() => setEmitiendoNota(null)}>
                           Cancelar
@@ -619,10 +615,10 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                   {generandoPago === "FACTURA" && (
                     <div className="grid gap-3 sm:grid-cols-2">
                       <Field label="RUC">
-                        <Input placeholder="RUC" value={facturaRuc} onChange={(e) => setFacturaRuc(e.target.value)} />
+                        <Input aria-label="RUC" placeholder="RUC" value={facturaRuc} onChange={(e) => setFacturaRuc(e.target.value)} />
                       </Field>
                       <Field label="Razón social">
-                        <Input placeholder="Razón social" value={facturaRazonSocial} onChange={(e) => setFacturaRazonSocial(e.target.value)} />
+                        <Input aria-label="Razón social" placeholder="Razón social" value={facturaRazonSocial} onChange={(e) => setFacturaRazonSocial(e.target.value)} />
                       </Field>
                     </div>
                   )}
@@ -656,9 +652,9 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
               <div className="animate-fade">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-sm font-medium text-ink">Agregar producto</p>
-                  <button onClick={() => setAddingProduct(false)} className="text-sm text-muted hover:text-ink">
+                  <ActionButton onClick={() => setAddingProduct(false)} className="text-sm text-muted hover:text-ink">
                     Listo
-                  </button>
+                  </ActionButton>
                 </div>
                 <ProductPicker
                   onAdd={async (_productoId, product) => {
@@ -672,6 +668,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
               </div>
             ) : payingBalance && sale && sale.saldoCentimos > 0 ? (
               <div className="animate-fade">
+                {stay?.salidaDeclaradaEn && <Notice kind="warn">La salida ya está registrada. Al cobrar se completará el checkout.</Notice>}
                 <PaymentForm
                   totalCentimos={sale.saldoCentimos}
                   busy={busy}
@@ -683,11 +680,13 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                         setPayingBalance(false);
                         await reload();
                         void printReceiptForSale(sale.id, entry.room.numero);
+                        if (stay?.salidaDeclaradaEn) { await api.checkOut(stay.id); onBack(); }
                       },
                       "No se pudo cobrar el saldo.",
                     )
                   }
                 />
+                <Button block disabled={busy} onClick={() => setPayingBalance(false)}>Volver a las acciones</Button>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -727,7 +726,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                             { id: "60min", label: "Hace 1 hora" },
                             { id: "manual", label: "Hora exacta…" },
                           ].map((pill) => (
-                            <button
+                            <ActionButton
                               key={pill.id}
                               type="button"
                               onClick={() => {
@@ -745,15 +744,16 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                               )}
                             >
                               {pill.label}
-                            </button>
+                            </ActionButton>
                           ))}
                         </div>
 
                         {checkoutMode === "manual" && (
                           <div className="flex items-center gap-2 pt-1">
                             <span className="text-xs font-medium text-muted">Hora de salida:</span>
-                            <input
+                            <Input
                               type="time"
+                              aria-label="Hora exacta de salida"
                               value={checkoutCustomTime}
                               onChange={(e) => setCheckoutCustomTime(e.target.value)}
                               className="rounded-lg border border-line bg-surface px-3 py-1 text-xs font-semibold text-ink focus:border-brand focus:outline-none"
@@ -762,27 +762,27 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                         )}
 
                         <div className="flex gap-2 pt-1">
-                          <Button block size="sm" onClick={() => setCheckingOut(false)}>
+                          <Button size="sm" className="shrink-0" onClick={() => setCheckingOut(false)}>
                             Cancelar
                           </Button>
                           <Button
-                            block
                             size="sm"
+                            className="h-auto min-h-8 min-w-0 flex-1 whitespace-normal py-2"
                             variant="primary"
                             disabled={busy}
                             onClick={() => {
-                              const horaSalida = calculateHoraSalida();
-                              run(() => api.checkOut(entry.stayId!, horaSalida), "No se pudo hacer el check-out.", onBack);
+                              const horaSalida = calculateHoraSalida() ?? stay?.salidaDeclaradaEn ?? new Date().toISOString();
+                              setCheckoutReview({ horaSalida, retroactiva: checkoutMode !== "ahora" });
                             }}
                           >
-                            Confirmar check-out
+                            Revisar cuenta y salida
                           </Button>
                         </div>
                       </div>
                     ) : (
                       <Button
                         block
-                        disabled={busy || (sale ? sale.saldoCentimos > 0 : false)}
+                        disabled={busy}
                         onClick={() => setCheckingOut(true)}
                       >
                         Check-out
@@ -804,19 +804,19 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
 
       {/* Modal para cobrar producto al momento de agregarlo a la habitación */}
       {productToCharge && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
+        <ModalFrame title="Cobrar producto" onClose={() => setProductToCharge(null)} busy={busy}>
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-line-soft">
               <div>
                 <h3 className="text-lg font-bold text-ink">Cobrar producto · Cuarto {entry.room.numero}</h3>
                 <p className="text-xs text-muted">Registra el producto y cobra de inmediato o cárgalo a la cuenta</p>
               </div>
-              <button
+              <ActionButton disabled={busy} aria-label="Cerrar"
                 onClick={() => setProductToCharge(null)}
                 className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-inset hover:text-ink transition-colors"
               >
                 <IconX className="h-4 w-4" />
-              </button>
+              </ActionButton>
             </div>
 
             <div className="rounded-xl bg-inset p-4 space-y-3">
@@ -830,23 +830,23 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted">Cantidad:</span>
                 <div className="flex items-center gap-2">
-                  <button
+                  <ActionButton
                     type="button"
                     className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors disabled:opacity-40"
                     disabled={productQty <= 1}
                     onClick={() => setProductQty((q) => Math.max(1, q - 1))}
                   >
                     -
-                  </button>
+                  </ActionButton>
                   <span className="w-8 text-center font-bold text-base text-ink">{productQty}</span>
-                  <button
+                  <ActionButton
                     type="button"
                     className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors disabled:opacity-40"
                     disabled={productQty >= productToCharge.stock}
                     onClick={() => setProductQty((q) => Math.min(productToCharge.stock, q + 1))}
                   >
                     +
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
 
@@ -871,7 +871,7 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                   disabled={busy}
                   onClick={() => handleAddProductAndPay("EFECTIVO")}
                 >
-                  💵 Efectivo
+                  <IconCash className="inline h-4 w-4 align-text-bottom" /> Efectivo
                 </Button>
 
                 <Button
@@ -911,58 +911,60 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
                   disabled={busy}
                   onClick={handleAddProductToRoomOnly}
                 >
-                  🏨 Cargar a la habitación (paga al salir en check-out)
+                  <IconBed className="inline h-4 w-4 align-text-bottom" /> Cargar a la habitación (paga al salir en check-out)
                 </Button>
               </div>
             </div>
           </div>
-        </div>
+        </ModalFrame>
       )}
+
+      {checkoutReview && entry.stayId && <CheckoutDialog stayId={entry.stayId} roomNumber={entry.room.numero} horaSalida={checkoutReview.horaSalida} retroactiva={checkoutReview.retroactiva} onClose={() => { setCheckoutReview(null); void reload(); }} onUpdated={reload} onCompleted={onBack} />}
 
       {/* Modal para cobrar hora(s) extra al momento de agregarlas a la habitación */}
       {addingExtraHours && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
+        <ModalFrame title="Agregar horas extra" onClose={() => setAddingExtraHours(false)} busy={busy}>
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-line-soft">
               <div>
                 <h3 className="text-lg font-bold text-ink">Agregar hora(s) extra · Cuarto {entry.room.numero}</h3>
-                <p className="text-xs text-muted">Cobra de inmediato o cárgalo a la cuenta de la habitación</p>
+                <p className="text-xs text-muted">Amplía la salida prevista; luego revisa y cobra el saldo actualizado</p>
               </div>
-              <button
+              <ActionButton disabled={busy} aria-label="Cerrar"
                 onClick={() => setAddingExtraHours(false)}
                 className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-inset hover:text-ink transition-colors"
               >
                 <IconX className="h-4 w-4" />
-              </button>
+              </ActionButton>
             </div>
 
             <div className="rounded-xl bg-inset p-4 space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted font-medium">Cantidad de horas:</span>
                 <div className="flex items-center gap-2">
-                  <button
+                  <ActionButton
                     type="button"
                     className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors disabled:opacity-40"
                     disabled={extraHoursCount <= 1}
                     onClick={() => setExtraHoursCount((c) => Math.max(1, c - 1))}
                   >
                     -
-                  </button>
+                  </ActionButton>
                   <span className="w-8 text-center font-bold text-base text-ink">{extraHoursCount}</span>
-                  <button
+                  <ActionButton
                     type="button"
                     className="h-8 w-8 rounded-lg border border-line bg-surface font-bold text-ink hover:bg-raised transition-colors"
                     onClick={() => setExtraHoursCount((c) => c + 1)}
                   >
                     +
-                  </button>
+                  </ActionButton>
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted font-medium">Precio por hora (S/):</span>
                 <div className="w-28">
-                  <input
+                  <Input
                     type="number"
                     step="0.50"
                     min="0"
@@ -981,63 +983,14 @@ export function RoomDetailModule({ roomId, floors, onBack }: Props) {
               </div>
             </div>
 
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                ¿Cómo paga el huésped ahora?
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="primary"
-                  className="py-3 font-semibold justify-center"
-                  disabled={busy || !extraHoursPriceSoles}
-                  onClick={() => handleAddExtraHoursAndPay("EFECTIVO")}
-                >
-                  💵 Efectivo
-                </Button>
-
-                <Button
-                  variant="secondary"
-                  className="py-3 font-semibold justify-center text-[#742384] hover:bg-[#742384]/10 border-[#742384]/30"
-                  disabled={busy || !extraHoursPriceSoles}
-                  onClick={() => handleAddExtraHoursAndPay("YAPE")}
-                >
-                  📱 Yape
-                </Button>
-
-                <Button
-                  variant="secondary"
-                  className="py-3 font-semibold justify-center text-[#00c8b3] hover:bg-[#00c8b3]/10 border-[#00c8b3]/30"
-                  disabled={busy || !extraHoursPriceSoles}
-                  onClick={() => handleAddExtraHoursAndPay("PLIN")}
-                >
-                  🟣 Plin
-                </Button>
-
-                <Button
-                  variant="secondary"
-                  className="py-3 font-semibold justify-center"
-                  disabled={busy || !extraHoursPriceSoles}
-                  onClick={() => handleAddExtraHoursAndPay("POS_DEBITO")}
-                >
-                  💳 Tarjeta / POS
-                </Button>
-              </div>
-
-              <div className="pt-2 border-t border-line-soft">
-                <Button
-                  block
-                  variant="ghost"
-                  className="text-xs text-muted hover:text-ink justify-center"
-                  disabled={busy || !extraHoursPriceSoles}
-                  onClick={handleAddExtraHoursToRoomOnly}
-                >
-                  🏨 Cargar a la habitación (paga al salir en check-out)
-                </Button>
-              </div>
+            <p className="text-xs text-muted">El exceso automático cubierto por esta ampliación se ajusta para evitar cobrar dos veces el mismo tiempo.</p>
+            {error && <Notice kind="error">{error}</Notice>}
+            <div className="space-y-2">
+              <Button block variant="primary" disabled={busy || !extraHoursPriceSoles} onClick={() => handleAddExtraHours(true)}>Agregar horas y preparar cobro</Button>
+              <Button block disabled={busy || !extraHoursPriceSoles} onClick={() => handleAddExtraHours(false)}>Agregar a la cuenta de la habitación</Button>
             </div>
           </div>
-        </div>
+        </ModalFrame>
       )}
     </>
   );

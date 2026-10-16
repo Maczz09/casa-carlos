@@ -1,4 +1,8 @@
 import { z } from "zod";
+import type { PaymentWithDetails } from "./payments.js";
+import type { CashMovement, Shift } from "./cashbox.js";
+import type { StayWithCustomer } from "./stays.js";
+import type { PaymentMethod } from "./payments.js";
 
 export const SaleTypeSchema = z.enum(["COTIZACION", "VENTA"]);
 export type SaleType = z.infer<typeof SaleTypeSchema>;
@@ -47,6 +51,7 @@ export const SaleLineSchema = z.object({
   ventaId: z.string(),
   tipo: LineTypeSchema,
   referenciaId: z.string().nullable(),
+  intervaloMinutos: z.number().int().positive().nullable().optional(),
   descripcion: z.string(),
   cantidad: z.number().int().positive(),
   precioUnitarioCentimos: z.number().int().nonnegative(),
@@ -63,6 +68,36 @@ export const SaleWithLinesSchema = SaleSchema.extend({
   lineas: z.array(SaleLineSchema),
 });
 export type SaleWithLines = z.infer<typeof SaleWithLinesSchema>;
+
+export interface SaleHistory {
+  venta: SaleWithLines;
+  estadia: StayWithCustomer | null;
+  pagos: Array<PaymentWithDetails & { usuarioNombre: string }>;
+  movimientos: Array<CashMovement & { usuarioNombre: string }>;
+  turnos: Shift[];
+  auditoria: Array<{
+    id: string; entidad: string; entidadId: string; accion: string;
+    usuarioId: string | null; usuarioNombre: string; ocurridoEn: string;
+    motivo: string | null; antesJson: string | null; despuesJson: string | null;
+  }>;
+}
+
+export interface CheckoutPreview {
+  estadiaId: string; ventaId: string; horaSalida: string; revision: string;
+  anularHorasExtra: boolean; requiereConfirmacion: boolean;
+  totalAntesCentimos: number; totalDespuesCentimos: number;
+  saldoAntesCentimos: number; saldoDespuesCentimos: number;
+  devolverCentimos: number;
+  devoluciones: Array<{ metodo: PaymentMethod; montoCentimos: number }>;
+  cambios: Array<{ lineaId: string | null; descripcion: string; antesCentimos: number; despuesCentimos: number }>;
+}
+
+export interface CheckoutConfirmation {
+  horaSalida: string; revision: string; anularHorasExtra: boolean;
+  motivo: string; confirmarDevolucion?: boolean;
+}
+
+export interface CheckoutResult { finalizada: boolean; estadia: StayWithCustomer; venta: SaleWithLines }
 
 export interface CancelledSale extends Sale {
   anuladoPorUsuarioId?: string | null;

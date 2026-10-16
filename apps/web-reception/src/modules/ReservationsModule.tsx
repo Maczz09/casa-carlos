@@ -1,3 +1,8 @@
+import { IconCalendar as ModuleIcon, IconCalendar } from "@casacarlos/ui";
+import { ModalFrame } from "@casacarlos/ui/components/modal-frame";
+import { Textarea } from "../components/ui.js";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+
 import { useEffect, useMemo, useState } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/react/daygrid";
@@ -9,7 +14,7 @@ import "@fullcalendar/react/themes/breezy/theme.css";
 import "@fullcalendar/react/themes/breezy/palettes/emerald.css";
 import type { FloorBoard, Modality, StayWithCustomer } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
-import { IconCalendar } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Skeleton } from "../components/ui.js";
 
@@ -45,6 +50,8 @@ export function ReservationsModule({ floors }: Props) {
   const [apellidos, setApellidos] = useState("");
   const [dni, setDni] = useState("");
   const [telefono, setTelefono] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -127,7 +134,8 @@ export function ReservationsModule({ floors }: Props) {
 
   return (
     <>
-      <PageHeader title="Reservas" subtitle="Calendario operativo por día, semana o mes, con disponibilidad validada por el servidor" />
+      {cancelling && selected && <ModalFrame title="Cancelar reserva" busy={busy} onClose={() => setCancelling(false)}><Card className="w-full max-w-lg p-5 space-y-4"><h2 className="text-lg font-semibold text-ink">Cancelar reserva · Cuarto {roomMeta.get(selected.cuartoId)?.numero}</h2><p className="text-sm text-muted">El motivo se guardará con el usuario y la fecha de la operación.</p><Field label="Motivo de cancelación"><Textarea autoFocus value={cancelReason} onChange={e => setCancelReason(e.target.value)} /></Field>{error && <Notice>{error}</Notice>}<div className="flex justify-end gap-2"><Button disabled={busy} onClick={() => setCancelling(false)}>Volver</Button><Button variant="danger" disabled={busy || !cancelReason.trim()} onClick={async () => { setBusy(true); try { await api.cancelStay(selected.id, cancelReason.trim()); setCancelling(false); setSelectedId(null); await loadCalendar(visibleRange); } catch (err) { setError(err instanceof ApiError ? err.message : "No se pudo cancelar la reserva."); } finally { setBusy(false); } }}>Confirmar cancelación</Button></div></Card></ModalFrame>}
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />} title="Reservas" subtitle="Calendario operativo por día, semana o mes, con disponibilidad validada por el servidor" />
 
       {error && <div className="mb-4"><Notice>{error}</Notice></div>}
       {ok && <div className="mb-4"><Notice kind="ok">{ok}</Notice></div>}
@@ -170,7 +178,7 @@ export function ReservationsModule({ floors }: Props) {
             <div className="flex gap-2">
               <Button onClick={() => setSelectedId(null)}>Cerrar detalle</Button>
               {selected.estado === "RESERVADA" && <Button variant="primary" disabled={busy} onClick={async () => { setBusy(true); try { await api.checkInReservation(selected.id); await loadCalendar(visibleRange); } catch (err) { setError(err instanceof ApiError ? err.message : "No se pudo hacer check-in."); } finally { setBusy(false); } }}>Hacer check-in</Button>}
-              {selected.estado === "RESERVADA" && <Button variant="danger" disabled={busy} onClick={async () => { const motivo = window.prompt("Motivo de la cancelación"); if (!motivo) return; setBusy(true); try { await api.cancelStay(selected.id, motivo); setSelectedId(null); await loadCalendar(visibleRange); } catch (err) { setError(err instanceof ApiError ? err.message : "No se pudo cancelar."); } finally { setBusy(false); } }}>Cancelar reserva</Button>}
+              {selected.estado === "RESERVADA" && <Button variant="danger" disabled={busy} onClick={() => { setCancelReason(""); setError(null); setCancelling(true); }}>Cancelar reserva</Button>}
             </div>
           </div>
         </Card>
@@ -204,10 +212,10 @@ export function ReservationsModule({ floors }: Props) {
           ) : (
             <div className="flex max-h-[520px] flex-col gap-2 overflow-y-auto pr-1">
               {reservasVisibles.map((stay) => (
-                <button key={stay.id} onClick={() => setSelectedId(stay.id)} className="flex items-center justify-between gap-3 rounded-xl border border-line p-3 text-left transition-colors hover:bg-inset/60">
+                <ActionButton key={stay.id} onClick={() => setSelectedId(stay.id)} className="flex items-center justify-between gap-3 rounded-xl border border-line p-3 text-left transition-colors hover:bg-inset/60">
                   <span className="min-w-0"><span className="block truncate text-sm font-medium text-ink">Cuarto {roomMeta.get(stay.cuartoId)?.numero ?? "—"} · {stay.cliente.nombres}</span><span className="block truncate text-xs text-muted">{formatDateTime12h(stay.bloqueoDesde)}</span></span>
                   <Badge tone={stay.estado === "RESERVADA" ? "tone-violet" : "tone-stone"}>{STATE_LABEL[stay.estado]}</Badge>
-                </button>
+                </ActionButton>
               ))}
             </div>
           )}

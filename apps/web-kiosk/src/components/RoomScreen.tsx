@@ -1,3 +1,4 @@
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import type { Category, FloorBoard } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
 import { RoomIllustration } from "@casacarlos/ui";
@@ -26,7 +27,7 @@ export function RoomScreen({ floor, categories, preciosPorCategoria, onSelect, o
             const categoria = categories.find((c) => c.id === entry.room.categoriaId);
             const precio = preciosPorCategoria[entry.room.categoriaId];
             return (
-              <button
+              <ActionButton
                 key={entry.room.id}
                 style={{ ["--i" as string]: i }}
                 onClick={() => onSelect(entry.room.id)}
@@ -39,13 +40,13 @@ export function RoomScreen({ floor, categories, preciosPorCategoria, onSelect, o
                 </div>
                 <div className="flex flex-1 flex-col gap-0.5 p-3">
                   <div className="flex items-baseline justify-between">
-                    <span className="font-serif text-lg font-bold text-ink">Cuarto {entry.room.numero}</span>
+                    <span className="font-sans text-lg font-bold text-ink">Cuarto {entry.room.numero}</span>
                     {precio !== undefined && <span className="text-base font-semibold text-brand">{format(cents(precio))}</span>}
                   </div>
                   <p className="text-xs font-medium text-muted truncate">{categoria?.nombre}</p>
                   {categoria?.descripcion && <p className="text-xs text-subtle line-clamp-1">{categoria.descripcion}</p>}
                 </div>
-              </button>
+              </ActionButton>
             );
           })}
         </div>

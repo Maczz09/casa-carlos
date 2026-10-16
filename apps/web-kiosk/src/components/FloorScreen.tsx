@@ -1,3 +1,4 @@
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import type { FloorBoard } from "@casacarlos/contracts";
 import { Shell } from "./Shell.js";
 
@@ -15,7 +16,7 @@ export function FloorScreen({ floors, onSelect, onCancel }: Props) {
           const disponibles = f.rooms.filter((r) => r.estado === "DISPONIBLE").length;
           const libre = disponibles > 0;
           return (
-            <button
+            <ActionButton
               key={f.floor.id}
               style={{ ["--i" as string]: i }}
               onClick={() => libre && onSelect(f.floor.id)}
@@ -24,12 +25,12 @@ export function FloorScreen({ floors, onSelect, onCancel }: Props) {
                 libre ? "hover:-translate-y-0.5 hover:shadow-[var(--shadow-pop)]" : "opacity-50"
               }`}
             >
-              <span className="font-serif text-3xl text-ink">{f.floor.nombre}</span>
+              <span className="font-sans text-3xl text-ink">{f.floor.nombre}</span>
               <span className={`flex items-center gap-2 text-sm font-medium ${libre ? "text-brand" : "text-danger"}`}>
                 <span className={`h-2.5 w-2.5 rounded-full ${libre ? "bg-brand" : "bg-danger"}`} />
                 {libre ? `${disponibles} disponible${disponibles > 1 ? "s" : ""}` : "Completo"}
               </span>
-            </button>
+            </ActionButton>
           );
         })}
       </div>

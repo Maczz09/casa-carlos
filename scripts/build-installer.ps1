@@ -26,7 +26,13 @@ function Get-OfficialPrerequisite {
 if ($LASTEXITCODE -ne 0) { throw 'No se pudo compilar la aplicación de escritorio.' }
 
 Write-Host 'Compilando interfaces web (recepción y kiosco)...'
-& pnpm -r run build
+$nodeExecutable = (Get-Command node.exe -ErrorAction Stop).Source
+$corepack = Join-Path (Split-Path -Parent $nodeExecutable) 'corepack.cmd'
+if (Test-Path -LiteralPath $corepack) {
+  & $corepack pnpm -r run build
+} else {
+  & pnpm -r run build
+}
 if ($LASTEXITCODE -ne 0) { throw 'No se pudieron compilar las aplicaciones web.' }
 
 $webViewDir = Join-Path $root 'vendor\webview2'
@@ -61,6 +67,13 @@ if ((-not (Test-Path -LiteralPath $portableNode)) -or (-not (Test-Path -LiteralP
   New-Item -ItemType Directory -Force -Path $vendorDir | Out-Null
   $nodeZip = Join-Path $vendorDir "node-$nodeVersion-win-x64.zip"
   $nodeExtractDir = Join-Path $vendorDir 'node-temp'
+  $resolvedVendorRoot = [System.IO.Path]::GetFullPath($vendorDir).TrimEnd('\') + '\'
+  foreach ($targetPath in @($nodeExtractDir, $portableNodeDir)) {
+    $resolvedTarget = [System.IO.Path]::GetFullPath($targetPath)
+    if (-not $resolvedTarget.StartsWith($resolvedVendorRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+      throw "La ruta temporal salió del directorio vendor: $resolvedTarget"
+    }
+  }
 
   if (-not (Test-Path -LiteralPath $nodeZip)) {
     Invoke-WebRequest -Uri $nodeZipUrl -OutFile $nodeZip
@@ -72,6 +85,9 @@ if ((-not (Test-Path -LiteralPath $portableNode)) -or (-not (Test-Path -LiteralP
   Expand-Archive -LiteralPath $nodeZip -DestinationPath $nodeExtractDir
 
   $extractedInner = Join-Path $nodeExtractDir "node-$nodeVersion-win-x64"
+  if (-not ([System.IO.Path]::GetFullPath($extractedInner)).StartsWith($resolvedVendorRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw 'La carpeta extraída salió del directorio vendor.'
+  }
   if (Test-Path -LiteralPath $portableNodeDir) {
     Remove-Item -LiteralPath $portableNodeDir -Recurse -Force
   }

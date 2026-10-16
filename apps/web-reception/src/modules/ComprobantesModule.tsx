@@ -1,8 +1,13 @@
+import { IconCash, IconReceipt as ModuleIcon, IconPrinter, IconReceipt, IconSearch, IconX } from "@casacarlos/ui";
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { ModalFrame } from "@casacarlos/ui/components/modal-frame";
+
 import { useEffect, useMemo, useState } from "react";
 import type { ComprobantePagoView, DocumentType, PaymentMethod } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconPrinter, IconReceipt, IconSearch, IconX } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { openComprobantePdf, printReceiptForSale } from "../components/receipt.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Select, Skeleton, StatCard, cx } from "../components/ui.js";
@@ -177,7 +182,7 @@ export function ComprobantesModule() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Comprobantes de Pago"
         subtitle="Listado oficial de ventas y emisión de boletas o facturas con impresión directa de comprobantes"
       />
@@ -226,7 +231,7 @@ export function ComprobantesModule() {
           <div className="lg:col-span-2">
             <Field label="Buscar cliente, DNI, RUC o N° comprobante">
               <div className="relative">
-                <Input
+                <Input aria-label="Ej. Juan Pérez, 72345678, B001-12..."
                   type="text"
                   placeholder="Ej. Juan Pérez, 72345678, B001-12..."
                   value={search}
@@ -384,19 +389,19 @@ export function ComprobantesModule() {
 
       {/* Modal para emitir a SUNAT */}
       {emitModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade">
+        <ModalFrame title="Emitir comprobante a SUNAT" onClose={() => setEmitModalItem(null)} busy={emitBusy}>
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-line-soft pb-3">
               <div>
                 <h3 className="text-lg font-bold text-ink">Emitir Comprobante a SUNAT</h3>
                 <p className="text-xs text-muted">Venta {emitModalItem.serie}-{emitModalItem.correlativo}</p>
               </div>
-              <button
+              <ActionButton disabled={emitBusy} aria-label="Cerrar"
                 onClick={() => setEmitModalItem(null)}
                 className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-inset hover:text-ink transition-colors"
               >
                 <IconX className="h-4 w-4" />
-              </button>
+              </ActionButton>
             </div>
 
             <div className="rounded-xl bg-inset p-3 text-xs space-y-1">
@@ -423,7 +428,7 @@ export function ComprobantesModule() {
               ) : (
                 <>
                   <Field label="RUC de la empresa (11 dígitos)">
-                    <Input
+                    <Input aria-label="20123456789"
                       type="text"
                       maxLength={11}
                       value={facturaRuc}
@@ -432,7 +437,7 @@ export function ComprobantesModule() {
                     />
                   </Field>
                   <Field label="Razón Social">
-                    <Input
+                    <Input aria-label="Empresa SAC"
                       type="text"
                       value={facturaRazonSocial}
                       onChange={(e) => setFacturaRazonSocial(e.target.value)}
@@ -452,11 +457,11 @@ export function ComprobantesModule() {
               </Button>
             </div>
           </div>
-        </div>
+        </ModalFrame>
       )}
       {/* Modal para cobrar saldo pendiente */}
       {paySaldoItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs animate-fade">
+        <ModalFrame title="Cobrar saldo pendiente" onClose={() => setPaySaldoItem(null)} busy={paySaldoBusy}>
           <div className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-line-soft pb-3">
               <div>
@@ -465,12 +470,12 @@ export function ComprobantesModule() {
                   Comprobante {paySaldoItem.serie}-{String(paySaldoItem.correlativo).padStart(6, "0")}
                 </p>
               </div>
-              <button
+              <ActionButton disabled={paySaldoBusy} aria-label="Cerrar"
                 onClick={() => setPaySaldoItem(null)}
                 className="grid h-8 w-8 place-items-center rounded-lg text-muted hover:bg-inset hover:text-ink transition-colors"
               >
                 <IconX className="h-4 w-4" />
-              </button>
+              </ActionButton>
             </div>
 
             <div className="rounded-xl bg-inset p-4 space-y-2">
@@ -499,7 +504,7 @@ export function ComprobantesModule() {
               </p>
 
               <div className="grid grid-cols-2 gap-2">
-                <button
+                <ActionButton
                   type="button"
                   className={cx(
                     "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
@@ -509,9 +514,9 @@ export function ComprobantesModule() {
                   )}
                   onClick={() => setPaySaldoMetodo("EFECTIVO")}
                 >
-                  💵 Efectivo
-                </button>
-                <button
+                  <IconCash className="inline h-4 w-4 align-text-bottom" /> Efectivo
+                </ActionButton>
+                <ActionButton
                   type="button"
                   className={cx(
                     "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
@@ -522,8 +527,8 @@ export function ComprobantesModule() {
                   onClick={() => setPaySaldoMetodo("YAPE")}
                 >
                   📱 Yape
-                </button>
-                <button
+                </ActionButton>
+                <ActionButton
                   type="button"
                   className={cx(
                     "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
@@ -534,8 +539,8 @@ export function ComprobantesModule() {
                   onClick={() => setPaySaldoMetodo("PLIN")}
                 >
                   🟣 Plin
-                </button>
-                <button
+                </ActionButton>
+                <ActionButton
                   type="button"
                   className={cx(
                     "p-3 rounded-xl border font-semibold text-sm transition-all flex items-center justify-center gap-1.5",
@@ -546,12 +551,12 @@ export function ComprobantesModule() {
                   onClick={() => setPaySaldoMetodo("POS_DEBITO")}
                 >
                   💳 Tarjeta / POS
-                </button>
+                </ActionButton>
               </div>
 
               {paySaldoMetodo !== "EFECTIVO" && (
                 <Field label="Código de operación (opcional)">
-                  <Input
+                  <Input aria-label="Ej. 987654"
                     placeholder="Ej. 987654"
                     value={paySaldoCodigoOp}
                     onChange={(e) => setPaySaldoCodigoOp(e.target.value)}
@@ -579,7 +584,7 @@ export function ComprobantesModule() {
               </div>
             </div>
           </div>
-        </div>
+        </ModalFrame>
       )}
     </>
   );

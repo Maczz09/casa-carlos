@@ -1,5 +1,5 @@
 import type { Db } from "@casacarlos/db";
-import { recordAudit } from "@casacarlos/db";
+import { atomic, recordAudit, schema, eq, and } from "@casacarlos/db";
 import { WALLET_PROVIDERS, newId } from "@casacarlos/contracts";
 import type {
   CollectionAccount,
@@ -13,7 +13,7 @@ import type {
   SalesPort,
   UpdateCollectionAccountInput,
 } from "@casacarlos/contracts";
-import { cents, sumEquals } from "@casacarlos/money";
+import { cents } from "@casacarlos/money";
 import type { EventBus } from "@casacarlos/bus";
 import { PaymentsRepo } from "./repo.js";
 
@@ -29,68 +29,86 @@ export class PaymentsService implements PaymentsPort {
   }
 
   async create(input: CreatePaymentInput): Promise<PaymentWithDetails> {
-    if (input.detalles.length === 0) {
-      throw new Error("Un pago necesita al menos un método de pago.");
-    }
-    const sale = await this.sales.getSale(input.saleId);
-    const amounts = input.detalles.map((d) => cents(d.montoCentimos));
-    if (!sumEquals(amounts, cents(sale.saldoCentimos))) {
-      throw new Error(
-        `La suma de los métodos de pago no coincide con el saldo a cobrar (saldo: ${sale.saldoCentimos}, suma ingresada: ${amounts.reduce((a, b) => a + b, 0)}).`,
-      );
-    }
+    return atomic(this.db, async () => {
+      if (input.detalles.length === 0) {
+        throw new Error("Un pago necesita al menos un método de pago.");
+      }
+      const sale = await this.sales.getSale(input.saleId);
+      if (["CERRADA", "ANULADA"].includes(sale.estado) || sale.saldoCentimos <= 0) throw new Error("La venta no tiene saldo cobrable.");
+      const pending = await this.repo.listForSale(input.saleId);
+      if (pending.some((p) => p.estado === "PENDIENTE")) throw new Error("Resuelve el pago pendiente antes de registrar otro.");
+      for (const d of input.detalles) {
+        if (!Number.isSafeInteger(d.montoCentimos) || d.montoCentimos <= 0) throw new Error("El monto de cada método debe ser un entero positivo.");
+        if (d.metodo === "EFECTIVO" && d.recibidoCentimos != null && (!Number.isSafeInteger(d.recibidoCentimos) || d.recibidoCentimos < d.montoCentimos)) throw new Error("El efectivo recibido no cubre el monto a cobrar.");
+      }
+      const amounts = input.detalles.map((d) => cents(d.montoCentimos));
+      const total = amounts.reduce((a, b) => a + b, 0);
+      if (total <= 0 || total > sale.saldoCentimos) {
+        throw new Error(
+          `La suma de los métodos debe ser positiva y no superar el saldo a cobrar (saldo: ${sale.saldoCentimos}, suma ingresada: ${amounts.reduce((a, b) => a + b, 0)}).`,
+        );
+      }
 
-    const now = new Date().toISOString();
-    const payment = await this.repo.insertPayment({
-      id: newId(),
-      ventaId: input.saleId,
-      totalCentimos: sale.saldoCentimos,
-      estado: "PENDIENTE",
-      motivoRechazo: null,
-      aceptadoPor: null,
-      aceptadoEn: null,
-      creadoEn: now,
-    });
-
-    for (const detalle of input.detalles) {
-      const recibido = detalle.recibidoCentimos ?? null;
-      const vuelto = detalle.metodo === "EFECTIVO" && recibido !== null ? Math.max(0, recibido - detalle.montoCentimos) : null;
-      await this.repo.insertDetail({
+      const now = new Date().toISOString();
+      const payment = await this.repo.insertPayment({
         id: newId(),
-        pagoId: payment.id,
-        metodo: detalle.metodo,
-        montoCentimos: detalle.montoCentimos,
-        codigoOperacion: detalle.codigoOperacion ?? null,
-        ordenanteNombres: detalle.ordenanteNombres ?? null,
-        ordenanteApellidos: detalle.ordenanteApellidos ?? null,
-        bancoOrigen: detalle.bancoOrigen ?? null,
-        recibidoCentimos: recibido,
-        vueltoCentimos: vuelto,
+        ventaId: input.saleId,
+        totalCentimos: total,
+        estado: "PENDIENTE",
+        motivoRechazo: null,
+        aceptadoPor: null,
+        aceptadoEn: null,
         creadoEn: now,
       });
-    }
 
-    await recordAudit(this.db, { entidad: "payments_pagos", entidadId: payment.id, accion: "CREAR", despues: payment });
-    return this.getPayment(payment.id);
+      for (const detalle of input.detalles) {
+        const recibido = detalle.recibidoCentimos ?? null;
+        const vuelto = detalle.metodo === "EFECTIVO" && recibido !== null ? Math.max(0, recibido - detalle.montoCentimos) : null;
+        await this.repo.insertDetail({
+          id: newId(),
+          pagoId: payment.id,
+          metodo: detalle.metodo,
+          montoCentimos: detalle.montoCentimos,
+          codigoOperacion: detalle.codigoOperacion ?? null,
+          ordenanteNombres: detalle.ordenanteNombres ?? null,
+          ordenanteApellidos: detalle.ordenanteApellidos ?? null,
+          bancoOrigen: detalle.bancoOrigen ?? null,
+          recibidoCentimos: recibido,
+          vueltoCentimos: vuelto,
+          creadoEn: now,
+        });
+      }
+
+      await recordAudit(this.db, { entidad: "payments_pagos", entidadId: payment.id, accion: "CREAR", despues: payment });
+      return this.getPayment(payment.id);
+    });
   }
 
   async accept(paymentId: string, usuarioId: string): Promise<PaymentWithDetails> {
-    const payment = await this.mustGet(paymentId);
-    if (payment.estado !== "PENDIENTE") throw new Error(`El pago ${paymentId} ya fue resuelto (${payment.estado}).`);
-    const now = new Date().toISOString();
-    const updated = await this.repo.updatePayment(paymentId, { estado: "ACEPTADO", aceptadoPor: usuarioId, aceptadoEn: now });
-    await recordAudit(this.db, { entidad: "payments_pagos", entidadId: paymentId, accion: "ACEPTAR", usuarioId, antes: payment, despues: updated });
-    await this.bus.publish("payment.accepted", { paymentId, saleId: updated.ventaId, totalCentimos: updated.totalCentimos, aceptadoPor: usuarioId });
-    return this.getPayment(paymentId);
+    return atomic(this.db, async () => {
+      const payment = await this.mustGet(paymentId);
+      if (payment.estado !== "PENDIENTE") throw new Error(`El pago ${paymentId} ya fue resuelto (${payment.estado}).`);
+      const shift = await this.db.select().from(schema.cashboxTurnos).innerJoin(schema.cashboxConfiguracion, eq(schema.cashboxConfiguracion.turnoActivoId, schema.cashboxTurnos.id)).where(and(eq(schema.cashboxConfiguracion.id, "principal"), eq(schema.cashboxTurnos.estado, "ABIERTO"))).get();
+      if (!shift) throw new Error("Abre la caja del hotel para aceptar el pago.");
+      const sale = await this.sales.getSale(payment.ventaId);
+      if (["CERRADA", "ANULADA"].includes(sale.estado) || sale.saldoCentimos < payment.totalCentimos) throw new Error("El saldo cambió. Rechaza este pago y registra el saldo actualizado.");
+      const now = new Date().toISOString();
+      const updated = await this.repo.updatePayment(paymentId, { estado: "ACEPTADO", aceptadoPor: usuarioId, aceptadoEn: now });
+      await recordAudit(this.db, { entidad: "payments_pagos", entidadId: paymentId, accion: "ACEPTAR", usuarioId, antes: payment, despues: { ...updated, ventaAlCobrar: sale } });
+      await this.bus.publish("payment.accepted", { paymentId, saleId: updated.ventaId, totalCentimos: updated.totalCentimos, aceptadoPor: usuarioId });
+      return this.getPayment(paymentId);
+    });
   }
 
   async reject(paymentId: string, motivo: string, usuarioId: string): Promise<PaymentWithDetails> {
-    const payment = await this.mustGet(paymentId);
-    if (payment.estado !== "PENDIENTE") throw new Error(`El pago ${paymentId} ya fue resuelto (${payment.estado}).`);
-    const updated = await this.repo.updatePayment(paymentId, { estado: "RECHAZADO", motivoRechazo: motivo });
-    await recordAudit(this.db, { entidad: "payments_pagos", entidadId: paymentId, accion: "RECHAZAR", usuarioId, antes: payment, despues: updated, motivo });
-    await this.bus.publish("payment.rejected", { paymentId, saleId: updated.ventaId, motivo });
-    return this.getPayment(paymentId);
+    return atomic(this.db, async () => {
+      const payment = await this.mustGet(paymentId);
+      if (payment.estado !== "PENDIENTE") throw new Error(`El pago ${paymentId} ya fue resuelto (${payment.estado}).`);
+      const updated = await this.repo.updatePayment(paymentId, { estado: "RECHAZADO", motivoRechazo: motivo });
+      await recordAudit(this.db, { entidad: "payments_pagos", entidadId: paymentId, accion: "RECHAZAR", usuarioId, antes: payment, despues: updated, motivo });
+      await this.bus.publish("payment.rejected", { paymentId, saleId: updated.ventaId, motivo, usuarioId });
+      return this.getPayment(paymentId);
+    });
   }
 
   async getPayment(id: string): Promise<PaymentWithDetails> {

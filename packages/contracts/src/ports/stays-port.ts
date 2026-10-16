@@ -41,6 +41,8 @@ export interface StaysPort {
   checkInReservation(stayId: string, usuarioId: string): Promise<Stay>;
 
   checkOut(stayId: string, usuarioId: string, horaSalida?: string | null): Promise<Stay>;
+  declareExit(stayId: string, horaSalida: string, motivo: string, usuarioId: string): Promise<Stay>;
+  extendByHours(stayId: string, horas: number, usuarioId: string): Promise<Stay>;
   cancel(stayId: string, motivo: string, usuarioId: string): Promise<Stay>;
 
   extendByBlock(stayId: string, blocks: number, usuarioId: string): Promise<Stay>;

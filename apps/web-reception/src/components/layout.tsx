@@ -1,29 +1,15 @@
+import { Toaster } from "@casacarlos/ui/components/sonner";
+import { IconArrowLeft, IconMonitor, IconHelp, IconBed, IconBell, IconBox, IconCalendar, IconCash, IconChart, IconChevronRight, IconGrid, IconFileChart, IconFileX, IconLogout, IconMenu, IconMoon, IconPlus, IconReceipt, IconSliders, IconSun, IconTag, IconUsers, IconX } from "@casacarlos/ui";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@casacarlos/ui/components/sheet";
+import { Popover, PopoverTrigger, PopoverContent } from "@casacarlos/ui/components/popover";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@casacarlos/ui/components/tooltip";
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import { useEffect, useState, type ReactNode } from "react";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import "overlayscrollbars/overlayscrollbars.css";
 import type { AppPermission, User } from "@casacarlos/contracts";
-import {
-  IconBed,
-  IconBell,
-  IconBox,
-  IconCalendar,
-  IconCash,
-  IconChart,
-  IconChevronRight,
-  IconGrid,
-  IconFileChart,
-  IconFileX,
-  IconLogout,
-  IconMenu,
-  IconMoon,
-  IconPlus,
-  IconReceipt,
-  IconSliders,
-  IconSun,
-  IconTag,
-  IconUsers,
-  IconX,
-} from "@casacarlos/ui";
+
 import { cx } from "./ui.js";
 import { useBrand } from "../hooks/useBrand.js";
 import type { OperationalAlert } from "../hooks/useOperationalAlerts.js";
@@ -131,50 +117,27 @@ function NavButton({
   onClick: () => void;
 }) {
   return (
-    <button
+    <Tooltip><TooltipTrigger asChild><ActionButton
       data-tour={entry.id}
+      aria-label={entry.label}
+      aria-current={active ? "page" : undefined}
       onClick={onClick}
       title={collapsed ? entry.label : undefined}
       className={cx(
         "group relative flex w-full items-center gap-3 rounded-xl py-2.5 text-sm font-medium transition-all duration-150",
-        collapsed ? "justify-center px-0" : "px-3",
+        collapsed ? "justify-center px-0" : "justify-start px-3 text-left",
         active ? "bg-brand-soft text-brand" : "text-muted hover:bg-inset hover:text-ink",
       )}
     >
       {active && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-brand" />}
       <span className={cx("shrink-0 transition-transform duration-150", !active && "group-hover:scale-110")}>{entry.icon}</span>
       {!collapsed && <span className="truncate">{entry.label}</span>}
-    </button>
+    </ActionButton></TooltipTrigger>{collapsed && <TooltipContent side="right">{entry.label}</TooltipContent>}</Tooltip>
   );
 }
 
-function Sidebar({
-  user,
-  active,
-  collapsed,
-  mobileOpen,
-  onNavigate,
-  onCloseMobile,
-}: {
-  user: User;
-  active: string;
-  collapsed: boolean;
-  mobileOpen: boolean;
-  onNavigate: (id: string) => void;
-  onCloseMobile: () => void;
-}) {
-  return (
-    <>
-      {mobileOpen && <div onClick={onCloseMobile} className="animate-fade fixed inset-0 z-40 bg-black/50 lg:hidden" />}
-
-      <aside
-        className={cx(
-          "app-sidebar fixed inset-y-0 left-0 z-50 flex flex-col border-r border-line bg-surface transition-all duration-300 ease-out",
-          collapsed ? "lg:w-[76px]" : "lg:w-[260px]",
-          "w-[260px]",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-        )}
-      >
+function Sidebar({ user, active, collapsed, mobileOpen, onNavigate, onCloseMobile }: { user: User; active: string; collapsed: boolean; mobileOpen: boolean; onNavigate: (id: string) => void; onCloseMobile: () => void; }) {
+  const content = (collapsed: boolean) => <>
         <Brand collapsed={collapsed} />
 
         <OverlayScrollbarsComponent defer options={{ scrollbars: { autoHide: "leave", autoHideDelay: 350, theme: "os-theme-casacarlos" } }} className="min-h-0 flex-1">
@@ -207,7 +170,7 @@ function Sidebar({
 
         <div className={cx("border-t border-line-soft p-3", collapsed && "px-2")}>
           <div data-tour="profile" className={cx("flex items-center gap-2.5 rounded-xl bg-inset p-2.5", collapsed && "justify-center p-2")}>
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand/15 text-xs font-bold text-brand">
+            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand-soft text-xs font-bold text-brand">
               {user.nombres.charAt(0)}
               {user.apellidos.charAt(0)}
             </span>
@@ -221,9 +184,16 @@ function Sidebar({
             )}
           </div>
         </div>
-      </aside>
-    </>
-  );
+      </>;
+  return <>
+    <aside aria-label="Navegación principal" className={cx("app-sidebar fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-line bg-surface lg:flex", collapsed ? "w-[76px]" : "w-[260px]")}>{content(collapsed)}</aside>
+    <Sheet open={mobileOpen} onOpenChange={(open) => { if (!open) onCloseMobile(); }}>
+      <SheetContent side="left" className="app-sidebar flex w-[280px] flex-col gap-0 p-0">
+        <SheetTitle className="sr-only">Navegación de recepción</SheetTitle><SheetDescription className="sr-only">Módulos habilitados para {user.nombres}</SheetDescription>
+        {content(false)}
+      </SheetContent>
+    </Sheet>
+  </>;
 }
 
 /* ---------------- Topbar ---------------- */
@@ -264,12 +234,12 @@ function Topbar({
   return (
     <header className="app-topbar sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-line bg-surface/85 px-4 backdrop-blur-md sm:px-6">
       <div className="flex min-w-0 items-center gap-3">
-        <button onClick={onToggleSidebar} className="hidden rounded-lg p-2 text-muted transition-colors hover:bg-inset hover:text-ink lg:block">
+        <ActionButton onClick={onToggleSidebar} aria-label="Contraer o expandir navegación" className="hidden rounded-lg p-2 text-muted transition-colors hover:bg-inset hover:text-ink lg:block">
           <IconMenu className="h-5 w-5" />
-        </button>
-        <button onClick={onOpenMobile} className="rounded-lg p-2 text-muted transition-colors hover:bg-inset hover:text-ink lg:hidden">
+        </ActionButton>
+        <ActionButton onClick={onOpenMobile} aria-label="Abrir navegación" className="rounded-lg p-2 text-muted transition-colors hover:bg-inset hover:text-ink lg:hidden">
           <IconMenu className="h-5 w-5" />
-        </button>
+        </ActionButton>
 
         <div className="flex min-w-0 items-center gap-1.5 text-sm">
           <span className="hidden text-muted sm:inline">{brandNombre}</span>
@@ -290,7 +260,7 @@ function Topbar({
           {connected ? "En vivo" : "Reconectando…"}
         </span>
 
-        <button
+        <ActionButton aria-label={kioskMode === "split" ? "Cerrar modo dividido (volver a pantalla completa de recepción)" : "Dividir pantalla con Kiosco (50% Recepción / 50% Kiosco)"}
           type="button"
           onClick={onToggleKioskSplit}
           title={kioskMode === "split" ? "Cerrar modo dividido (volver a pantalla completa de recepción)" : "Dividir pantalla con Kiosco (50% Recepción / 50% Kiosco)"}
@@ -301,13 +271,13 @@ function Topbar({
               : "border border-line bg-surface text-ink hover:bg-inset hover:border-brand/40"
           )}
         >
-          <span className="text-sm">🖥️</span>
+          <IconMonitor className="h-4 w-4" />
           <span className="hidden sm:inline">
             {kioskMode === "split" ? "50/50 Activo" : "Control Kiosco (50/50)"}
           </span>
-        </button>
+        </ActionButton>
 
-        <button
+        <Popover open={alertsOpen} onOpenChange={setAlertsOpen}><PopoverTrigger asChild><ActionButton aria-label="Centro de avisos"
           data-tour="alerts"
           onClick={() => setAlertsOpen((open) => !open)}
           title="Centro de avisos"
@@ -316,44 +286,44 @@ function Topbar({
         >
           <IconBell className="h-5 w-5" />
           {(notificationsEnabled || alerts.length > 0) && <span className={cx("absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full ring-2 ring-surface", alerts.length > 0 ? "bg-warn" : "bg-ok")} />}
-        </button>
+        </ActionButton></PopoverTrigger>
 
-        {alertsOpen && (
-          <section className="absolute right-0 top-12 z-50 w-[min(92vw,380px)] overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-pop)]" aria-label="Centro de avisos">
+
+          <PopoverContent align="end" sideOffset={10} className="w-[min(92vw,380px)] overflow-hidden rounded-2xl p-0" aria-label="Centro de avisos">
             <div className="flex items-center justify-between border-b border-line px-4 py-3">
               <div><p className="text-sm font-semibold text-ink">Centro de avisos</p><p className="text-xs text-muted">Cambios operativos recientes</p></div>
-              <button onClick={() => setAlertsOpen(false)} className="rounded-lg px-2 py-1 text-xs text-muted hover:bg-inset hover:text-ink">Cerrar</button>
+              <ActionButton onClick={() => setAlertsOpen(false)} className="rounded-lg px-2 py-1 text-xs text-muted hover:bg-inset hover:text-ink">Cerrar</ActionButton>
             </div>
             <div className="max-h-72 overflow-y-auto p-2">
               {alerts.length === 0 ? <p className="px-2 py-5 text-center text-sm text-muted">No hay avisos pendientes.</p> : alerts.map((alert) => (
                 <div key={alert.id} className="mb-1 rounded-xl bg-inset px-3 py-2.5 last:mb-0">
-                  <div className="flex gap-2"><div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{alert.title}</p><p className="mt-0.5 text-xs leading-relaxed text-muted">{alert.message}</p></div><button onClick={() => onDismissAlert(alert.id)} className="shrink-0 text-xs text-muted hover:text-ink">Descartar</button></div>
+                  <div className="flex gap-2"><div className="min-w-0 flex-1"><p className="text-sm font-medium text-ink">{alert.title}</p><p className="mt-0.5 text-xs leading-relaxed text-muted">{alert.message}</p></div><ActionButton onClick={() => onDismissAlert(alert.id)} className="shrink-0 text-xs text-muted hover:text-ink">Descartar</ActionButton></div>
                 </div>
               ))}
             </div>
             <div className="border-t border-line p-2">
-              <button onClick={onEnableNotifications} className="w-full rounded-xl bg-brand-soft px-3 py-2 text-sm font-medium text-brand transition-colors hover:bg-brand/15">
+              <ActionButton onClick={onEnableNotifications} className="w-full rounded-xl bg-brand-soft px-3 py-2 text-sm font-medium text-brand transition-colors hover:bg-brand/15">
                 {notificationsEnabled ? "Avisos de Windows y sonido activados" : "Activar avisos de Windows y sonido"}
-              </button>
+              </ActionButton>
             </div>
-          </section>
-        )}
+          </PopoverContent>
+        </Popover>
 
-        <button onClick={onStartTour} title="Guía del sistema" className="grid h-9 w-9 place-items-center rounded-lg text-sm font-bold text-muted transition-colors hover:bg-inset hover:text-ink">
-          ?
-        </button>
+        <ActionButton onClick={onStartTour} title="Guía del sistema" aria-label="Guía del sistema" className="grid h-9 w-9 place-items-center rounded-lg text-sm font-bold text-muted transition-colors hover:bg-inset hover:text-ink">
+          <IconHelp className="h-5 w-5" />
+        </ActionButton>
 
-        <button
+        <ActionButton
           onClick={onToggleTheme}
-          title={theme === "dark" ? "Modo claro" : "Modo oscuro"}
+          title={theme === "dark" ? "Modo claro" : "Modo oscuro"} aria-label={theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
           className="rounded-lg p-2 text-muted transition-all duration-150 hover:bg-inset hover:text-ink active:scale-90"
         >
           {theme === "dark" ? <IconSun className="h-5 w-5" /> : <IconMoon className="h-5 w-5" />}
-        </button>
+        </ActionButton>
 
-        <button onClick={onLogout} title="Salir" className="rounded-lg p-2 text-muted transition-colors hover:bg-inset hover:text-danger">
+        <ActionButton  onClick={onLogout} title="Salir" aria-label="Cerrar sesión" className="rounded-lg p-2 text-muted transition-colors hover:bg-inset hover:text-danger">
           <IconLogout className="h-5 w-5" />
-        </button>
+        </ActionButton>
       </div>
     </header>
   );
@@ -412,7 +382,7 @@ export function AppShell({
   };
 
   return (
-    <div className={cx("min-h-[100dvh] bg-bg", kioskMode === "split" && "h-[100dvh] max-h-[100dvh] overflow-hidden")}>
+    <TooltipProvider delayDuration={160}><Toaster theme={theme} position="bottom-right" closeButton richColors /><div className={cx("min-h-[100dvh] bg-bg", kioskMode === "split" && "h-[100dvh] max-h-[100dvh] overflow-hidden")}>
       <Sidebar
         user={user}
         active={active}
@@ -464,7 +434,7 @@ export function AppShell({
           </>
         )}
       </div>
-    </div>
+    </div></TooltipProvider>
   );
 }
 
@@ -473,9 +443,9 @@ export function DetailHeader({ title, subtitle, onBack, actions }: { title: stri
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <div className="flex items-center gap-3">
-        <button onClick={onBack} className="rounded-lg border border-line bg-surface p-2 text-muted transition-colors hover:text-ink" title="Volver">
-          <IconX className="h-4 w-4" />
-        </button>
+        <ActionButton  onClick={onBack} className="rounded-lg border border-line bg-surface p-2 text-muted transition-colors hover:text-ink" title="Volver" aria-label="Volver a la vista anterior">
+          <IconArrowLeft className="h-4 w-4" />
+        </ActionButton>
         <div>
           <h1 className="text-xl font-semibold tracking-tight text-ink">{title}</h1>
           {subtitle && <div className="mt-0.5 text-sm text-muted">{subtitle}</div>}

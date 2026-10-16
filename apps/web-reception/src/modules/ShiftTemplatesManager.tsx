@@ -1,9 +1,11 @@
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { ModalFrame } from "@casacarlos/ui/components/modal-frame";
 import { useState, useEffect } from "react";
-import type { ShiftTemplate } from "@casacarlos/contracts";
+import type { CashboxAutomation, ShiftTemplate } from "@casacarlos/contracts";
 import { formatTime12h } from "@casacarlos/contracts";
 import { IconClock, IconPlus, IconTrash, IconCheck, IconX, IconAlertTriangle, IconSliders } from "@casacarlos/ui";
 import { api, ApiError } from "../api.js";
-import { Button, Card, EmptyState, Field, Input, Notice, Section, Skeleton, cx } from "../components/ui.js";
+import { Button, Card, EmptyState, Field, Input, Notice, Section, Skeleton, Switch, cx } from "../components/ui.js";
 
 interface ShiftTemplatesManagerProps {
   onTemplatesChange?: (templates: ShiftTemplate[]) => void;
@@ -40,6 +42,8 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [okMessage, setOkMessage] = useState<string | null>(null);
+  const [automation, setAutomation] = useState<CashboxAutomation | null>(null);
+  const [automationBusy, setAutomationBusy] = useState(false);
 
   // Modal Crear / Editar
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -64,6 +68,7 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
       setError(null);
       const list = await api.shiftTemplates();
       setTemplates(list);
+      setAutomation(await api.cashboxAutomation());
       onTemplatesChange?.(list);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Error al cargar las plantillas de turnos.");
@@ -74,6 +79,10 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
 
   useEffect(() => {
     loadTemplates();
+    let pending: ReturnType<typeof setTimeout>;
+    const refresh = () => { clearTimeout(pending); pending = setTimeout(() => void loadTemplates(), 150); };
+    window.addEventListener("casacarlos:cashbox-changed", refresh);
+    return () => { clearTimeout(pending); window.removeEventListener("casacarlos:cashbox-changed", refresh); };
   }, []);
 
   const openCreateModal = () => {
@@ -159,10 +168,7 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
     try {
       setPresetBusy(true);
       setError(null);
-      // Creamos los 3 turnos de Carlos:
-      for (const preset of CARLOS_PRESET_SHIFTS) {
-        await api.createShiftTemplate(preset);
-      }
+      await api.applyStandardSchedule();
       setOkMessage("¡Se configuraron con éxito los 3 turnos de Casa Carlos (9 am, 5 pm, 1 am)!");
       setShowPresetConfirm(false);
       await loadTemplates();
@@ -180,6 +186,13 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
     <div className={cx("space-y-6", className)}>
       {error && <Notice kind="error">{error}</Notice>}
       {okMessage && <Notice kind="ok">{okMessage}</Notice>}
+      <Card className="p-5 space-y-3">
+        <div className="flex items-start justify-between gap-4"><div><h3 className="font-semibold text-ink">Relevos automáticos de la caja compartida</h3><p className="mt-1 text-sm text-muted">Hora de Lima. Después de la primera apertura, al terminar cada horario se cierra su tramo y el fondo esperado pasa al siguiente. El relevo queda auditado y no sustituye el arqueo físico.</p></div>
+          <Switch aria-label="Relevos automáticos" checked={automation?.habilitado ?? false} disabled={!automation || automationBusy} onCheckedChange={async habilitado => { setAutomationBusy(true); setError(null); try { setAutomation(await api.setCashboxAutomation(habilitado)); } catch (err) { setError(err instanceof Error ? err.message : "No se pudo cambiar la automatización."); } finally { setAutomationBusy(false); } }} />
+        </div>
+        {automation?.problema && <Notice kind="warn">{automation.problema}</Notice>}
+        {automation?.habilitado && automation.horarioValido && <p className="text-sm font-medium text-brand">Activo: el cambio se sincroniza en todas las sesiones. Si cierras caja manualmente, una nueva apertura requiere declarar el fondo.</p>}
+      </Card>
 
       {/* Tarjeta de Acceso Rápido: Los 3 Turnos de Carlos */}
       <Card className="border-brand/30 bg-brand/5 p-5">
@@ -314,7 +327,7 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
 
       {/* Modal Crear / Editar Turno */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <ModalFrame title="Registrar o editar turno" onClose={closeModal} busy={formBusy}>
           <Card className="relative w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-start justify-between gap-3 border-b border-line-soft pb-3">
               <div>
@@ -326,21 +339,21 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
                   {editingTemplate ? `Editar: ${editingTemplate.nombre}` : "Registrar nuevo turno"}
                 </h3>
               </div>
-              <button
+              <ActionButton aria-label="Cerrar"
                 type="button"
                 onClick={closeModal}
                 className="rounded-lg p-1 text-muted hover:bg-inset hover:text-ink transition-colors"
                 disabled={formBusy}
               >
                 <IconX className="h-5 w-5" />
-              </button>
+              </ActionButton>
             </div>
 
             {formError && <Notice kind="error">{formError}</Notice>}
 
             <form onSubmit={handleSave} className="space-y-4">
               <Field label="Nombre del turno" hint="Ej: Turno Mañana, Turno Tarde, Turno Noche">
-                <Input
+                <Input aria-label="Ej: Turno Mañana"
                   type="text"
                   placeholder="Ej: Turno Mañana"
                   value={formNombre}
@@ -403,12 +416,12 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
               </div>
             </form>
           </Card>
-        </div>
+        </ModalFrame>
       )}
 
       {/* Modal Confirmar Eliminar */}
       {deletingTemplate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <ModalFrame title="Eliminar turno" onClose={() => setDeletingTemplate(null)} busy={deleteBusy}>
           <Card className="relative w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-rose-500/10 text-rose-500">
@@ -434,12 +447,12 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
               </Button>
             </div>
           </Card>
-        </div>
+        </ModalFrame>
       )}
 
       {/* Modal Confirmar Aplicar Preset */}
       {showPresetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <ModalFrame title="Configurar turnos" onClose={() => setShowPresetConfirm(false)} busy={presetBusy}>
           <Card className="relative w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand/10 text-brand">
@@ -448,7 +461,7 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
               <div>
                 <h3 className="text-base font-bold text-ink">Configurar 3 turnos automáticos</h3>
                 <p className="mt-1 text-xs text-muted leading-relaxed">
-                  Ya tienes turnos creados. ¿Deseas agregar los 3 turnos estándar solicitados por Carlos?
+                  Se reemplazarán los horarios activos por estos tres turnos y se habilitarán los relevos automáticos. Los horarios anteriores se conservarán para sus reportes históricos.
                 </p>
                 <ul className="mt-2 space-y-1 text-xs text-ink">
                   <li>• <strong>Turno Mañana:</strong> 9:00 AM – 5:00 PM (09:00 - 17:00)</li>
@@ -463,11 +476,11 @@ export function ShiftTemplatesManager({ onTemplatesChange, className }: ShiftTem
                 Cancelar
               </Button>
               <Button variant="primary" onClick={handleApplyPreset} disabled={presetBusy}>
-                {presetBusy ? "Agregando…" : "Confirmar y agregar"}
+                {presetBusy ? "Configurando…" : "Aplicar horarios y activar relevos"}
               </Button>
             </div>
           </Card>
-        </div>
+        </ModalFrame>
       )}
     </div>
   );

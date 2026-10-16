@@ -1,9 +1,13 @@
+import { IconAlertTriangle, IconCash, IconClock, IconBed as ModuleIcon, IconBed, IconPlus, IconX, RoomIllustration } from "@casacarlos/ui";
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+
 import { useEffect, useMemo, useState } from "react";
 import type { Attribute, Category, CategoryRatesDto, Floor, FloorBoard, Modality, Room } from "@casacarlos/contracts";
 import { formatTime12h } from "@casacarlos/contracts";
 import { cents, format, soles } from "@casacarlos/money";
-import { IconBed, IconPlus, IconX } from "@casacarlos/ui";
-import { RoomIllustration } from "@casacarlos/ui";
+
+
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Skeleton, Tabs, cx } from "../components/ui.js";
 
@@ -113,7 +117,7 @@ export function RoomsModule({ floors: floorBoards, onCatalogChanged }: Props) {
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Cuartos y Tarifas"
         subtitle="Gestión de habitaciones, categorías y tarifas por horas, noche o día para el kiosco y mostrador"
         actions={
@@ -312,17 +316,17 @@ function RoomsTab({
                               <span className="rounded-md bg-brand/10 px-2 py-0.5 font-semibold text-brand">
                                 3h: {format(cents(roomRate.precioHorasCentimos))}
                               </span>
-                              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-semibold text-amber-600 dark:text-amber-400">
+                              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-semibold text-amber-800 dark:text-amber-300">
                                 Noche: {format(cents(roomRate.precioNocheCentimos))}
                               </span>
                               {roomRate.precioNocheBCentimos && (
-                                <span className="rounded-md bg-sky-500/10 px-2 py-0.5 font-semibold text-sky-600 dark:text-sky-400">
+                                <span className="rounded-md bg-sky-500/10 px-2 py-0.5 font-semibold text-sky-800 dark:text-sky-300">
                                   Día / Noche B: {format(cents(roomRate.precioNocheBCentimos))}
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <p className="text-[11px] text-amber-500 mt-1 font-medium">⚠️ Sin tarifa asignada</p>
+                            <p className="text-[11px] text-amber-500 mt-1 font-medium"><IconAlertTriangle className="inline h-4 w-4 align-text-bottom" /> Sin tarifa asignada</p>
                           )}
                         </div>
                       </div>
@@ -330,13 +334,13 @@ function RoomsTab({
                         {room.fueraDeServicio && <Badge tone="tone-stone">Fuera de servicio</Badge>}
                         {!room.activo && <Badge tone="tone-red">Dado de baja</Badge>}
                         <Button size="sm" onClick={onGoToTarifas} title="Ajustar precios">
-                          💵 Precios
+                          <IconCash className="inline h-4 w-4 align-text-bottom" /> Precios
                         </Button>
                         <Button size="sm" onClick={() => setEditingId(room.id)}>
                           Editar
                         </Button>
                         {room.activo ? (
-                          <Button size="sm" variant="danger" disabled={busy} onClick={() => setConfirmDeleteId(confirming ? null : room.id)}>
+                          <Button aria-label="Cerrar" size="sm" variant="danger" disabled={busy} onClick={() => setConfirmDeleteId(confirming ? null : room.id)}>
                             <IconX className="h-3.5 w-3.5" />
                           </Button>
                         ) : (
@@ -410,7 +414,7 @@ function RoomForm({
       <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Número">
-            <Input placeholder="201" value={numero} onChange={(e) => setNumero(e.target.value)} />
+            <Input aria-label="201" placeholder="201" value={numero} onChange={(e) => setNumero(e.target.value)} />
           </Field>
           <Field label="Piso">
             <Select value={pisoId} onChange={(e) => setPisoId(e.target.value)}>
@@ -432,11 +436,11 @@ function RoomForm({
             </Select>
           </Field>
           <Field label="Incluye (opcional)">
-            <Input placeholder="Toallas, TV…" value={incluye ?? ""} onChange={(e) => setIncluye(e.target.value)} />
+            <Input aria-label="Toallas, TV…" placeholder="Toallas, TV…" value={incluye ?? ""} onChange={(e) => setIncluye(e.target.value)} />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Descripción (opcional)">
-              <Input placeholder="Notas internas sobre este cuarto" value={descripcion ?? ""} onChange={(e) => setDescripcion(e.target.value)} />
+              <Input aria-label="Notas internas sobre este cuarto" placeholder="Notas internas sobre este cuarto" value={descripcion ?? ""} onChange={(e) => setDescripcion(e.target.value)} />
             </Field>
           </div>
         </div>
@@ -601,24 +605,24 @@ function CategoriesTab({
                               <span className="rounded-md bg-brand/10 px-2 py-0.5 font-semibold text-brand">
                                 Por horas (3h): {format(cents(catRate.precioHorasCentimos))}
                               </span>
-                              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-semibold text-amber-600 dark:text-amber-400">
+                              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-semibold text-amber-800 dark:text-amber-300">
                                 Por noche: {format(cents(catRate.precioNocheCentimos))}
                               </span>
                               {catRate.precioNocheBCentimos && (
-                                <span className="rounded-md bg-sky-500/10 px-2 py-0.5 font-semibold text-sky-600 dark:text-sky-400">
+                                <span className="rounded-md bg-sky-500/10 px-2 py-0.5 font-semibold text-sky-800 dark:text-sky-300">
                                   Día / Noche B: {format(cents(catRate.precioNocheBCentimos))}
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <p className="text-[11px] text-amber-500 mt-1 font-medium">⚠️ Sin tarifas configuradas</p>
+                            <p className="text-[11px] text-amber-500 mt-1 font-medium"><IconAlertTriangle className="inline h-4 w-4 align-text-bottom" /> Sin tarifas configuradas</p>
                           )}
                         </div>
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         {!c.activo && <Badge tone="tone-stone">Inactiva</Badge>}
                         <Button size="sm" onClick={onGoToTarifas}>
-                          💵 Modificar precios
+                          <IconCash className="inline h-4 w-4 align-text-bottom" /> Modificar precios
                         </Button>
                         <Button size="sm" onClick={() => setEditingId(c.id)}>
                           Editar
@@ -626,7 +630,7 @@ function CategoriesTab({
                         <Button size="sm" disabled={busy} onClick={() => run(() => api.updateRoomCategory(c.id, { activo: !c.activo }), "No se pudo cambiar el estado.")}>
                           {c.activo ? "Desactivar" : "Activar"}
                         </Button>
-                        <Button size="sm" variant="danger" disabled={busy} onClick={() => setConfirmDeleteId(confirming ? null : c.id)}>
+                        <Button aria-label="Cerrar" size="sm" variant="danger" disabled={busy} onClick={() => setConfirmDeleteId(confirming ? null : c.id)}>
                           <IconX className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -725,10 +729,10 @@ function CategoryForm({
         <div className="flex flex-col gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Nombre de la categoría">
-              <Input placeholder="Ej: Matrimonial VIP" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+              <Input aria-label="Ej: Matrimonial VIP" placeholder="Ej: Matrimonial VIP" value={nombre} onChange={(e) => setNombre(e.target.value)} />
             </Field>
             <Field label="Descripción (opcional)">
-              <Input placeholder="Detalle para el huésped" value={descripcion ?? ""} onChange={(e) => setDescripcion(e.target.value)} />
+              <Input aria-label="Detalle para el huésped" placeholder="Detalle para el huésped" value={descripcion ?? ""} onChange={(e) => setDescripcion(e.target.value)} />
             </Field>
             <Field label="Camas">
               <Input type="number" min={1} value={camas} onChange={(e) => setCamas(Math.max(1, Number(e.target.value) || 1))} />
@@ -743,7 +747,7 @@ function CategoryForm({
             <p className="text-xs font-bold uppercase tracking-wider text-ink">Tarifas y Precios de Venta (S/)</p>
             <div className="grid gap-3 sm:grid-cols-3">
               <Field label="Precio por Horas (3h)">
-                <Input
+                <Input aria-label="40.00"
                   type="number"
                   min="0"
                   step="0.50"
@@ -753,7 +757,7 @@ function CategoryForm({
                 />
               </Field>
               <Field label="Precio Noche (Check-in 19:00)">
-                <Input
+                <Input aria-label="60.00"
                   type="number"
                   min="0"
                   step="0.50"
@@ -763,7 +767,7 @@ function CategoryForm({
                 />
               </Field>
               <Field label="Precio Día / Noche tardía">
-                <Input
+                <Input aria-label="50.00"
                   type="number"
                   min="0"
                   step="0.50"
@@ -782,7 +786,7 @@ function CategoryForm({
             <p className="mb-2 text-xs font-medium text-muted">Otros atributos (opcional)</p>
             <div className="flex flex-wrap gap-1.5">
               {localAttributes.map((a) => (
-                <button
+                <ActionButton
                   key={a.id}
                   type="button"
                   onClick={() => toggleAtributo(a.id)}
@@ -792,11 +796,11 @@ function CategoryForm({
                   )}
                 >
                   {a.nombre}
-                </button>
+                </ActionButton>
               ))}
             </div>
             <div className="mt-2 flex gap-2">
-              <Input placeholder="Nuevo atributo (TV, balcón…)" value={nuevoAtributo} onChange={(e) => setNuevoAtributo(e.target.value)} className="max-w-56" />
+              <Input aria-label="Nuevo atributo (TV, balcón…)" placeholder="Nuevo atributo (TV, balcón…)" value={nuevoAtributo} onChange={(e) => setNuevoAtributo(e.target.value)} className="max-w-56" />
               <Button size="sm" onClick={crearAtributo} disabled={!nuevoAtributo.trim()}>
                 Agregar
               </Button>
@@ -1010,7 +1014,7 @@ function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" 
       <div className="flex items-center gap-1.5">
         {/* Selector de Hora 1-12 */}
         <div className="flex-1">
-          <select
+          <Select
             value={hour}
             onChange={(e) => handleHourChange(Number(e.target.value))}
             className="w-full rounded-xl border border-line bg-surface px-2.5 py-1.5 text-sm font-bold text-ink shadow-sm focus:border-brand focus:outline-none"
@@ -1020,12 +1024,12 @@ function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" 
                 {h} : {minute}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Selector de Minutos */}
         <div className="w-20">
-          <select
+          <Select
             value={minute}
             onChange={(e) => handleMinuteChange(e.target.value)}
             className="w-full rounded-xl border border-line bg-surface px-2 py-1.5 text-sm font-semibold text-ink shadow-sm focus:border-brand focus:outline-none"
@@ -1035,12 +1039,12 @@ function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" 
                 :{m}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
 
         {/* Botones AM / PM */}
         <div className="flex rounded-xl border border-line bg-surface p-0.5 shadow-sm">
-          <button
+          <ActionButton
             type="button"
             onClick={() => handlePeriodChange("AM")}
             className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
@@ -1050,8 +1054,8 @@ function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" 
             }`}
           >
             AM
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             type="button"
             onClick={() => handlePeriodChange("PM")}
             className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all ${
@@ -1061,7 +1065,7 @@ function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" 
             }`}
           >
             PM
-          </button>
+          </ActionButton>
         </div>
       </div>
 
@@ -1071,7 +1075,7 @@ function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" 
           {presets.map((p) => {
             const isSelected = value === p.time;
             return (
-              <button
+              <ActionButton
                 key={p.time}
                 type="button"
                 onClick={() => onChange(p.time)}
@@ -1082,7 +1086,7 @@ function TimePicker12h({ label, value, onChange, presets, accentColor = "brand" 
                 }`}
               >
                 {p.label}
-              </button>
+              </ActionButton>
             );
           })}
         </div>
@@ -1216,7 +1220,7 @@ function ModalityScheduleCard({
         </div>
 
         <Field label="Nombre descriptivo">
-          <Input
+          <Input aria-label="Ej. Por Día (check-in 14:00 - 10:00)"
             type="text"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
@@ -1247,7 +1251,7 @@ function ModalityScheduleCard({
           </div>
         ) : (
           <div className="rounded-xl bg-teal-500/10 border border-teal-500/20 p-3 text-xs text-teal-800 dark:text-teal-200">
-            <p className="font-bold mb-1">⏱️ Alquiler Por Horas</p>
+            <p className="font-bold mb-1"><IconClock className="inline h-4 w-4 align-text-bottom" /> Alquiler Por Horas</p>
             <p className="text-[11px] leading-relaxed">
               Inicia en el momento en que se registra al huésped y concluye al cumplirse las horas asignadas más el tiempo de tolerancia.
             </p>
@@ -1260,13 +1264,13 @@ function ModalityScheduleCard({
             <span>
               💡 Horas calculadas entre Check-in y Check-out: <strong>{calculatedDuration} horas</strong>
             </span>
-            <button
+            <ActionButton
               type="button"
               onClick={() => setDuracionHoras(String(calculatedDuration))}
               className="rounded-lg bg-brand px-2.5 py-1 text-xs font-bold text-brand-ink hover:opacity-90 active:scale-95 transition-all shadow-xs"
             >
               Aplicar {calculatedDuration}h
-            </button>
+            </ActionButton>
           </div>
         )}
 
@@ -1277,33 +1281,34 @@ function ModalityScheduleCard({
               <span className="text-xs font-bold text-brand">{duracionHoras} hrs</span>
             </div>
             <div className="flex items-center gap-1">
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setDuracionHoras((h) => String(Math.max(1, Number(h) - 1)))}
                 className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
               >
                 −
-              </button>
+              </ActionButton>
               <Input
                 type="number"
                 min="1"
                 max="72"
+                aria-label="Duración del bloque en horas"
                 value={duracionHoras}
                 onChange={(e) => setDuracionHoras(e.target.value)}
                 className="tabular-nums font-bold text-center h-9"
               />
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setDuracionHoras((h) => String(Math.min(72, Number(h) + 1)))}
                 className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
               >
                 +
-              </button>
+              </ActionButton>
             </div>
             {isHours && (
               <div className="flex flex-wrap gap-1 pt-1">
                 {[2, 3, 4, 6, 8, 12].map((hrs) => (
-                  <button
+                  <ActionButton
                     key={hrs}
                     type="button"
                     onClick={() => setDuracionHoras(String(hrs))}
@@ -1314,7 +1319,7 @@ function ModalityScheduleCard({
                     }`}
                   >
                     {hrs}h
-                  </button>
+                  </ActionButton>
                 ))}
               </div>
             )}
@@ -1326,32 +1331,33 @@ function ModalityScheduleCard({
               <span className="text-xs font-bold text-muted">{toleranciaMin} min</span>
             </div>
             <div className="flex items-center gap-1">
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setToleranciaMin((m) => String(Math.max(0, Number(m) - 5)))}
                 className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
               >
                 −
-              </button>
+              </ActionButton>
               <Input
                 type="number"
                 min="0"
                 max="120"
+                aria-label="Tolerancia en minutos"
                 value={toleranciaMin}
                 onChange={(e) => setToleranciaMin(e.target.value)}
                 className="tabular-nums font-bold text-center h-9"
               />
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setToleranciaMin((m) => String(Math.min(120, Number(m) + 5)))}
                 className="h-9 w-9 rounded-xl border border-line bg-surface text-base font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
               >
                 +
-              </button>
+              </ActionButton>
             </div>
             <div className="flex flex-wrap gap-1 pt-1">
               {[0, 10, 15, 20, 30].map((mins) => (
-                <button
+                <ActionButton
                   key={mins}
                   type="button"
                   onClick={() => setToleranciaMin(String(mins))}
@@ -1362,7 +1368,7 @@ function ModalityScheduleCard({
                   }`}
                 >
                   {mins}m
-                </button>
+                </ActionButton>
               ))}
             </div>
           </div>
@@ -1388,7 +1394,7 @@ function ModalityScheduleCard({
             <div className="rounded-xl border border-line-soft bg-inset/50 p-3 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-sm">⏱️</span>
+                  <span className="text-sm"><IconClock className="inline h-4 w-4 align-text-bottom" /></span>
                   <span className="text-xs font-bold text-ink">Cobro Adicional por Exceso</span>
                 </div>
                 <span className="text-[11px] font-semibold text-brand">
@@ -1407,7 +1413,7 @@ function ModalityScheduleCard({
                   <label className="text-[11px] font-bold text-ink">Monto adicional (S/)</label>
                   <div className="flex items-center gap-1">
                     <span className="text-xs font-bold text-muted pl-0.5">S/</span>
-                    <Input
+                    <Input aria-label="0.00"
                       type="number"
                       min="0"
                       step="1"
@@ -1419,7 +1425,7 @@ function ModalityScheduleCard({
                   </div>
                   <div className="flex flex-wrap gap-1 pt-0.5">
                     {[0, 5, 10, 15, 20, 30].map((s) => (
-                      <button
+                      <ActionButton
                         key={s}
                         type="button"
                         onClick={() => setPrecioAdicionalSoles(s.toFixed(2))}
@@ -1430,7 +1436,7 @@ function ModalityScheduleCard({
                         }`}
                       >
                         {s === 0 ? "0" : `${s}`}
-                      </button>
+                      </ActionButton>
                     ))}
                   </div>
                 </div>
@@ -1439,31 +1445,32 @@ function ModalityScheduleCard({
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-ink">Cada cuánto tiempo</label>
                   <div className="flex items-center gap-1">
-                    <button
+                    <ActionButton
                       type="button"
                       onClick={() => setTiempoAdicionalMinutos((m) => String(Math.max(5, Number(m) - 15)))}
                       className="h-8 w-8 rounded-lg border border-line bg-surface text-xs font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
                       title="Restar 15 minutos"
                     >
                       −
-                    </button>
+                    </ActionButton>
                     <Input
                       type="number"
                       min="5"
                       max="1440"
+                      aria-label="Duración de cada adicional en minutos"
                       step="5"
                       value={tiempoAdicionalMinutos}
                       onChange={(e) => setTiempoAdicionalMinutos(e.target.value)}
                       className="tabular-nums font-bold text-center h-8 text-xs"
                     />
-                    <button
+                    <ActionButton
                       type="button"
                       onClick={() => setTiempoAdicionalMinutos((m) => String(Math.min(1440, Number(m) + 15)))}
                       className="h-8 w-8 rounded-lg border border-line bg-surface text-xs font-bold text-ink hover:bg-raised active:scale-95 flex items-center justify-center shrink-0"
                       title="Sumar 15 minutos"
                     >
                       +
-                    </button>
+                    </ActionButton>
                     <span className="text-[11px] font-semibold text-muted">min</span>
                   </div>
                   <div className="flex flex-wrap gap-1 pt-0.5">
@@ -1475,7 +1482,7 @@ function ModalityScheduleCard({
                       { m: 90, label: "1h 30m" },
                       { m: 120, label: "2 horas" },
                     ].map((pill) => (
-                      <button
+                      <ActionButton
                         key={pill.m}
                         type="button"
                         onClick={() => setTiempoAdicionalMinutos(String(pill.m))}
@@ -1486,7 +1493,7 @@ function ModalityScheduleCard({
                         }`}
                       >
                         {pill.label}
-                      </button>
+                      </ActionButton>
                     ))}
                   </div>
                 </div>
@@ -1616,7 +1623,7 @@ function CategoryRateEditor({
             step="0.50"
             value={precioNoche}
             onChange={(e) => setPrecioNoche(e.target.value)}
-            className="font-bold tabular-nums text-amber-600 dark:text-amber-400"
+            className="font-bold tabular-nums text-amber-800 dark:text-amber-300"
           />
         </Field>
         <Field label={diaLabel}>
@@ -1626,7 +1633,7 @@ function CategoryRateEditor({
             step="0.50"
             value={precioNocheB}
             onChange={(e) => setPrecioNocheB(e.target.value)}
-            className="font-bold tabular-nums text-sky-600 dark:text-sky-400"
+            className="font-bold tabular-nums text-sky-800 dark:text-sky-300"
           />
         </Field>
       </div>

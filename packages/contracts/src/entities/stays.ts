@@ -36,6 +36,7 @@ export const StaySchema = z.object({
   checkinReal: z.string().nullable(),
   checkoutPrevisto: z.string(),
   checkoutReal: z.string().nullable(),
+  salidaDeclaradaEn: z.string().nullable().optional(),
   noches: z.number().int().nonnegative(),
   toleranciaMin: z.number().int().nonnegative(),
   notificadoExcesoEn: z.string().nullable(),

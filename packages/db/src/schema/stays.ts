@@ -35,6 +35,7 @@ export const staysEstadias = sqliteTable("stays_estadias", {
   checkinReal: text("checkin_real"),
   checkoutPrevisto: text("checkout_previsto").notNull(),
   checkoutReal: text("checkout_real"),
+  salidaDeclaradaEn: text("salida_declarada_en"),
   noches: integer("noches").notNull().default(0),
   toleranciaMin: integer("tolerancia_min").notNull().default(15),
   notificadoExcesoEn: text("notificado_exceso_en"),

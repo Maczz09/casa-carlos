@@ -156,7 +156,7 @@ export class KioskStore {
       ...session,
       wantsProducts: true,
       totalCentimos: sale.totalCentimos,
-      lineas: sale.lineas.map((l) => ({
+      lineas: sale.lineas.filter((l) => !l.anulada).map((l) => ({
         id: l.id,
         tipo: l.tipo,
         descripcion: l.descripcion,
@@ -176,7 +176,7 @@ export class KioskStore {
     return this.commit({
       ...session,
       totalCentimos: sale.totalCentimos,
-      lineas: sale.lineas.map((l) => ({
+      lineas: sale.lineas.filter((l) => !l.anulada).map((l) => ({
         id: l.id,
         tipo: l.tipo,
         descripcion: l.descripcion,

@@ -8,10 +8,14 @@ export function cashboxRoutes(services: Services) {
     const auth = { preHandler: requirePermission(services.identity, "CASHBOX_MANAGE") };
 
     app.get("/api/cashbox/templates", auth, async () => services.cashbox.listShiftTemplates());
+    app.post("/api/cashbox/templates/standard", auth, async (request, reply) => {
+      try { return await services.cashbox.applyStandardSchedule(request.user!.id); }
+      catch (err) { return reply.code(400).send({ error: (err as Error).message }); }
+    });
 
     app.post<{ Body: { nombre: string; horaInicio: string; horaFin: string; orden?: number } }>("/api/cashbox/templates", auth, async (request, reply) => {
       try {
-        return await services.cashbox.createShiftTemplate(request.body);
+        return await services.cashbox.createShiftTemplate(request.body, request.user!.id);
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
@@ -19,7 +23,7 @@ export function cashboxRoutes(services: Services) {
 
     app.put<{ Params: { id: string }; Body: UpdateShiftTemplateInput }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
       try {
-        return await services.cashbox.updateShiftTemplate(request.params.id, request.body);
+        return await services.cashbox.updateShiftTemplate(request.params.id, request.body, request.user!.id);
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
@@ -27,7 +31,7 @@ export function cashboxRoutes(services: Services) {
 
     app.patch<{ Params: { id: string }; Body: UpdateShiftTemplateInput }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
       try {
-        return await services.cashbox.updateShiftTemplate(request.params.id, request.body);
+        return await services.cashbox.updateShiftTemplate(request.params.id, request.body, request.user!.id);
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
@@ -35,7 +39,7 @@ export function cashboxRoutes(services: Services) {
 
     app.delete<{ Params: { id: string } }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
       try {
-        await services.cashbox.deleteShiftTemplate(request.params.id);
+        await services.cashbox.deleteShiftTemplate(request.params.id, request.user!.id);
         return reply.code(204).send();
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
@@ -44,7 +48,7 @@ export function cashboxRoutes(services: Services) {
 
     app.post<{ Params: { id: string }; Body: UpdateShiftTemplateInput }>("/api/cashbox/templates/:id", auth, async (request, reply) => {
       try {
-        return await services.cashbox.updateShiftTemplate(request.params.id, request.body);
+        return await services.cashbox.updateShiftTemplate(request.params.id, request.body, request.user!.id);
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
@@ -52,14 +56,22 @@ export function cashboxRoutes(services: Services) {
 
     app.post<{ Params: { id: string } }>("/api/cashbox/templates/:id/delete", auth, async (request, reply) => {
       try {
-        await services.cashbox.deleteShiftTemplate(request.params.id);
+        await services.cashbox.deleteShiftTemplate(request.params.id, request.user!.id);
         return reply.code(204).send();
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
     });
 
-    app.get("/api/cashbox/shifts/mine", auth, async (request) => services.cashbox.getOpenShiftForUser(request.user!.id));
+    app.get("/api/cashbox/shifts/mine", auth, async () => services.cashbox.getOpenShift());
+    app.get("/api/cashbox/shifts/current", auth, async () => services.cashbox.getOpenShift());
+    app.get("/api/cashbox/shifts/legacy", auth, async () => services.cashbox.getLegacyOpenShifts());
+    app.get("/api/cashbox/automation", auth, async () => services.cashbox.getAutomation());
+    app.put<{ Body: { habilitado: boolean } }>("/api/cashbox/automation", auth, async (request, reply) => {
+      if (typeof request.body?.habilitado !== "boolean") return reply.code(400).send({ error: "Indica si los relevos automáticos están habilitados." });
+      try { return await services.cashbox.setAutomation(request.body.habilitado, request.user!.id); }
+      catch (err) { return reply.code(400).send({ error: (err as Error).message }); }
+    });
 
     app.get<{ Querystring: { desde?: string; hasta?: string } }>("/api/cashbox/shifts", auth, async (request) => {
       const { desde, hasta } = request.query;
@@ -117,7 +129,7 @@ export function cashboxRoutes(services: Services) {
         const userIds = [...new Set(movements.map((movement) => movement.usuarioId))];
         const users = await Promise.all(userIds.map((id) => services.identity.getUser(id).catch(() => null)));
         const names = new Map(users.filter(Boolean).map((user) => [user!.id, `${user!.nombres} ${user!.apellidos}`]));
-        return movements.map((movement) => ({ ...movement, usuarioNombre: names.get(movement.usuarioId) ?? "Usuario no disponible" }));
+        return movements.map((movement) => ({ ...movement, usuarioNombre: names.get(movement.usuarioId) ?? (movement.usuarioId === "system" ? "Sistema automático" : "Usuario no disponible") }));
       } catch (err) {
         return reply.code(400).send({ error: (err as Error).message });
       }
@@ -136,6 +148,7 @@ export function cashboxRoutes(services: Services) {
       const userIds = [...new Set(arqueos.map((a) => a.usuarioId))];
       const users = await Promise.all(userIds.map((uid) => services.identity.getUser(uid).catch(() => null)));
       const userMap = new Map(users.filter(Boolean).map((u) => [u!.id, `${u!.nombres} ${u!.apellidos}`.trim()]));
+        userMap.set("system", "Sistema automático");
       return arqueos.map((a) => ({
         ...a,
         usuarioNombre: userMap.get(a.usuarioId) ?? "Recepcionista",
@@ -150,7 +163,7 @@ export function cashboxRoutes(services: Services) {
         const shift = await services.cashbox.getShift(arqueo.turnoId);
         const summary = await services.cashbox.getShiftSummary(arqueo.turnoId);
         const templates = await services.cashbox.listShiftTemplates();
-        const plantilla = shift.plantillaId ? templates.find((t) => t.id === shift.plantillaId) ?? null : null;
+        const plantilla = shift.plantillaId ? await services.cashbox.getShiftTemplate(shift.plantillaId) : null;
 
         const [realizadoUser, abiertoUser] = await Promise.all([
           services.identity.getUser(arqueo.usuarioId).catch(() => null),
@@ -198,18 +211,19 @@ export function cashboxRoutes(services: Services) {
         const summary = await services.cashbox.getShiftSummary(shiftId);
         const movements = await services.cashbox.listMovements(shiftId);
         const templates = await services.cashbox.listShiftTemplates();
-        const plantilla = shift.plantillaId ? templates.find((t) => t.id === shift.plantillaId) ?? null : null;
+        const plantilla = shift.plantillaId ? await services.cashbox.getShiftTemplate(shift.plantillaId) : null;
 
         const userIds = [...new Set([shift.usuarioId, ...movements.map((m) => m.usuarioId)])];
         const users = await Promise.all(userIds.map((uid) => services.identity.getUser(uid).catch(() => null)));
         const userMap = new Map(users.filter(Boolean).map((u) => [u!.id, `${u!.nombres} ${u!.apellidos}`.trim()]));
+        userMap.set("system", "Sistema automático");
 
         const abiertoPor = {
           id: shift.usuarioId,
           nombre: userMap.get(shift.usuarioId) ?? "Usuario desconocido",
         };
 
-        const cierreMovement = movements.slice().reverse().find((m) => m.tipo === "CIERRE");
+        const cierreMovement = movements.slice().reverse().find((m) => m.tipo === "CIERRE" || m.tipo === "TRASPASO_SALIDA");
         const cerradoPor = shift.cerradoEn
           ? {
               id: cierreMovement ? cierreMovement.usuarioId : shift.usuarioId,
@@ -223,6 +237,7 @@ export function cashboxRoutes(services: Services) {
           const uNombre = userMap.get(uId) ?? "Usuario";
           const prev = intervinientesMap.get(uId) ?? { id: uId, nombre: uNombre, operaciones: 0, montoTotalCentimos: 0 };
           prev.operaciones += 1;
+          if (m.tipo === "ANULACION" || m.tipo === "DEVOLUCION") prev.montoTotalCentimos -= m.montoCentimos;
           if (m.tipo === "VENTA" || m.tipo === "INGRESO") {
             prev.montoTotalCentimos += m.montoCentimos;
           }
@@ -232,7 +247,7 @@ export function cashboxRoutes(services: Services) {
         const emisor = services.sunatConfig.read(services.sunatModoActivo).emisor;
 
         const arqueos = await services.cashbox.listArqueos(shiftId);
-        const ultimoArqueo = arqueos.length > 0 ? arqueos[0] : null;
+        const ultimoArqueo = shift.estado === "ABIERTO" && arqueos.length > 0 ? arqueos[0] : null;
 
         const effectiveShift = {
           ...shift,
@@ -242,16 +257,20 @@ export function cashboxRoutes(services: Services) {
           denominacionesCierre: shift.denominacionesCierre ?? (ultimoArqueo ? ultimoArqueo.denominaciones : null),
         };
 
-        const saleMovements = movements.filter((m) => m.tipo === "VENTA" && m.ventaId);
+        const saleMovements = movements.filter((m) => (m.tipo === "VENTA" || m.tipo === "ANULACION" || m.tipo === "DEVOLUCION" || m.tipo === "CORRECCION") && m.ventaId);
         const ventaIds = [...new Set(saleMovements.map((m) => m.ventaId!))];
 
         const rawVentasDetalle = await Promise.all(
           ventaIds.map(async (ventaId) => {
-            const sale = await services.sales.getSale(ventaId).catch(() => null);
+            const history = await services.sales.getSaleHistory(ventaId);
+            const sale = history.venta;
             if (!sale) return null;
 
-            const payments = (await services.payments.getForSale(ventaId).catch(() => [])) ?? [];
+            const saleEntries = movements.filter((m) => m.ventaId === ventaId);
+            const paymentIds = new Set(saleEntries.filter((m) => m.tipo === "VENTA").map((m) => m.pagoId));
+            const payments = history.pagos.filter((p) => p.estado === "ACEPTADO" && paymentIds.has(p.id));
             const allDetalles = payments.flatMap((p) => p.detalles);
+            const cobros = payments.flatMap((p) => p.detalles.map((d) => ({ ...d, usuarioNombre: p.usuarioNombre, usuarioId: p.aceptadoPor, aceptadoEn: p.aceptadoEn })));
 
             const metodosPago = [...new Set(allDetalles.map((d) => d.metodo))];
 
@@ -301,6 +320,12 @@ export function cashboxRoutes(services: Services) {
 
             return {
               ventaId: sale.id,
+              estado: sale.estado,
+              cerradaEn: sale.cerradaEn,
+              cobradoTurnoCentimos: saleEntries.filter((m) => m.tipo === "VENTA").reduce((sum, m) => sum + m.montoCentimos, 0),
+              devueltoTurnoCentimos: saleEntries.filter((m) => m.tipo === "DEVOLUCION").reduce((sum, m) => sum + m.montoCentimos, 0),
+              anuladoTurnoCentimos: saleEntries.filter((m) => m.tipo === "ANULACION").reduce((sum, m) => sum + m.montoCentimos, 0),
+              cobros,
               serie: sale.serie,
               correlativo: sale.correlativo,
               cuartoNumero: sale.cuartoNumero ?? null,
@@ -314,6 +339,7 @@ export function cashboxRoutes(services: Services) {
               vueltoCentimos: vueltoCentimos > 0 ? vueltoCentimos : null,
               hospedajeDescripcion,
               hospedajeMontoCentimos,
+              cargosAnulados: sale.lineas.filter((l) => l.anulada).map((l) => ({ descripcion: l.descripcion, cantidad: l.cantidad, subtotalCentimos: l.subtotalCentimos, motivo: l.motivoAnulacion })),
               horasExtra,
               productos,
               otrosCargos,
@@ -352,6 +378,7 @@ export function cashboxRoutes(services: Services) {
           esCorteProvisional: shift.estado === "ABIERTO",
           ultimoArqueo,
           ventasDetalle,
+          movimientos: movements.map((m) => ({ ...m, usuarioNombre: userMap.get(m.usuarioId) ?? m.usuarioId })),
           totalesConceptos,
         };
       } catch (err) {

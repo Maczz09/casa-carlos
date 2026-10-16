@@ -1,7 +1,9 @@
+import { IconChart as ModuleIcon, IconBox } from "@casacarlos/ui";
+
 import { Fragment, useEffect, useState } from "react";
 import type { DashboardReport, HoraPico, Product } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconBox } from "@casacarlos/ui";
+
 import { Area, Bar, BarChart, CartesianGrid, Cell, ComposedChart, Legend, Line, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Skeleton, cx } from "../components/ui.js";
@@ -219,7 +221,7 @@ export function DashboardModule({ onGoToInventory }: Props) {
 
   return (
     <>
-      <PageHeader title="Dashboard" subtitle="Ventas, ocupación y comportamiento del hotel en el periodo elegido" />
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />} title="Dashboard" subtitle="Ventas, ocupación y comportamiento del hotel en el periodo elegido" />
 
       <Card className="mb-5 flex flex-wrap items-end gap-3 p-4">
         <Field label="Desde">

@@ -1,3 +1,5 @@
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { Input } from "./ui.js";
 import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import type { Product } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
@@ -47,7 +49,7 @@ export function ProductPicker({ onAdd }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <input
+      <Input aria-label="Buscar producto o escanear código de barras"
         autoFocus
         value={query}
         onChange={(e) => setQuery(e.target.value)}
@@ -69,13 +71,13 @@ export function ProductPicker({ onAdd }: Props) {
                   {p.stock <= p.stockMinimo && <span className="ml-1 text-warn">bajo</span>}
                 </p>
               </div>
-              <button
+              <ActionButton
                 onClick={() => add(p)}
                 disabled={busyId === p.id || p.stock <= 0}
                 className="rounded-lg bg-brand px-3 py-1 text-sm font-medium text-brand-ink hover:bg-brand-hover disabled:opacity-40"
               >
                 {p.stock <= 0 ? "Sin stock" : "+ Agregar"}
-              </button>
+              </ActionButton>
             </div>
           ))
         )}

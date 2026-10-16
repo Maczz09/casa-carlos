@@ -18,9 +18,12 @@
     "desktop:publish": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-desktop.ps1",
     "installer:build": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-installer.ps1",
     "service:install": "node scripts/service/install-service.cjs",
-    "service:uninstall": "node scripts/service/uninstall-service.cjs"
+    "service:uninstall": "node scripts/service/uninstall-service.cjs",
+    "test:ui": "node scripts/ui-smoke.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
     "node-windows": "1.0.0-beta.8"
   }
 }

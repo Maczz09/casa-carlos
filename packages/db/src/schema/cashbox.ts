@@ -12,6 +12,9 @@ export const cashboxPlantillasTurno = sqliteTable("cashbox_plantillas_turno", {
 export const cashboxTurnos = sqliteTable("cashbox_turnos", {
   id: text("id").primaryKey(),
   plantillaId: text("plantilla_id"),
+  programadoHasta: text("programado_hasta"),
+  tipoCierre: text("tipo_cierre", { enum: ["MANUAL", "AUTOMATICO", "UNIFICACION"] }),
+  turnoAnteriorId: text("turno_anterior_id"),
   usuarioId: text("usuario_id").notNull(),
   fecha: text("fecha").notNull(),
   abiertoEn: text("abierto_en").notNull(),
@@ -31,7 +34,7 @@ export const cashboxMovimientos = sqliteTable("cashbox_movimientos", {
   turnoId: text("turno_id")
     .notNull()
     .references(() => cashboxTurnos.id),
-  tipo: text("tipo", { enum: ["APERTURA", "VENTA", "INGRESO", "EGRESO", "AJUSTE", "VUELTO", "CIERRE"] }).notNull(),
+  tipo: text("tipo", { enum: ["APERTURA", "VENTA", "ANULACION", "CORRECCION", "DEVOLUCION", "INGRESO", "EGRESO", "AJUSTE", "VUELTO", "CIERRE", "TRASPASO_SALIDA"] }).notNull(),
   metodo: text("metodo", {
     enum: ["EFECTIVO", "YAPE", "PLIN", "LEMON", "AGORA", "TRANSFERENCIA", "POS_CREDITO", "POS_DEBITO"],
   }),
@@ -56,4 +59,10 @@ export const cashboxArqueos = sqliteTable("cashbox_arqueos", {
   diferenciaCentimos: integer("diferencia_centimos").notNull(),
   usuarioId: text("usuario_id").notNull(),
   creadoEn: text("creado_en").notNull(),
+});
+
+export const cashboxConfiguracion = sqliteTable("cashbox_configuracion", {
+  id: text("id").primaryKey(),
+  automatico: integer("automatico", { mode: "boolean" }).notNull().default(true),
+  turnoActivoId: text("turno_activo_id").references(() => cashboxTurnos.id),
 });

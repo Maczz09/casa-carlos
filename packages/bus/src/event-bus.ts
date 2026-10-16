@@ -16,7 +16,7 @@ export type Unsubscribe = () => void;
  */
 export interface EventBus {
   publish<K extends DomainEventName>(event: K, payload: DomainEvents[K]): Promise<void>;
-  subscribe<K extends DomainEventName>(event: K, handler: EventHandler<K>): Unsubscribe;
+  subscribe<K extends DomainEventName>(event: K, handler: EventHandler<K>, options?: { critical: boolean }): Unsubscribe;
   /** Used by the gateway to relay every domain event to connected WebSocket clients. */
   subscribeAll(handler: WildcardHandler): Unsubscribe;
 }

@@ -1,8 +1,13 @@
+import { IconBox as ModuleIcon, IconBox, IconChevronDown, IconPlus, IconSearch } from "@casacarlos/ui";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { ModalFrame } from "@casacarlos/ui/components/modal-frame";
+
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@casacarlos/ui/components/table";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { Product, ProductCategory, ProductMovement, ProductState, Role } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format, soles } from "@casacarlos/money";
-import { IconBox, IconChevronDown, IconPlus, IconSearch } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { Badge, Button, EmptyState, Field, Input, Notice, PageHeader, Section, Select, Skeleton, StatCard, Textarea, cx } from "../components/ui.js";
 
@@ -87,7 +92,7 @@ export function InventoryModule({ role, onManageCategories }: Props) {
             <Notice kind={feedback.kind}>
               <div className="flex items-start justify-between gap-3">
                 <span>{feedback.message}</span>
-                <button type="button" onClick={() => setFeedback(null)} className="shrink-0 rounded px-1 font-semibold opacity-70 hover:opacity-100" aria-label="Cerrar notificación">×</button>
+                <ActionButton type="button" onClick={() => setFeedback(null)} className="shrink-0 rounded px-1 font-semibold opacity-70 hover:opacity-100" aria-label="Cerrar notificación">×</ActionButton>
               </div>
             </Notice>
           </div>
@@ -124,13 +129,13 @@ export function InventoryModule({ role, onManageCategories }: Props) {
           <Notice kind={feedback.kind}>
             <div className="flex items-start justify-between gap-3">
               <span>{feedback.message}</span>
-              <button type="button" onClick={() => setFeedback(null)} className="shrink-0 rounded px-1 font-semibold opacity-70 hover:opacity-100" aria-label="Cerrar notificación">×</button>
+              <ActionButton type="button" onClick={() => setFeedback(null)} className="shrink-0 rounded px-1 font-semibold opacity-70 hover:opacity-100" aria-label="Cerrar notificación">×</ActionButton>
             </div>
           </Notice>
         </div>
       )}
 
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Bodega"
         subtitle="Administración de productos, imágenes, entradas de stock y kardex"
         actions={
@@ -183,10 +188,10 @@ export function InventoryModule({ role, onManageCategories }: Props) {
               const low = product.stock <= product.stockMinimo;
               return (
                 <div key={product.id} className="stagger overflow-hidden rounded-xl border border-line" style={{ ["--i" as string]: i }}>
-                  <button
+                  <div className="flex items-center gap-2 pr-4"><ActionButton
                     type="button"
                     onClick={() => setExpandedId(open ? null : product.id)}
-                    className={cx("flex w-full items-center gap-3 px-4 py-3 text-left transition-colors", open ? "bg-inset" : "hover:bg-inset/60")}
+                    aria-expanded={open} className={cx("flex flex-1 items-center gap-3 px-4 py-3 text-left transition-colors", open ? "bg-inset" : "hover:bg-inset/60")}
                   >
                     <ProductPicture product={product} />
                     <div className="min-w-0 flex-1">
@@ -198,7 +203,11 @@ export function InventoryModule({ role, onManageCategories }: Props) {
                       <Badge tone={product.stock === 0 ? "tone-red" : low ? "tone-amber" : "tone-teal"}>
                         stock: {product.stock}
                       </Badge>
-                      <button
+
+                      {product.imagenes.length === 0 && <Badge tone="tone-stone">sin imagen</Badge>}
+                      <IconChevronDown className={cx("h-4 w-4 text-subtle transition-transform", open && "rotate-180")} />
+                    </div>
+                  </ActionButton><ActionButton
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -209,11 +218,7 @@ export function InventoryModule({ role, onManageCategories }: Props) {
                       >
                         <IconPlus className="h-3 w-3" />
                         Stock
-                      </button>
-                      {product.imagenes.length === 0 && <Badge tone="tone-stone">sin imagen</Badge>}
-                      <IconChevronDown className={cx("h-4 w-4 text-subtle transition-transform", open && "rotate-180")} />
-                    </div>
-                  </button>
+                      </ActionButton></div>
                   {open && (
                     <AdminProductDetail
                       product={product}
@@ -249,7 +254,7 @@ function SearchBox({ value, onChange }: { value: string; onChange: (value: strin
   return (
     <div className="relative">
       <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-subtle" />
-      <Input value={value} onChange={(event) => onChange(event.target.value)} placeholder="Buscar o escanear código" className="w-64 pl-9" />
+      <Input aria-label="Buscar o escanear código" value={value} onChange={(event) => onChange(event.target.value)} placeholder="Buscar o escanear código" className="w-64 pl-9" />
     </div>
   );
 }
@@ -273,7 +278,7 @@ function ReceptionPriceCatalog({
 }) {
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Bodega y Precios"
         subtitle="Recepción puede consultar el catálogo, registrar ingresos de nuevo stock y ajustar precios de venta"
         actions={
@@ -341,13 +346,13 @@ function ReceptionPriceCard({ product, onReload, onOpenStock }: { product: Produ
             <span>{product.categoria ?? "Sin categoría"}</span>
             <span>·</span>
             <span className="font-mono text-ink/80">{product.codigoBarras ? `Cód: ${product.codigoBarras}` : "Sin código"}</span>
-            <button
+            <ActionButton
               type="button"
               onClick={() => setEditingBarcode(!editingBarcode)}
               className="text-[11px] text-brand hover:underline font-medium ml-1"
             >
               {editingBarcode ? "Cancelar" : product.codigoBarras ? "Cambiar cód." : "+ Código"}
-            </button>
+            </ActionButton>
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
             <Badge tone={product.stock === 0 ? "tone-red" : low ? "tone-amber" : "tone-teal"}>
@@ -361,7 +366,7 @@ function ReceptionPriceCard({ product, onReload, onOpenStock }: { product: Produ
       {editingBarcode && (
         <div className="rounded-xl border border-line bg-surface p-2.5 space-y-1">
           <Field label="Código de barras (escanear o escribir)">
-            <Input
+            <Input aria-label="Código de barras"
               autoFocus
               placeholder="Código de barras"
               value={barcode}
@@ -479,8 +484,8 @@ function NewProductForm({
     <Section title="Nuevo producto" subtitle="Completa la ficha y especifica el stock inicial que ingresa">
       <div className="grid gap-5 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Código de barras"><Input autoFocus placeholder="Escanear o dejar vacío" {...field("codigoBarras")} /></Field>
-          <Field label="Nombre"><Input placeholder="Ej: Gaseosa Inka Kola 500ml" {...field("nombre")} /></Field>
+          <Field label="Código de barras"><Input aria-label="Escanear o dejar vacío" autoFocus placeholder="Escanear o dejar vacío" {...field("codigoBarras")} /></Field>
+          <Field label="Nombre"><Input aria-label="Ej: Gaseosa Inka Kola 500ml" placeholder="Ej: Gaseosa Inka Kola 500ml" {...field("nombre")} /></Field>
           <Field label="Categoría">
             {activeCategories.length === 0 ? (
               <Button size="sm" onClick={onManageCategories}>Crear una categoría</Button>
@@ -491,15 +496,15 @@ function NewProductForm({
               </Select>
             )}
           </Field>
-          <Field label="Precio de venta (S/)"><Input type="number" min="0" step="0.10" placeholder="0.00" {...field("precio")} /></Field>
-          <Field label="Costo compra (S/)"><Input type="number" min="0" step="0.10" placeholder="0.00" {...field("costo")} /></Field>
+          <Field label="Precio de venta (S/)"><Input aria-label="0.00" type="number" min="0" step="0.10" placeholder="0.00" {...field("precio")} /></Field>
+          <Field label="Costo compra (S/)"><Input aria-label="0.00" type="number" min="0" step="0.10" placeholder="0.00" {...field("costo")} /></Field>
           <Field label="Stock inicial (unidades)"><Input type="number" min="0" {...field("stockInicial")} /></Field>
           <Field label="Stock mínimo de alerta"><Input type="number" min="0" {...field("stockMinimo")} /></Field>
           <Field label="Descripción"><Textarea rows={2} placeholder="Descripción opcional" {...field("descripcion")} /></Field>
         </div>
         <div>
           <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-subtle">Imagen principal (opcional)</p>
-          <button
+          <ActionButton
             type="button"
             onClick={() => imageInputRef.current?.click()}
             className="group relative grid aspect-[16/9] w-full place-items-center overflow-hidden rounded-2xl border border-dashed border-line bg-inset text-center transition-colors hover:border-brand"
@@ -512,7 +517,7 @@ function NewProductForm({
                 <IconBox className="mx-auto mb-2 h-8 w-8 text-subtle" />Seleccionar imagen
               </span>
             )}
-          </button>
+          </ActionButton>
           <p className="mt-2 text-xs leading-relaxed text-muted"><strong className="text-ink">Recomendado:</strong> horizontal 4:3 o 16:9, JPG/PNG/WebP, máx 3 MB.</p>
           {image && (
             <div className="mt-2 flex items-center justify-between gap-2 text-xs text-muted">
@@ -653,7 +658,7 @@ function AdminProductDetail({
           <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-subtle">Ficha y Precios</p>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Código de barras">
-              <Input
+              <Input aria-label="Escanear o ingresar código"
                 placeholder="Escanear o ingresar código"
                 value={edit.codigoBarras}
                 onChange={(event) => setEdit({ ...edit, codigoBarras: event.target.value })}
@@ -721,26 +726,26 @@ function AdminProductDetail({
 
             <div className="flex flex-wrap gap-1.5">
               {[6, 12, 24, 48].map((n) => (
-                <button
+                <ActionButton
                   key={n}
                   type="button"
                   onClick={() => setStockQty(String((Number(stockQty) || 0) + n))}
                   className="rounded-lg border border-line bg-inset px-2.5 py-1 text-xs font-semibold text-ink hover:bg-line active:scale-95"
                 >
                   +{n}
-                </button>
+                </ActionButton>
               ))}
             </div>
 
             <div className="grid grid-cols-[8rem_1fr] gap-2">
-              <Input
+              <Input aria-label="Cantidad"
                 type="number"
                 min="1"
                 placeholder="Cantidad"
                 value={stockQty}
                 onChange={(e) => setStockQty(e.target.value)}
               />
-              <Input
+              <Input aria-label="Motivo (ej: Compra a proveedor)"
                 placeholder="Motivo (ej: Compra a proveedor)"
                 value={stockReason}
                 onChange={(e) => setStockReason(e.target.value)}
@@ -774,25 +779,25 @@ function AdminProductDetail({
 
             <div className="flex flex-wrap gap-1.5">
               {["Conteo físico", "Merma / Dañado", "Vencimiento"].map((mot) => (
-                <button
+                <ActionButton
                   key={mot}
                   type="button"
                   onClick={() => setAdjustReason(mot)}
                   className="rounded-lg border border-line bg-inset px-2 py-0.5 text-[11px] text-muted hover:bg-line"
                 >
                   {mot}
-                </button>
+                </ActionButton>
               ))}
             </div>
 
             <div className="grid grid-cols-[8rem_1fr] gap-2">
-              <Input
+              <Input aria-label="Diferencia (ej: -1 o +2)"
                 type="number"
                 placeholder="Diferencia (ej: -1 o +2)"
                 value={adjustQty}
                 onChange={(e) => setAdjustQty(e.target.value)}
               />
-              <Input
+              <Input aria-label="Motivo del ajuste"
                 placeholder="Motivo del ajuste"
                 value={adjustReason}
                 onChange={(e) => setAdjustReason(e.target.value)}
@@ -823,34 +828,34 @@ function AdminProductDetail({
             <p className="text-xs text-muted">No hay movimientos registrados para este producto.</p>
           ) : (
             <div className="max-h-52 overflow-y-auto rounded-xl border border-line-soft bg-surface">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-inset text-subtle sticky top-0">
-                  <tr>
-                    <th className="py-2 px-3">Fecha y Hora</th>
-                    <th className="py-2 px-3">Tipo</th>
-                    <th className="py-2 px-3">Cantidad</th>
-                    <th className="py-2 px-3">Stock Resultante</th>
-                    <th className="py-2 px-3">Motivo</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-line-soft">
+              <Table className="w-full text-left text-xs">
+                <TableHeader className="bg-inset text-subtle sticky top-0">
+                  <TableRow>
+                    <TableHead className="py-2 px-3">Fecha y Hora</TableHead>
+                    <TableHead className="py-2 px-3">Tipo</TableHead>
+                    <TableHead className="py-2 px-3">Cantidad</TableHead>
+                    <TableHead className="py-2 px-3">Stock Resultante</TableHead>
+                    <TableHead className="py-2 px-3">Motivo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody className="divide-y divide-line-soft">
                   {movements.map((m) => (
-                    <tr key={m.id} className="hover:bg-inset/50">
-                      <td className="py-2 px-3 text-subtle">{formatDateTime12h(m.ocurridoEn)}</td>
-                      <td className="py-2 px-3 font-medium">
+                    <TableRow key={m.id} className="hover:bg-inset/50">
+                      <TableCell className="py-2 px-3 text-subtle">{formatDateTime12h(m.ocurridoEn)}</TableCell>
+                      <TableCell className="py-2 px-3 font-medium">
                         <Badge tone={m.tipo === "INGRESO" ? "tone-teal" : m.tipo === "SALIDA" ? "tone-sky" : m.tipo === "ANULACION" ? "tone-red" : "tone-amber"}>
                           {MOVEMENT_LABEL[m.tipo] ?? m.tipo}
                         </Badge>
-                      </td>
-                      <td className={cx("py-2 px-3 font-bold tabular-nums", m.cantidad > 0 ? "text-ok" : "text-danger")}>
+                      </TableCell>
+                      <TableCell className={cx("py-2 px-3 font-bold tabular-nums", m.cantidad > 0 ? "text-ok" : "text-danger")}>
                         {m.cantidad > 0 ? `+${m.cantidad}` : m.cantidad}
-                      </td>
-                      <td className="py-2 px-3 font-semibold tabular-nums text-ink">{m.stockResultante}</td>
-                      <td className="py-2 px-3 text-muted truncate max-w-xs">{m.motivo || "—"}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className="py-2 px-3 font-semibold tabular-nums text-ink">{m.stockResultante}</TableCell>
+                      <TableCell className="py-2 px-3 text-muted truncate max-w-xs">{m.motivo || "—"}</TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>
@@ -918,7 +923,7 @@ function StockOperationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade">
+    <ModalFrame title="Gestionar stock" onClose={onClose} busy={busy}>
       <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-pop)] animate-fade-up">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-line bg-raised px-5 py-4">
@@ -931,9 +936,9 @@ function StockOperationModal({
               <p className="text-xs text-muted">Añadir nuevo stock o ajustar inventario físico</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-subtle hover:bg-inset hover:text-ink">
+          <ActionButton disabled={busy} type="button" onClick={onClose} className="rounded-lg p-1.5 text-subtle hover:bg-inset hover:text-ink">
             ✕
-          </button>
+          </ActionButton>
         </div>
 
         {/* Content */}
@@ -969,20 +974,20 @@ function StockOperationModal({
 
           {/* Selector de modo: Ingreso o Ajuste */}
           <div className="flex rounded-xl bg-inset p-1 border border-line-soft">
-            <button
+            <ActionButton
               type="button"
               onClick={() => { setTab("INGRESO"); setReason("Compra de mercadería"); setQty(""); }}
               className={cx("flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all", tab === "INGRESO" ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink")}
             >
               + Ingreso / Reabastecimiento
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => { setTab("AJUSTE"); setReason("Conteo físico de inventario"); setQty(""); }}
               className={cx("flex-1 rounded-lg py-1.5 text-xs font-semibold transition-all", tab === "AJUSTE" ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink")}
             >
               ± Ajuste de Inventario
-            </button>
+            </ActionButton>
           </div>
 
           {/* Botones de incremento rápido para Ingreso */}
@@ -991,22 +996,22 @@ function StockOperationModal({
               <span className="text-xs text-muted block mb-1.5">Atajos rápidos de cantidad:</span>
               <div className="flex flex-wrap gap-2">
                 {[6, 12, 24, 48, 100].map((n) => (
-                  <button
+                  <ActionButton
                     key={n}
                     type="button"
                     onClick={() => setQty(String((Number(qty) || 0) + n))}
                     className="rounded-lg border border-line bg-surface px-3 py-1 text-xs font-bold text-ink hover:bg-inset active:scale-95"
                   >
                     +{n}
-                  </button>
+                  </ActionButton>
                 ))}
-                <button
+                <ActionButton
                   type="button"
                   onClick={() => setQty("")}
                   className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs text-danger hover:bg-danger/10"
                 >
                   Limpiar
-                </button>
+                </ActionButton>
               </div>
             </div>
           )}
@@ -1014,7 +1019,7 @@ function StockOperationModal({
           {/* Campos de cantidad y motivo */}
           <div className="grid grid-cols-[1fr_2fr] gap-3">
             <Field label={tab === "INGRESO" ? "Cantidad a sumar" : "Diferencia (±)"}>
-              <Input
+              <Input aria-label={tab === "INGRESO" ? "Ej: 24" : "Ej: -2 o +3"}
                 type="number"
                 min={tab === "INGRESO" ? "1" : undefined}
                 placeholder={tab === "INGRESO" ? "Ej: 24" : "Ej: -2 o +3"}
@@ -1025,7 +1030,7 @@ function StockOperationModal({
             </Field>
 
             <Field label="Motivo de la operación">
-              <Input
+              <Input aria-label="Motivo del movimiento"
                 placeholder="Motivo del movimiento"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
@@ -1039,14 +1044,14 @@ function StockOperationModal({
               ? ["Compra a distribuidor", "Reposición de mercadería", "Carga inicial de stock"]
               : ["Conteo físico de inventario", "Merma / Botella rota", "Producto vencido", "Diferencia de inventario"]
             ).map((sug) => (
-              <button
+              <ActionButton
                 key={sug}
                 type="button"
                 onClick={() => setReason(sug)}
                 className="rounded-md border border-line bg-inset/50 px-2 py-0.5 text-[11px] text-muted hover:bg-line hover:text-ink"
               >
                 {sug}
-              </button>
+              </ActionButton>
             ))}
           </div>
 
@@ -1070,7 +1075,7 @@ function StockOperationModal({
           </Button>
         </div>
       </div>
-    </div>
+    </ModalFrame>
   );
 }
 

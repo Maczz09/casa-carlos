@@ -1,3 +1,5 @@
+import { Tabs as TabsRoot, TabsList, TabsTrigger, TabsContent } from "@casacarlos/ui/components/tabs";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import { useState, type FormEvent } from "react";
 import { ApiError } from "../api.js";
 import { useBrand } from "../hooks/useBrand.js";
@@ -109,29 +111,13 @@ export function LoginScreen({ onLogin, onLoginByPin, onRegister }: Props) {
           <h1 className="text-2xl font-semibold tracking-tight text-ink">{mode === "register" ? "Crear cuenta" : "Iniciar sesión"}</h1>
           <p className="mt-1 mb-6 text-sm text-muted">{mode === "register" ? "Alta segura para el personal del hospedaje" : "Panel de recepción"}</p>
 
-          <div className="mb-4 flex gap-1 rounded-xl border border-line bg-inset p-1">
-            {(["password", "pin", "register"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                className={cx(
-                  "flex-1 rounded-lg py-1.5 text-sm font-medium transition-all duration-150",
-                  mode === m ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink",
-                )}
-              >
-                {m === "password" ? "Usuario" : m === "pin" ? "PIN rápido" : "Registrarme"}
-              </button>
-            ))}
-          </div>
-
-          {mode === "password" ? (
+          <TabsRoot value={mode} onValueChange={value => setMode(value as typeof mode)}><TabsList className="mb-4 h-10 w-full bg-inset" aria-label="Forma de acceso"><TabsTrigger value="password">Usuario</TabsTrigger><TabsTrigger value="pin">PIN rápido</TabsTrigger><TabsTrigger value="register">Registrarme</TabsTrigger></TabsList><TabsContent value={mode}>{mode === "password" ? (
             <div className="animate-fade flex flex-col gap-3">
-              <Input autoFocus placeholder="Usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} />
-              <Input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input aria-label="Usuario" autoFocus placeholder="Usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} />
+              <Input aria-label="Contraseña" type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} />
             </div>
           ) : mode === "pin" ? (
-            <Input
+            <Input aria-label="PIN de acceso"
               autoFocus
               type="password"
               inputMode="numeric"
@@ -143,25 +129,25 @@ export function LoginScreen({ onLogin, onLoginByPin, onRegister }: Props) {
           ) : (
             <div className="animate-fade flex max-h-[58vh] flex-col gap-3 overflow-y-auto pr-1">
               <div className="grid grid-cols-2 gap-3">
-                <Input autoFocus placeholder="Nombres" value={nombres} onChange={(e) => setNombres(e.target.value)} />
-                <Input placeholder="Apellidos" value={apellidos} onChange={(e) => setApellidos(e.target.value)} />
+                <Input aria-label="Nombres" autoFocus placeholder="Nombres" value={nombres} onChange={(e) => setNombres(e.target.value)} />
+                <Input aria-label="Apellidos" placeholder="Apellidos" value={apellidos} onChange={(e) => setApellidos(e.target.value)} />
               </div>
-              <Input placeholder="Nuevo usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} />
-              <Input type="password" placeholder="Nueva contraseña" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input aria-label="Nuevo usuario" placeholder="Nuevo usuario" value={usuario} onChange={(e) => setUsuario(e.target.value)} />
+              <Input aria-label="Nueva contraseña" type="password" placeholder="Nueva contraseña" value={password} onChange={(e) => setPassword(e.target.value)} />
               <div className="grid grid-cols-2 gap-3">
-                <Input inputMode="numeric" placeholder="PIN (opcional)" value={pin} onChange={(e) => setPin(e.target.value)} />
-                <Input inputMode="tel" placeholder="WhatsApp (opcional)" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
+                <Input aria-label="PIN (opcional)" inputMode="numeric" placeholder="PIN (opcional)" value={pin} onChange={(e) => setPin(e.target.value)} />
+                <Input aria-label="WhatsApp (opcional)" inputMode="tel" placeholder="WhatsApp (opcional)" value={telefono} onChange={(e) => setTelefono(e.target.value)} />
               </div>
               <div className="mt-1 rounded-xl border border-line bg-inset/70 p-3">
                 <p className="mb-2 text-xs font-semibold text-ink">Autorización del administrador</p>
                 <p className="mb-3 text-xs leading-relaxed text-muted">Evita que una persona ajena cree cuentas desde la pantalla de acceso.</p>
                 <div className="flex flex-col gap-2">
-                  <Input placeholder="Usuario administrador" value={adminUsuario} onChange={(e) => setAdminUsuario(e.target.value)} />
-                  <Input type="password" placeholder="Contraseña del administrador" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} />
+                  <Input aria-label="Usuario administrador" placeholder="Usuario administrador" value={adminUsuario} onChange={(e) => setAdminUsuario(e.target.value)} />
+                  <Input aria-label="Contraseña del administrador" type="password" placeholder="Contraseña del administrador" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} />
                 </div>
               </div>
             </div>
-          )}
+          )}</TabsContent></TabsRoot>
 
           {error && (
             <div className="mt-3">

@@ -24,10 +24,12 @@ export type DomainEvents = {
   "sale.line_added": { saleId: string; lineId: string; phase: "PRE_PAGO" | "POST_PAGO" };
   "sale.paid": { saleId: string; totalCentimos: number };
   "sale.closed": { saleId: string };
+  "sale.checkout_corrected": { saleId: string; usuarioId: string; motivo: string };
+  "sale.refunded": { saleId: string; usuarioId: string; motivo: string; devoluciones: Array<{ metodo: import("./entities/payments.js").PaymentMethod; montoCentimos: number }> };
   "sale.cancelled": { saleId: string; motivo: string; usuarioId: string; correlationId: string; idempotencyKey?: string };
 
   "payment.accepted": { paymentId: string; saleId: string; totalCentimos: number; aceptadoPor: string };
-  "payment.rejected": { paymentId: string; saleId: string; motivo: string };
+  "payment.rejected": { paymentId: string; saleId: string; motivo: string; usuarioId: string };
 
   "inventory.low_stock": { productoId: string; nombre: string; stock: number; stockMinimo: number };
   "inventory.dispatched": { productoId: string; cantidad: number; lineaVentaId: string | null };
@@ -36,6 +38,7 @@ export type DomainEvents = {
 
   "shift.opened": { turnoId: string; usuarioId: string };
   "shift.closed": { turnoId: string; usuarioId: string; diferenciaCentimos: number };
+  "cashbox.changed": { turnoId: string | null };
 };
 
 export type DomainEventName = keyof DomainEvents;

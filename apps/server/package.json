@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:finance": "node --import tsx --test tests/finance.test.ts",
+    "test:cashbox": "node --import tsx --test tests/cashbox-shifts.test.ts",
+    "test:cashbox-ui": "node --import tsx tests/cashbox-ui.mts"
   },
   "dependencies": {
     "@casacarlos/backup": "workspace:*",

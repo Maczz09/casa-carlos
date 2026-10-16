@@ -1,3 +1,5 @@
+import { IconBox } from "@casacarlos/ui";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import { useEffect, useState } from "react";
 import type { KioskProduct, KioskSession } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
@@ -20,10 +22,7 @@ function ProductCover({ src, name }: { src?: string; name: string }) {
     return (
       <div className="grid h-full place-items-center text-center text-sm text-subtle">
         <div>
-          <svg viewBox="0 0 48 48" className="mx-auto h-12 w-12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path d="m24 6 17 9v18l-17 9-17-9V15Z" />
-            <path d="m7 15 17 9 17-9M24 24v18" />
-          </svg>
+          <IconBox className="h-12 w-12" />
           <span className="mt-2 block">Imagen no disponible</span>
         </div>
       </div>
@@ -69,7 +68,7 @@ export function ProductsScreen({ session, products, totalCentimos, onAdd, onFini
       <Shell title="¿Desea agregar un producto o bebida a su habitación?" step="Opcional — productos de bodega" onBack={onCancel}>
         <div className="flex flex-1 flex-col items-center justify-center gap-8 text-center max-w-xl mx-auto">
           <div className="space-y-2">
-            <h2 className="font-serif text-3xl font-bold text-ink">
+            <h2 className="font-sans text-3xl font-bold text-ink">
               ¿Desea agregar productos o bebidas?
             </h2>
             <p className="text-base text-muted">
@@ -78,23 +77,23 @@ export function ProductsScreen({ session, products, totalCentimos, onAdd, onFini
           </div>
 
           <div className="stagger flex gap-6 w-full justify-center">
-            <button
+            <ActionButton
               style={{ ["--i" as string]: 0 }}
               onClick={() => setWantsProducts(true)}
               className="min-w-44 rounded-2xl bg-brand px-10 py-5 text-2xl font-semibold text-brand-ink shadow-[var(--shadow-card)] transition-transform active:scale-[0.98]"
             >
               Sí, deseo ver productos
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               style={{ ["--i" as string]: 1 }}
               onClick={onFinish}
               className="min-w-44 rounded-2xl bg-inset border border-line px-10 py-5 text-2xl font-semibold text-ink transition-transform active:scale-[0.98] hover:bg-surface"
             >
               No, continuar a pagar
-            </button>
+            </ActionButton>
           </div>
 
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3.5 py-1 text-xs font-medium text-emerald-800 dark:text-emerald-300">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>Sincronizado en tiempo real con recepción</span>
           </div>
@@ -120,7 +119,7 @@ export function ProductsScreen({ session, products, totalCentimos, onAdd, onFini
             <div className="min-h-0 flex-1 overflow-y-auto pr-2">
               <div className="stagger grid grid-cols-2 gap-4 pb-2 sm:grid-cols-3">
                 {products.map((p, i) => (
-                  <button
+                  <ActionButton
                     key={p.id}
                     style={{ ["--i" as string]: i }}
                     onClick={() => add(p.id)}
@@ -138,11 +137,11 @@ export function ProductsScreen({ session, products, totalCentimos, onAdd, onFini
                       </span>
                     </div>
                     <div className="flex flex-col gap-1 p-3">
-                      <span className="line-clamp-1 font-serif text-base font-semibold leading-tight text-ink">{p.nombre}</span>
+                      <span className="line-clamp-1 font-sans text-base font-semibold leading-tight text-ink">{p.nombre}</span>
                       {p.categoria && <span className="text-[10px] font-medium uppercase tracking-wide text-subtle">{p.categoria}</span>}
                       <span className="mt-1 text-lg font-bold text-brand">{format(cents(p.precioCentimos))}</span>
                     </div>
-                  </button>
+                  </ActionButton>
                 ))}
               </div>
             </div>
@@ -153,10 +152,10 @@ export function ProductsScreen({ session, products, totalCentimos, onAdd, onFini
         <div className="flex flex-col rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow-card)] min-h-0">
           <div className="mb-4 flex items-center justify-between border-b border-line pb-3">
             <div>
-              <h3 className="font-serif text-lg font-bold text-ink">Detalle de su cuenta</h3>
+              <h3 className="font-sans text-lg font-bold text-ink">Detalle de su cuenta</h3>
               <p className="text-xs text-muted">Habitación y consumos agregados</p>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span>En vivo</span>
             </span>
@@ -185,15 +184,15 @@ export function ProductsScreen({ session, products, totalCentimos, onAdd, onFini
           <div className="mt-4 border-t border-line pt-4 space-y-4">
             <div className="flex items-baseline justify-between">
               <span className="text-sm font-semibold uppercase tracking-wider text-subtle">Total a pagar</span>
-              <span className="font-serif text-3xl font-bold tabular-nums text-ink">{format(cents(totalCentimos))}</span>
+              <span className="font-sans text-3xl font-bold tabular-nums text-ink">{format(cents(totalCentimos))}</span>
             </div>
 
-            <button
+            <ActionButton
               onClick={onFinish}
               className="w-full rounded-2xl bg-brand py-4 text-lg font-semibold text-brand-ink shadow-sm transition-transform active:scale-[0.98] hover:bg-brand-hover"
             >
               Continuar al pago →
-            </button>
+            </ActionButton>
           </div>
         </div>
       </div>

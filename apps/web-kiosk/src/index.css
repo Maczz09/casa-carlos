@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@casacarlos/ui/styles/tokens.css";
+@source "../../../packages/ui/src";
 
 /*
  * Sistema de diseño del kiosco. Misma mecánica que apps/web-reception
@@ -38,8 +40,8 @@
   --c-line: rgb(41 37 36 / 6%);
 
   --c-ink: #292524;
-  --c-muted: #78716c;
-  --c-subtle: #a8a29e;
+  --c-muted: #625d57;
+  --c-subtle: #6f665c;
 
   --c-brand: #0f766e;
   --c-brand-hover: #115e59;
@@ -74,7 +76,7 @@
 
   --c-ink: #f3ede1;
   --c-muted: #b6ac9c;
-  --c-subtle: #857a6a;
+  --c-subtle: #b6ac9c;
 
   --c-brand: #2dd4bf;
   --c-brand-hover: #5eead4;
@@ -244,3 +246,10 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* El kiosco usa el mismo catálogo de controles con densidad táctil. */
+[data-slot="button"] { min-height: 48px; }
+[data-slot="input"], [data-slot="native-select"] { min-height: 48px; font-size: 1rem; }
+[data-slot="button"] svg { flex-shrink: 0; }
+
+[data-slot="dropdown-menu-item"], [data-slot="dropdown-menu-checkbox-item"] { min-height: 48px; }

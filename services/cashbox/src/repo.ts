@@ -20,6 +20,9 @@ const toTemplate = (r: TemplateRow): ShiftTemplate => ({
 const toShift = (r: ShiftRow): Shift => ({
   id: r.id,
   plantillaId: r.plantillaId,
+  programadoHasta: r.programadoHasta,
+  tipoCierre: r.tipoCierre,
+  turnoAnteriorId: r.turnoAnteriorId,
   usuarioId: r.usuarioId,
   fecha: r.fecha,
   abiertoEn: r.abiertoEn,
@@ -87,6 +90,10 @@ export class CashboxRepo {
     }
   }
 
+  async deactivateTemplates(): Promise<void> {
+    await this.db.update(schema.cashboxPlantillasTurno).set({ activa: false });
+  }
+
   async listTemplates(): Promise<ShiftTemplate[]> {
     const rows = await this.db
       .select()
@@ -114,13 +121,23 @@ export class CashboxRepo {
     return updated;
   }
 
-  async findOpenShiftForUser(usuarioId: string): Promise<Shift | null> {
-    const row = await this.db
-      .select()
-      .from(schema.cashboxTurnos)
-      .where(and(eq(schema.cashboxTurnos.usuarioId, usuarioId), eq(schema.cashboxTurnos.estado, "ABIERTO")))
-      .get();
-    return row ? toShift(row) : null;
+  async findOpenShift(): Promise<Shift | null> {
+    const config = await this.getConfig();
+    if (!config?.turnoActivoId) return null;
+    const shift = await this.getShift(config.turnoActivoId);
+    return shift?.estado === "ABIERTO" ? shift : null;
+  }
+
+  async getConfig() {
+    return this.db.select().from(schema.cashboxConfiguracion).where(eq(schema.cashboxConfiguracion.id, "principal")).get();
+  }
+
+  async setActiveShift(turnoId: string | null): Promise<void> {
+    await this.db.update(schema.cashboxConfiguracion).set({ turnoActivoId: turnoId }).where(eq(schema.cashboxConfiguracion.id, "principal"));
+  }
+
+  async setAutomation(habilitado: boolean): Promise<void> {
+    await this.db.update(schema.cashboxConfiguracion).set({ automatico: habilitado }).where(eq(schema.cashboxConfiguracion.id, "principal"));
   }
 
   async listShifts(range?: { desde: string; hasta: string }): Promise<Shift[]> {
@@ -183,8 +200,5 @@ export class CashboxRepo {
     return rows.map(toMovement);
   }
 
-  async deleteMovementsForSale(ventaId: string): Promise<void> {
-    await this.db.delete(schema.cashboxMovimientos).where(eq(schema.cashboxMovimientos.ventaId, ventaId));
-  }
 }
 

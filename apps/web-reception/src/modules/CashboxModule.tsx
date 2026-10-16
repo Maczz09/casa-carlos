@@ -1,14 +1,23 @@
-import { useEffect, useState } from "react";
-import type { Arqueo, CancelledSale, CashMovementType, CashSummary, RoomBoardEntry, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
+import { toast } from "@casacarlos/ui/components/sonner";
+import { IconCash as ModuleIcon, IconAlertTriangle, IconCash, IconCheck, IconFileX, IconPrinter, IconReceipt, IconSliders, IconTrash, IconX } from "@casacarlos/ui";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { ModalFrame } from "@casacarlos/ui/components/modal-frame";
+
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@casacarlos/ui/components/table";
+import { Select } from "../components/ui.js";
+import { useEffect, useRef, useState } from "react";
+import type { Arqueo, CancelledSale, CashboxAutomation, CashMovementType, CashSummary, RoomBoardEntry, Sale, Shift, ShiftTemplate } from "@casacarlos/contracts";
 import { formatDateTime12h, formatTime12h, formatTimeOnly12h } from "@casacarlos/contracts";
 import { cents, format, soles, splitIncludedIgv } from "@casacarlos/money";
-import { IconAlertTriangle, IconCash, IconCheck, IconFileX, IconPrinter, IconReceipt, IconSliders, IconTrash, IconX } from "@casacarlos/ui";
+
 import { ArcElement, Chart as ChartJS, Legend, Tooltip as ChartTooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 import { api, ApiError, type CashMovementView, type ArqueoView, type ShiftCuadreDto } from "../api.js";
 import { DenominationCounter, sumDenominaciones } from "../components/DenominationCounter.js";
 import { printArqueoReceipt, printReceiptForSale, printShiftClosureReceipt } from "../components/receipt.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, StatCard, Tabs, Textarea, cx } from "../components/ui.js";
+import { SaleHistoryDialog } from "../components/SaleHistoryDialog.js";
+import { CashReportDialog } from "../components/CashReportDialog.js";
 import { ShiftTemplatesManager } from "./ShiftTemplatesManager.js";
 
 export const METHOD_LABEL: Record<string, string> = {
@@ -22,11 +31,11 @@ export const METHOD_LABEL: Record<string, string> = {
   POS_DEBITO: "POS débito",
 };
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima" }).format(new Date());
 const daysAgoIso = (days: number) => {
   const d = new Date();
   d.setDate(d.getDate() - days);
-  return d.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima" }).format(d);
 };
 
 type Tab = "turno" | "turnos" | "movimientos" | "ventas" | "anulaciones" | "historial";
@@ -34,23 +43,27 @@ type Tab = "turno" | "turnos" | "movimientos" | "ventas" | "anulaciones" | "hist
 const MOVEMENT_LABEL: Record<CashMovementType, string> = {
   APERTURA: "Apertura de caja",
   VENTA: "Cobro de venta",
+  ANULACION: "Anulación de venta",
+  CORRECCION: "Corrección de salida",
+  DEVOLUCION: "Devolución por corrección de salida",
   INGRESO: "Ingreso manual",
   EGRESO: "Egreso manual",
   AJUSTE: "Ajuste",
   VUELTO: "Vuelto entregado",
   CIERRE: "Cierre de caja",
+  TRASPASO_SALIDA: "Fondo entregado al siguiente turno",
 };
 
 const movementTone = (tipo: CashMovementType): string => {
   if (tipo === "VENTA" || tipo === "INGRESO" || tipo === "APERTURA") return "tone-teal";
-  if (tipo === "EGRESO" || tipo === "VUELTO") return "tone-red";
+  if (tipo === "EGRESO" || tipo === "VUELTO" || tipo === "ANULACION" || tipo === "DEVOLUCION") return "tone-red";
   if (tipo === "AJUSTE") return "tone-amber";
   return "tone-stone";
 };
 
 const movementAmount = (movement: CashMovementView): string => {
-  const outgoing = movement.tipo === "EGRESO" || movement.tipo === "VUELTO" || (movement.tipo === "AJUSTE" && movement.montoCentimos < 0);
-  const neutral = movement.tipo === "CIERRE";
+  const outgoing = movement.tipo === "EGRESO" || movement.tipo === "TRASPASO_SALIDA" || movement.tipo === "VUELTO" || movement.tipo === "ANULACION" || movement.tipo === "DEVOLUCION" || (movement.tipo === "AJUSTE" && movement.montoCentimos < 0);
+  const neutral = movement.tipo === "CIERRE" || movement.tipo === "CORRECCION";
   return `${outgoing ? "−" : neutral ? "" : "+"}${format(cents(Math.abs(movement.montoCentimos)))}`;
 };
 
@@ -58,10 +71,10 @@ ChartJS.register(ArcElement, ChartTooltip, Legend);
 
 function PaymentMethodChart({ summary }: { summary: CashSummary }) {
   const data = {
-    labels: summary.porMetodo.map((item) => METHOD_LABEL[item.metodo] ?? item.metodo),
+    labels: summary.porMetodo.filter((item) => item.totalCentimos > 0).map((item) => METHOD_LABEL[item.metodo] ?? item.metodo),
     datasets: [
       {
-        data: summary.porMetodo.map((item) => item.totalCentimos / 100),
+        data: summary.porMetodo.filter((item) => item.totalCentimos > 0).map((item) => item.totalCentimos / 100),
         backgroundColor: ["#14b8a6", "#7c3aed", "#0ea5e9", "#f59e0b", "#ec4899", "#22c55e", "#6366f1", "#f97316"],
         borderColor: "transparent",
         hoverOffset: 5,
@@ -71,6 +84,7 @@ function PaymentMethodChart({ summary }: { summary: CashSummary }) {
   return (
     <div className="mx-auto h-52 max-w-[280px]">
       <Doughnut
+        aria-label="Distribución de cobros por método de pago"
         data={data}
         options={{
           responsive: true,
@@ -91,6 +105,12 @@ export function CashboxModule() {
   const [shift, setShift] = useState<Shift | null | undefined>(undefined);
   const [summary, setSummary] = useState<CashSummary | null>(null);
   const [templates, setTemplates] = useState<ShiftTemplate[]>([]);
+  const [legacyShifts, setLegacyShifts] = useState<Shift[]>([]);
+  const [automation, setAutomation] = useState<CashboxAutomation | null>(null);
+  const [legacyClosing, setLegacyClosing] = useState<Shift | null>(null);
+  const loadRevision = useRef(0);
+  const activeShiftId = useRef<string | null | undefined>(undefined);
+  const refreshVisibleList = useRef<() => void>(() => {});
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -121,6 +141,8 @@ export function CashboxModule() {
   const [ventasDesde, setVentasDesde] = useState(todayIso());
   const [ventasHasta, setVentasHasta] = useState(todayIso());
   const [ventas, setVentas] = useState<Sale[] | null>(null);
+  const [historySaleId, setHistorySaleId] = useState<string | null>(null);
+  const [reportShiftId, setReportShiftId] = useState<string | null>(null);
   const [printingId, setPrintingId] = useState<string | null>(null);
 
   const [cancellingSale, setCancellingSale] = useState<Sale | null>(null);
@@ -145,14 +167,26 @@ export function CashboxModule() {
   const [movements, setMovements] = useState<CashMovementView[] | null>(null);
 
   const loadShift = async () => {
+    const revision = ++loadRevision.current;
     const current = await api.myShift();
+    const [legacy, config] = await Promise.all([api.legacyShifts(), api.cashboxAutomation()]);
+    if (revision !== loadRevision.current) return;
+    if (activeShiftId.current !== undefined && activeShiftId.current !== current?.id && activeShiftId.current !== (current?.id ?? null)) {
+      setClosing(false); setShowPendingRoomsWarning(false); setArqueando(false); setShowMovForm(false);
+      setDenominacionesCierre({}); setDenominacionesArqueo({}); setJustificacion("");
+      toast.info("La caja activa cambió. Se actualizó el turno compartido.");
+    }
+    activeShiftId.current = current?.id ?? null;
     setShift(current);
+    setLegacyShifts(legacy);
+    setAutomation(config);
     if (current) {
       const [sum, arqs, cdr] = await Promise.all([
         api.shiftSummary(current.id),
         api.arqueos(current.id),
         api.shiftCuadre(current.id).catch(() => null),
       ]);
+      if (revision !== loadRevision.current) return;
       setSummary(sum);
       setArqueos(arqs);
       setCuadre(cdr);
@@ -164,13 +198,18 @@ export function CashboxModule() {
   };
 
   useEffect(() => {
-    if (tab === "turno") {
-      loadShift();
+    const refresh = () => { void loadShift().catch(err => setError(err.message)); refreshVisibleList.current(); };
+    let pending: ReturnType<typeof setTimeout>;
+    const invalidate = () => { clearTimeout(pending); pending = setTimeout(refresh, 75); };
+    refresh();
       api.shiftTemplates().then((list) => {
         if (list) setTemplates(list);
       }).catch(console.error);
-    }
-  }, [tab]);
+    window.addEventListener("casacarlos:cashbox-changed", invalidate);
+    window.addEventListener("focus", refresh);
+    const timer = window.setInterval(refresh, 15000);
+    return () => { ++loadRevision.current; clearInterval(timer); clearTimeout(pending); window.removeEventListener("casacarlos:cashbox-changed", invalidate); window.removeEventListener("focus", refresh); };
+  }, []);
 
   const loadHistory = async () => {
     const [shifts, sum] = await Promise.all([api.shifts({ desde, hasta }), api.rangeSummary({ desde, hasta })]);
@@ -212,7 +251,7 @@ export function CashboxModule() {
     setError(null);
     try {
       await api.cancelSale(cancellingSale.id, finalMotivo, cancelCorrelationId, cancelIdempotencyKey);
-      setCancelSuccess(`Venta ${cancellingSale.serie}-${cancellingSale.correlativo} anulada con éxito. Movimientos en caja revertidos para cuadre.`);
+      setCancelSuccess(`Venta ${cancellingSale.serie}-${cancellingSale.correlativo} anulada con éxito. Anulación registrada con motivo en la caja abierta.`);
       setCancellingSale(null);
       await Promise.all([loadVentas(), loadShift(), loadMovements()]);
       if (tab === "anulaciones") await loadAnulaciones();
@@ -224,8 +263,9 @@ export function CashboxModule() {
     }
   };
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string, label: string) => {
+    try { await navigator.clipboard.writeText(text); } catch { toast.error("No se pudo copiar. Selecciona el código para copiarlo manualmente."); return; }
+    toast.success("Copiado al portapapeles");
     setCopiedKey(label);
     setTimeout(() => setCopiedKey(null), 2500);
   };
@@ -250,6 +290,13 @@ export function CashboxModule() {
     if (tab === "anulaciones") loadAnulaciones();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab]);
+
+  refreshVisibleList.current = () => {
+    if (tab === "historial") void loadHistory().catch(err => setError(err.message));
+    if (tab === "ventas") void loadVentas().catch(err => setError(err.message));
+    if (tab === "movimientos") void loadMovements();
+    if (tab === "anulaciones") void loadAnulaciones();
+  };
 
   const printSale = async (sale: Sale) => {
     setPrintingId(sale.id);
@@ -337,6 +384,17 @@ export function CashboxModule() {
     }
   };
 
+  const closeLegacyShift = async () => {
+    if (!legacyClosing || !justificacion.trim()) return;
+    setBusy(true); setError(null);
+    try {
+      await api.closeShift(legacyClosing.id, { denominaciones: denominacionesCierre, justificacion: `Conciliación de turno anterior: ${justificacion.trim()}` });
+      setLegacyClosing(null); setDenominacionesCierre({}); setJustificacion("");
+      await loadShift(); if (tab === "historial") await loadHistory();
+    } catch (err) { setError(err instanceof Error ? err.message : "No se pudo conciliar el turno anterior."); }
+    finally { setBusy(false); }
+  };
+
   const registrarArqueo = async () => {
     if (!shift) return;
     setBusy(true);
@@ -389,13 +447,13 @@ export function CashboxModule() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Caja"
         subtitle="Control del dinero, impuestos y trazabilidad de cada entrada y salida"
         actions={
           <Tabs<Tab>
             tabs={[
-              { id: "turno", label: "Mi turno" },
+              { id: "turno", label: "Caja compartida" },
               { id: "turnos", label: "Turnos y Horarios" },
               { id: "movimientos", label: "Movimientos" },
               { id: "ventas", label: "Ventas" },
@@ -420,7 +478,13 @@ export function CashboxModule() {
         </div>
       )}
 
-      {/* ---------------- Mi turno ---------------- */}
+      {legacyShifts.length > 0 && <Card className="mb-5 border-warn/30 p-4 space-y-3">
+        <p className="font-semibold text-ink">{legacyShifts.length} turno(s) anterior(es) pendiente(s) de conciliar</p>
+        <p className="text-sm text-muted">La caja compartida usa el turno activo más reciente. Los turnos anteriores y sus movimientos se conservaron íntegros. Revisa su dinero por separado: sus fondos no se suman automáticamente para evitar duplicarlos.</p>
+        <div className="flex flex-wrap gap-2">{legacyShifts.map(s => <Button key={s.id} onClick={() => { setLegacyClosing(s); setDenominacionesCierre({}); setJustificacion(""); }}>Revisar turno del {formatDateTime12h(s.abiertoEn)}</Button>)}</div>
+      </Card>}
+
+      {/* ---------------- Caja compartida ---------------- */}
       {tab === "turno" && (
         <>
           {shift === undefined && <Skeleton className="h-64 rounded-2xl" />}
@@ -429,26 +493,26 @@ export function CashboxModule() {
             <Card className="mx-auto max-w-md p-6">
               <EmptyState
                 icon={<IconCash className="h-6 w-6" />}
-                title="No tenés un turno abierto"
-                hint="Abrí el turno con el monto de apertura para empezar a registrar movimientos."
+                title="La caja del hotel está cerrada"
+                hint="La apertura y los movimientos se comparten entre todos los recepcionistas. Declara el fondo inicial para comenzar."
               />
               <div className="flex flex-col gap-3">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-wider text-muted">Plantilla de turno</span>
-                    <button
+                    <ActionButton
                       type="button"
                       onClick={() => setTab("turnos")}
                       className="inline-flex items-center gap-1 text-xs font-medium text-brand hover:underline"
                     >
                       <IconSliders className="h-3 w-3" />
                       Modificar / crear turnos
-                    </button>
+                    </ActionButton>
                   </div>
 
                   {/* Selección de turno directa y táctil (100% visible sin popups bloqueados del sistema) */}
-                  <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-0.5">
-                    <button
+                  {automation?.habilitado && automation.horarioValido ? <Notice kind="info">El horario del turno se asignará automáticamente según la hora de Lima. Solo declara el fondo inicial.</Notice> : <div className="grid gap-1.5 max-h-56 overflow-y-auto pr-0.5">
+                    <ActionButton
                       type="button"
                       onClick={() => setPlantillaId("")}
                       className={cx(
@@ -467,12 +531,12 @@ export function CashboxModule() {
                           <IconCheck className="h-3 w-3" />
                         </span>
                       )}
-                    </button>
+                    </ActionButton>
 
                     {templates.map((t) => {
                       const isSelected = plantillaId === t.id;
                       return (
-                        <button
+                        <ActionButton
                           key={t.id}
                           type="button"
                           onClick={() => setPlantillaId(t.id)}
@@ -494,26 +558,26 @@ export function CashboxModule() {
                               <IconCheck className="h-3 w-3" />
                             </span>
                           )}
-                        </button>
+                        </ActionButton>
                       );
                     })}
-                  </div>
+                  </div>}
 
                   {templates.length === 0 && (
                     <div className="rounded-xl border border-dashed border-line bg-inset/50 p-3 text-center space-y-1.5">
                       <p className="text-xs text-muted">No hay turnos registrados en el sistema.</p>
-                      <button
+                      <ActionButton
                         type="button"
                         onClick={() => setTab("turnos")}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:underline"
                       >
                         ⚡ Configurar 3 turnos de atención (9am, 5pm, 1am)
-                      </button>
+                      </ActionButton>
                     </div>
                   )}
                 </div>
                 <Field label="Monto de apertura (S/)">
-                  <Input type="number" placeholder="0.00" value={apertura} onChange={(e) => setApertura(e.target.value)} />
+                  <Input aria-label="Fondo inicial en soles" type="number" min="0" step="0.01" placeholder="0.00" value={apertura} onChange={(e) => setApertura(e.target.value)} />
                 </Field>
                 <Button variant="primary" size="lg" block onClick={openShift} disabled={busy}>
                   {busy ? "Abriendo…" : "Abrir turno"}
@@ -525,7 +589,7 @@ export function CashboxModule() {
           {shift && summary && !closing && (
             <div className="flex flex-col gap-5">
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Cobrado en el turno" value={format(cents(summary.ventasBrutasCentimos))} hint={`${summary.porMetodo.reduce((sum, item) => sum + item.cantidad, 0)} operaciones cobradas`} icon={<IconReceipt className="h-4 w-4" />} />
+                <StatCard label="Cobros menos anulaciones y devoluciones" value={format(cents(summary.ventasBrutasCentimos))} hint={`${summary.porMetodo.reduce((sum, item) => sum + item.cantidad, 0)} operaciones cobradas`} icon={<IconReceipt className="h-4 w-4" />} />
                 <StatCard label="Valor de venta" value={format(cents(summary.valorVentaCentimos))} hint="Base imponible incluida" tone="tone-sky" delay={40} />
                 <StatCard label="IGV (18%)" value={format(cents(summary.igvCentimos))} hint="Impuesto incluido en las ventas" tone="tone-violet" delay={80} />
                 <StatCard label="Efectivo esperado" value={format(cents(summary.efectivoEsperadoCentimos))} hint="Dinero físico que debe haber" icon={<IconCash className="h-4 w-4" />} delay={120} />
@@ -541,24 +605,27 @@ export function CashboxModule() {
                         : ""
                     }`}
                   >
+                    <p className="mb-3 text-xs text-muted">Caja compartida por todos los recepcionistas. Cada operación conserva su usuario.</p>
+                    {shift.programadoHasta && <p className="mb-3 text-sm font-medium text-brand">Próximo relevo automático: {formatDateTime12h(shift.programadoHasta)}</p>}
+                    {shift.turnoAnteriorId && <Notice kind="info">El fondo inicial se recibió del turno anterior por relevo automático. Registra un arqueo para verificar el efectivo físico.</Notice>}
                     <Row label="Fondo de apertura" value={format(cents(summary.aperturaCentimos))} />
                     <Row label="Ingresos manuales" value={format(cents(summary.ingresosManualesCentimos))} tone="text-ok" />
                     <Row label="Egresos manuales" value={`−${format(cents(summary.egresosManualesCentimos))}`} tone="text-danger" />
-                    <Row label="Vueltos entregados" value={`−${format(cents(summary.vueltosCentimos))}`} tone="text-danger" />
+                    <Row label="Vueltos entregados (informativo)" value={`−${format(cents(summary.vueltosCentimos))}`} tone="text-danger" />
                     <div className="mt-2 border-t border-line pt-2">
                       <Row label="Efectivo esperado en caja" value={format(cents(summary.efectivoEsperadoCentimos))} strong tone="text-brand" />
                     </div>
                   </Section>
 
                   {cuadre?.totalesConceptos && (
-                    <Section title="Desglose por conceptos" subtitle="Detalle de habitaciones, horas extra, productos y vueltos" delay={40}>
+                    <Section title="Composición de ventas vinculadas" subtitle="Importes completos de las ventas; los cobros de este turno figuran por separado" delay={40}>
                       <Row label="Hospedaje / Habitaciones" value={format(cents(cuadre.totalesConceptos.totalHospedajeCentimos))} />
                       <Row label="Horas extra / Excesos" value={format(cents(cuadre.totalesConceptos.totalHorasExtraCentimos))} strong tone="text-brand" />
                       <Row label="Productos / Consumo" value={format(cents(cuadre.totalesConceptos.totalProductosCentimos))} />
                       {cuadre.totalesConceptos.totalOtrosCargosCentimos > 0 && (
                         <Row label="Otros cargos" value={format(cents(cuadre.totalesConceptos.totalOtrosCargosCentimos))} />
                       )}
-                      <Row label="Vueltos entregados" value={`−${format(cents(cuadre.totalesConceptos.totalVueltosCentimos))}`} tone="text-danger" />
+                      <Row label="Vueltos entregados (informativo)" value={`−${format(cents(cuadre.totalesConceptos.totalVueltosCentimos))}`} tone="text-danger" />
                     </Section>
                   )}
 
@@ -587,7 +654,7 @@ export function CashboxModule() {
                       <div className="animate-fade flex flex-col gap-3 rounded-xl bg-inset p-3">
                         <div className="flex gap-1.5">
                           {(["INGRESO", "EGRESO", "AJUSTE"] as const).map((t) => (
-                            <button
+                            <ActionButton
                               key={t}
                               onClick={() => setMovTipo(t)}
                               className={cx(
@@ -596,16 +663,16 @@ export function CashboxModule() {
                               )}
                             >
                               {t === "INGRESO" ? "Ingreso" : t === "EGRESO" ? "Egreso" : "Ajuste"}
-                            </button>
+                            </ActionButton>
                           ))}
                         </div>
-                        <Input
+                        <Input aria-label={movTipo === "AJUSTE" ? "Monto S/ (negativo para restar)" : "Monto S/"}
                           type="number"
                           placeholder={movTipo === "AJUSTE" ? "Monto S/ (negativo para restar)" : "Monto S/"}
                           value={movMonto}
                           onChange={(e) => setMovMonto(e.target.value)}
                         />
-                        <Input placeholder="Motivo" value={movMotivo} onChange={(e) => setMovMotivo(e.target.value)} />
+                        <Input aria-label="Motivo" placeholder="Motivo" value={movMotivo} onChange={(e) => setMovMotivo(e.target.value)} />
                         <div className="flex gap-2">
                           <Button block onClick={() => setShowMovForm(false)}>
                             Cancelar
@@ -684,6 +751,7 @@ export function CashboxModule() {
                 </div>
               </div>
 
+              {shift && <Button className="mb-3" onClick={() => setReportShiftId(shift.id)}>Ver reporte detallado del turno</Button>}
               {cuadre?.ventasDetalle && cuadre.ventasDetalle.length > 0 && (
                 <Section
                   title="Cuartos y ventas de este turno"
@@ -707,7 +775,7 @@ export function CashboxModule() {
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-sm text-ink">{format(cents(v.totalCentimos))}</span>
                             <Badge tone={v.saldoCentimos > 0 ? "tone-amber" : "tone-teal"}>
-                              {v.saldoCentimos > 0 ? `Saldo: ${format(cents(v.saldoCentimos))}` : "Pagado"}
+                              {v.estado === "ANULADA" ? "Anulada" : v.estado === "CERRADA" ? "Cerrada" : v.saldoCentimos > 0 ? `Saldo: ${format(cents(v.saldoCentimos))}` : "Pagado"}
                             </Badge>
                           </div>
                         </div>
@@ -741,6 +809,8 @@ export function CashboxModule() {
 
                         <div className="mt-2.5 flex flex-wrap items-center justify-between border-t border-line-soft pt-2 text-[11px] text-muted">
                           <div>
+                            <p className="font-semibold">Cobrado en este turno: {format(cents(v.cobradoTurnoCentimos))} · Anulado: {format(cents(v.anuladoTurnoCentimos))} · Devuelto: {format(cents(v.devueltoTurnoCentimos))}</p>
+                            {v.cobros.map((c, i) => <p key={i}>{c.usuarioNombre} · {METHOD_LABEL[c.metodo] ?? c.metodo} · {format(cents(c.montoCentimos))}{c.recibidoCentimos != null ? " · Recibido " + format(cents(c.recibidoCentimos)) : ""} · Vuelto {format(cents(c.vueltoCentimos ?? 0))}{c.codigoOperacion ? " · Op. " + c.codigoOperacion : ""}</p>)}
                             <span>Pago: {v.metodosPago.map((m) => METHOD_LABEL[m] || m).join(", ") || "Efectivo"}</span>
                             {v.vueltoCentimos && v.vueltoCentimos > 0 ? (
                               <span className="ml-2 font-semibold text-rose-600 dark:text-rose-400">
@@ -749,6 +819,7 @@ export function CashboxModule() {
                             ) : null}
                           </div>
                           <div className="flex items-center gap-2">
+                            <Button size="sm" variant="secondary" onClick={() => setHistorySaleId(v.ventaId)}>Ver detalle</Button>
                             <span>{v.serie}-{String(v.correlativo).padStart(8, "0")} · {formatDateTime12h(v.creadoEn)}</span>
                             <Button
                               size="sm"
@@ -800,7 +871,7 @@ export function CashboxModule() {
 
           {/* Modal de advertencia si hay cuartos ocupados al cerrar turno */}
           {showPendingRoomsWarning && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fade">
+            <ModalFrame title="Cerrar caja con habitaciones abiertas" onClose={() => setShowPendingRoomsWarning(false)} busy={busy}>
               <div className="w-full max-w-lg rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
                 <div className="flex items-center gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-amber-500/10 text-amber-500">
@@ -827,12 +898,12 @@ export function CashboxModule() {
                     ))}
                   </div>
                   <p className="text-[11px] text-muted">
-                    Al cerrar esta caja, estos cuartos y sus consumos o saldos pendientes permanecerán abiertos y se transferirán automáticamente al siguiente turno de caja que se aperture.
+                    Las habitaciones y sus saldos pendientes seguirán abiertos. Sus próximos cobros ingresarán en la caja activa del hotel; los cobros ya registrados se conservarán en este turno.
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                  <Button
+                <div className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-2">
+                  <Button disabled={busy}
                     block
                     variant="secondary"
                     onClick={() => setShowPendingRoomsWarning(false)}
@@ -847,11 +918,11 @@ export function CashboxModule() {
                       setClosing(true);
                     }}
                   >
-                    Traspasar a la siguiente caja y cerrar
+                    Continuar al conteo de cierre
                   </Button>
                 </div>
               </div>
-            </div>
+            </ModalFrame>
           )}
         </>
       )}
@@ -874,16 +945,16 @@ export function CashboxModule() {
                 <Input type="time" value={movementHoraHasta} onChange={(e) => setMovementHoraHasta(e.target.value)} />
               </Field>
               <Field label="Movimiento">
-                <select value={movementTipo} onChange={(e) => setMovementTipo(e.target.value)} className="w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25">
+                <Select value={movementTipo} onChange={(e) => setMovementTipo(e.target.value)} className="w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25">
                   <option value="">Todos</option>
                   {Object.entries(MOVEMENT_LABEL).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Método">
-                <select value={movementMetodo} onChange={(e) => setMovementMetodo(e.target.value)} className="w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25">
+                <Select value={movementMetodo} onChange={(e) => setMovementMetodo(e.target.value)} className="w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25">
                   <option value="">Todos</option>
                   {Object.entries(METHOD_LABEL).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
+                </Select>
               </Field>
               <Button variant="primary" onClick={loadMovements}>Aplicar filtros</Button>
             </div>
@@ -899,33 +970,33 @@ export function CashboxModule() {
               <EmptyState icon={<IconCash className="h-6 w-6" />} title="No hay movimientos" hint="Probá ampliando las fechas, horas o quitando filtros." />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[860px] text-left text-sm">
-                  <thead className="text-xs uppercase tracking-wide text-subtle">
-                    <tr>
-                      <th className="pb-3 font-semibold">Fecha y hora</th>
-                      <th className="pb-3 font-semibold">Tipo</th>
-                      <th className="pb-3 font-semibold">Método / referencia</th>
-                      <th className="pb-3 font-semibold">Registrado por</th>
-                      <th className="pb-3 font-semibold">Motivo</th>
-                      <th className="pb-3 text-right font-semibold">Importe</th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table className="w-full min-w-[860px] text-left text-sm">
+                  <TableHeader className="text-xs uppercase tracking-wide text-subtle">
+                    <TableRow>
+                      <TableHead className="pb-3 font-semibold">Fecha y hora</TableHead>
+                      <TableHead className="pb-3 font-semibold">Tipo</TableHead>
+                      <TableHead className="pb-3 font-semibold">Método / referencia</TableHead>
+                      <TableHead className="pb-3 font-semibold">Registrado por</TableHead>
+                      <TableHead className="pb-3 font-semibold">Motivo</TableHead>
+                      <TableHead className="pb-3 text-right font-semibold">Importe</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {movements.map((movement) => (
-                      <tr key={movement.id} className="border-t border-line-soft transition-colors hover:bg-inset/60">
-                        <td className="py-3 pr-4 tabular-nums text-muted">{formatDateTime12h(movement.ocurridoEn)}</td>
-                        <td className="py-3 pr-4"><Badge tone={movementTone(movement.tipo)}>{MOVEMENT_LABEL[movement.tipo]}</Badge></td>
-                        <td className="py-3 pr-4 text-muted">
+                      <TableRow key={movement.id} className="border-t border-line-soft transition-colors hover:bg-inset/60">
+                        <TableCell className="py-3 pr-4 tabular-nums text-muted">{formatDateTime12h(movement.ocurridoEn)}</TableCell>
+                        <TableCell className="py-3 pr-4"><Badge tone={movementTone(movement.tipo)}>{MOVEMENT_LABEL[movement.tipo]}</Badge></TableCell>
+                        <TableCell className="py-3 pr-4 text-muted">
                           {movement.metodo ? METHOD_LABEL[movement.metodo] ?? movement.metodo : "—"}
                           {movement.ventaId ? <span className="block text-[11px] text-subtle">Venta {movement.ventaId.slice(0, 8)}</span> : null}
-                        </td>
-                        <td className="py-3 pr-4 text-muted">{movement.usuarioNombre}</td>
-                        <td className="max-w-[260px] truncate py-3 pr-4 text-muted">{movement.motivo || "—"}</td>
-                        <td className={cx("py-3 text-right font-semibold tabular-nums", movement.tipo === "EGRESO" || movement.tipo === "VUELTO" ? "text-danger" : movement.tipo === "CIERRE" ? "text-muted" : "text-ok")}>{movementAmount(movement)}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="py-3 pr-4 text-muted">{movement.usuarioNombre}</TableCell>
+                        <TableCell className="max-w-[260px] truncate py-3 pr-4 text-muted">{movement.motivo || "—"}</TableCell>
+                        <TableCell className={cx("py-3 text-right font-semibold tabular-nums", movement.tipo === "EGRESO" || movement.tipo === "VUELTO" || movement.tipo === "ANULACION" || movement.tipo === "DEVOLUCION" ? "text-danger" : movement.tipo === "CIERRE" ? "text-muted" : "text-ok")}>{movementAmount(movement)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </Section>
@@ -947,14 +1018,14 @@ export function CashboxModule() {
             </Button>
             <span className="ml-auto self-center text-sm text-muted">
               {ventas ? (() => {
-                const total = cents(ventas.reduce((s, v) => s + v.totalCentimos, 0));
+                const total = cents(ventas.filter((v) => v.estado !== "ANULADA").reduce((s, v) => s + v.totalCentimos, 0));
                 const impuestos = splitIncludedIgv(total);
                 return `${ventas.length} venta${ventas.length === 1 ? "" : "s"} · IGV ${format(impuestos.igv)} · Total ${format(total)}`;
               })() : ""}
             </span>
           </Card>
 
-          <Section title="Ventas registradas" subtitle="Cada venta con su cliente — imprime la boleta emitida, o el borrador si todavía no se emitió">
+          <Section title="Ventas registradas" subtitle="Consulta el historial completo de cobros, adicionales, horas extra, checkout y anulaciones">
             {ventas === null ? (
               <div className="flex flex-col gap-2">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -998,9 +1069,10 @@ export function CashboxModule() {
                         <Badge tone="tone-red">Anulada</Badge>
                       ) : (
                         <Badge tone={v.saldoCentimos > 0 ? "tone-amber" : "tone-teal"}>
-                          {v.saldoCentimos > 0 ? "Con saldo" : "Pagada"}
+                          {v.estado === "CERRADA" ? "Cerrada" : v.saldoCentimos > 0 ? "Con saldo" : "Pagada"}
                         </Badge>
                       )}
+                      <Button size="sm" variant="secondary" onClick={() => setHistorySaleId(v.id)}>Ver detalle</Button>
                       <Button size="sm" icon={<IconPrinter className="h-3.5 w-3.5" />} onClick={() => printSale(v)} disabled={printingId === v.id}>
                         {printingId === v.id ? "…" : "Imprimir"}
                       </Button>
@@ -1053,53 +1125,53 @@ export function CashboxModule() {
               <EmptyState icon={<IconFileX className="h-6 w-6" />} title="Sin ventas anuladas en este rango" hint="Cambiá las fechas para ver otro periodo." />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="bg-inset text-xs uppercase tracking-wide text-subtle">
-                    <tr>
-                      <th className="px-4 py-3 font-semibold">Venta</th>
-                      <th className="px-4 py-3 font-semibold">Cliente</th>
-                      <th className="px-4 py-3 text-right font-semibold">Total</th>
-                      <th className="px-4 py-3 font-semibold">Motivo</th>
-                      <th className="px-4 py-3 font-semibold">Anulado por</th>
-                      <th className="px-4 py-3 font-semibold">Fecha</th>
-                      <th className="px-4 py-3 font-semibold">Trazabilidad</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-line-soft">
+                <Table className="w-full text-left text-sm">
+                  <TableHeader className="bg-inset text-xs uppercase tracking-wide text-subtle">
+                    <TableRow>
+                      <TableHead className="px-4 py-3 font-semibold">Venta</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">Cliente</TableHead>
+                      <TableHead className="px-4 py-3 text-right font-semibold">Total</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">Motivo</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">Anulado por</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">Fecha</TableHead>
+                      <TableHead className="px-4 py-3 font-semibold">Trazabilidad</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-line-soft">
                     {anulaciones.map((a) => (
-                      <tr key={a.id} className="transition-colors hover:bg-inset/40">
-                        <td className="px-4 py-3">
+                      <TableRow key={a.id} className="transition-colors hover:bg-inset/40">
+                        <TableCell className="px-4 py-3">
                           <p className="font-semibold text-ink">{a.serie}-{a.correlativo}</p>
                           <span className="text-[11px] text-muted">ID: {a.id.slice(0, 8)}</span>
-                        </td>
-                        <td className="px-4 py-3 text-muted">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-muted">
                           {a.clienteNombres ? `${a.clienteNombres} ${a.clienteApellidos ?? ""}`.trim() : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold tabular-nums text-rose-500 line-through">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-right font-semibold tabular-nums text-rose-500 line-through">
                           {format(cents(a.totalCentimos))}
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           <Badge tone="tone-red">{a.motivoAnulacion || "Anulada"}</Badge>
-                        </td>
-                        <td className="px-4 py-3 text-muted text-xs">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-muted text-xs">
                           {a.anuladoPorNombre ?? a.anuladoPorUsuarioId ?? "Usuario"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted tabular-nums">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-xs text-muted tabular-nums">
                           {formatDateTime12h(a.anuladoEn ?? a.creadoEn)}
-                        </td>
-                        <td className="px-4 py-3 text-xs">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-xs">
                           {a.correlationId && (
                             <div className="flex items-center gap-1">
                               <code className="text-[10px] bg-inset px-1.5 py-0.5 rounded font-mono text-subtle">
                                 {a.correlationId.slice(0, 16)}…
                               </code>
-                              <button
+                              <ActionButton
                                 type="button"
                                 onClick={() => copyToClipboard(a.correlationId!, `tab_corr_${a.id}`)}
                                 className="text-[10px] text-brand hover:underline"
                               >
                                 {copiedKey === `tab_corr_${a.id}` ? "✓" : "Copiar"}
-                              </button>
+                              </ActionButton>
                             </div>
                           )}
                           {a.idempotencyKey && (
@@ -1107,20 +1179,20 @@ export function CashboxModule() {
                               <code className="text-[10px] bg-inset px-1.5 py-0.5 rounded font-mono text-subtle">
                                 {a.idempotencyKey.slice(0, 16)}…
                               </code>
-                              <button
+                              <ActionButton
                                 type="button"
                                 onClick={() => copyToClipboard(a.idempotencyKey!, `tab_idem_${a.id}`)}
                                 className="text-[10px] text-brand hover:underline"
                               >
                                 {copiedKey === `tab_idem_${a.id}` ? "✓" : "Copiar"}
-                              </button>
+                              </ActionButton>
                             </div>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </Section>
@@ -1147,7 +1219,7 @@ export function CashboxModule() {
 
           {rangeSummary && (
             <Section title="Resumen del periodo" className="mb-5">
-              <Row label="Ventas brutas" value={format(cents(rangeSummary.ventasBrutasCentimos))} strong />
+              <Row label="Cobros menos anulaciones y devoluciones" value={format(cents(rangeSummary.ventasBrutasCentimos))} strong />
               <Row label="Valor de venta" value={format(cents(rangeSummary.valorVentaCentimos))} />
               <Row label="IGV (18%)" value={format(cents(rangeSummary.igvCentimos))} strong tone="text-brand" />
               <Row label="Efectivo esperado del periodo" value={format(cents(rangeSummary.efectivoEsperadoCentimos))} strong tone="text-brand" />
@@ -1159,31 +1231,33 @@ export function CashboxModule() {
 
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-inset text-xs uppercase tracking-wide text-subtle">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Fecha</th>
-                    <th className="px-4 py-3 font-semibold">Estado</th>
-                    <th className="px-4 py-3 text-right font-semibold">Esperado</th>
-                    <th className="px-4 py-3 text-right font-semibold">Declarado</th>
-                    <th className="px-4 py-3 text-right font-semibold">Diferencia</th>
-                    <th className="px-4 py-3 text-right font-semibold">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="w-full text-left text-sm">
+                <TableHeader className="bg-inset text-xs uppercase tracking-wide text-subtle">
+                  <TableRow>
+                    <TableHead className="px-4 py-3 font-semibold">Fecha</TableHead>
+                    <TableHead className="px-4 py-3 font-semibold">Estado</TableHead>
+                    <TableHead className="px-4 py-3 text-right font-semibold">Esperado</TableHead>
+                    <TableHead className="px-4 py-3 text-right font-semibold">Declarado</TableHead>
+                    <TableHead className="px-4 py-3 text-right font-semibold">Diferencia</TableHead>
+                    <TableHead className="px-4 py-3 text-right font-semibold">Acciones</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {history.map((s) => (
-                    <tr key={s.id} className="border-t border-line-soft transition-colors hover:bg-inset/50">
-                      <td className="px-4 py-3 text-ink">{s.fecha}</td>
-                      <td className="px-4 py-3">
+                    <TableRow key={s.id} className="border-t border-line-soft transition-colors hover:bg-inset/50">
+                      <TableCell className="px-4 py-3 text-ink">{s.fecha}</TableCell>
+                      <TableCell className="px-4 py-3">
                         <Badge tone={s.estado === "ABIERTO" ? "tone-sky" : "tone-stone"}>{s.estado === "ABIERTO" ? "Abierto" : "Cerrado"}</Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-muted">{s.efectivoEsperadoCentimos !== null ? format(cents(s.efectivoEsperadoCentimos)) : "—"}</td>
-                      <td className="px-4 py-3 text-right tabular-nums text-muted">{s.efectivoDeclaradoCentimos !== null ? format(cents(s.efectivoDeclaradoCentimos)) : "—"}</td>
-                      <td className={cx("px-4 py-3 text-right tabular-nums", s.diferenciaCentimos ? "font-medium text-warn" : "text-muted")}>
+                        {s.tipoCierre === "AUTOMATICO" && <p className="mt-1 text-xs text-muted">Relevo automático · Sin arqueo</p>}
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right tabular-nums text-muted">{s.efectivoEsperadoCentimos !== null ? format(cents(s.efectivoEsperadoCentimos)) : "—"}</TableCell>
+                      <TableCell className="px-4 py-3 text-right tabular-nums text-muted">{s.efectivoDeclaradoCentimos !== null ? format(cents(s.efectivoDeclaradoCentimos)) : "—"}</TableCell>
+                      <TableCell className={cx("px-4 py-3 text-right tabular-nums", s.diferenciaCentimos ? "font-medium text-warn" : "text-muted")}>
                         {s.diferenciaCentimos !== null ? format(cents(s.diferenciaCentimos)) : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right">
+                        <Button size="sm" variant="secondary" onClick={() => setReportShiftId(s.id)}>Ver detalle</Button>
+                        <ActionButton aria-label="Imprimir cuadre de caja (80 mm)"
                           type="button"
                           title="Imprimir cuadre de caja (80 mm)"
                           onClick={() => printShiftClosureReceipt(s.id)}
@@ -1191,23 +1265,35 @@ export function CashboxModule() {
                         >
                           <IconPrinter className="h-3.5 w-3.5" />
                           <span>Imprimir cuadre</span>
-                        </button>
-                      </td>
-                    </tr>
+                        </ActionButton>
+                      </TableCell>
+                    </TableRow>
                   ))}
                   {history.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="px-4 py-8 text-center text-muted">
+                    <TableRow>
+                      <TableCell colSpan={6} className="px-4 py-8 text-center text-muted">
                         Sin turnos en ese rango.
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   )}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </Card>
         </>
       )}
+
+      {historySaleId && <SaleHistoryDialog saleId={historySaleId} onClose={() => setHistorySaleId(null)} />}
+      {legacyClosing && <ModalFrame title="Conciliar turno anterior" busy={busy} onClose={() => setLegacyClosing(null)}><Card className="w-full max-w-lg p-5 space-y-4">
+        <h2 className="text-lg font-semibold text-ink">Conciliar turno anterior</h2>
+        <p className="text-sm text-muted">Abierto {formatDateTime12h(legacyClosing.abiertoEn)}. Registra el efectivo comprobado para ese turno y explica la conciliación. Esta operación conserva sus cobros y no añade ni retira dinero de la caja activa.</p>
+        <Button onClick={() => setReportShiftId(legacyClosing.id)}>Ver movimientos y reporte</Button>
+        <DenominationCounter value={denominacionesCierre} onChange={setDenominacionesCierre} />
+        <Field label="Motivo y sustento de la conciliación"><Textarea value={justificacion} onChange={e => setJustificacion(e.target.value)} /></Field>
+        {error && <Notice>{error}</Notice>}
+        <div className="grid gap-2 sm:grid-cols-2"><Button disabled={busy} onClick={() => setLegacyClosing(null)}>Cancelar</Button><Button variant="primary" disabled={busy || !justificacion.trim()} onClick={closeLegacyShift}>Registrar conteo y cerrar turno anterior</Button></div>
+      </Card></ModalFrame>}
+      {reportShiftId && <CashReportDialog shiftId={reportShiftId} onClose={() => setReportShiftId(null)} onSale={setHistorySaleId} />}
 
       {/* ---------------- Turnos y Horarios ---------------- */}
       {tab === "turnos" && (
@@ -1216,7 +1302,7 @@ export function CashboxModule() {
 
       {/* ---------------- Modal para anular venta ---------------- */}
       {cancellingSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <ModalFrame title="Anular venta" onClose={() => setCancellingSale(null)} busy={cancelBusy}>
           <Card className="relative w-full max-w-lg p-6 shadow-2xl space-y-4">
             <div className="flex items-start justify-between gap-3 border-b border-line-soft pb-3">
               <div>
@@ -1231,20 +1317,20 @@ export function CashboxModule() {
                   Total: <strong className="text-ink">{format(cents(cancellingSale.totalCentimos))}</strong> · Cliente: {cancellingSale.clienteNombres ? `${cancellingSale.clienteNombres} ${cancellingSale.clienteApellidos ?? ""}`.trim() : "Sin cliente"}
                 </p>
               </div>
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setCancellingSale(null)}
                 className="rounded-lg p-1 text-muted hover:bg-inset hover:text-ink transition-colors"
                 disabled={cancelBusy}
               >
                 ✕
-              </button>
+              </ActionButton>
             </div>
 
             <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-300 space-y-1">
               <p className="font-semibold">¿Por qué anular esta venta?</p>
               <p>
-                Al anularla, <strong>se revertirán los movimientos en caja de este turno</strong> para que el efectivo esperado coincida con tu arqueo real (eliminando descuadres por ventas duplicadas o doble digitación). También se devolverá el stock de productos y se liberará la habitación si estaba vinculada.
+                Al anularla, se conservarán los cobros originales y <strong>se registrará la resta por método en tu caja abierta</strong>, con tu usuario y el motivo. Los turnos cerrados conservan sus movimientos. Solo el efectivo reduce el dinero esperado en el cajón. También se devolverá el stock de productos y se liberará la habitación si la estadía sigue activa.
               </p>
             </div>
 
@@ -1260,7 +1346,7 @@ export function CashboxModule() {
                   "Cliente canceló servicio",
                   "Otro motivo",
                 ].map((preset) => (
-                  <button
+                  <ActionButton
                     key={preset}
                     type="button"
                     onClick={() => setCancelMotivo(preset)}
@@ -1272,10 +1358,10 @@ export function CashboxModule() {
                     )}
                   >
                     {preset}
-                  </button>
+                  </ActionButton>
                 ))}
               </div>
-              <Input
+              <Input aria-label="Detalle adicional (ej: se digitó 2 veces el cobro por error en caja)..."
                 placeholder="Detalle adicional (ej: se digitó 2 veces el cobro por error en caja)..."
                 value={cancelCustomMotivo}
                 onChange={(e) => setCancelCustomMotivo(e.target.value)}
@@ -1309,7 +1395,7 @@ export function CashboxModule() {
               </Button>
             </div>
           </Card>
-        </div>
+        </ModalFrame>
       )}
     </>
   );

@@ -6,7 +6,7 @@ import Fastify from "fastify";
 import websocketPlugin from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import fastifyMultipart from "@fastify/multipart";
-import { openDatabase, runMigrations } from "@casacarlos/db";
+import { afterCommit, openDatabase, runMigrations } from "@casacarlos/db";
 import { InProcessBus } from "@casacarlos/bus";
 import type { RoomsPort, StaysPort } from "@casacarlos/contracts";
 import { createIdentityService } from "@casacarlos/identity";
@@ -135,7 +135,7 @@ async function main() {
   await runMigrations(db, sqlite);
   ensureDatabaseSchema(sqlite);
 
-  const bus = new InProcessBus();
+  const bus = new InProcessBus((notify) => afterCommit(db, notify));
 
   // `rooms` reads `stays` to compute the status it shows; `stays` reads `rooms` to validate
   // availability. Neither service imports the other's package — this closure breaks the
@@ -192,7 +192,7 @@ async function main() {
   await ensurePricingDefaults(pricing, rooms);
   await ensureCashboxDefaults(cashbox);
 
-  const scheduler = startScheduler(rooms, stays, sales);
+  const scheduler = startScheduler(rooms, stays, sales, cashbox);
   const backupJob = startBackupJob(sqlite, dataDir);
 
   const app = Fastify({ logger: { level: process.env.LOG_LEVEL ?? "info" } });

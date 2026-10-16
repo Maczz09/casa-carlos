@@ -1,12 +1,49 @@
 import { DatabaseSync } from "node:sqlite";
 import { drizzle } from "drizzle-orm/sqlite-proxy";
 import * as schema from "./schema/index.js";
+import { AsyncLocalStorage } from "node:async_hooks";
 
 export type Db = ReturnType<typeof drizzle<typeof schema>>;
 
 export interface Connection {
   db: Db;
   sqlite: DatabaseSync;
+}
+
+const connections = new WeakMap<Db, { sqlite: DatabaseSync; pending: Promise<void> }>();
+const transactions = new AsyncLocalStorage<{ db: Db; afterCommit: Array<() => Promise<void>> }>();
+
+/** Serializa las operaciones contables y revierte todas sus escrituras si alguna falla. */
+export async function atomic<T>(db: Db, operation: () => Promise<T>): Promise<T> {
+  if (transactions.getStore()?.db === db) return operation();
+  const connection = connections.get(db);
+  if (!connection) throw new Error("Conexión de base de datos no registrada.");
+  const previous = connection.pending;
+  let release!: () => void;
+  connection.pending = new Promise<void>((resolve) => { release = resolve; });
+  await previous;
+  const context = { db, afterCommit: [] as Array<() => Promise<void>> };
+  let result: T;
+  try {
+    connection.sqlite.exec("BEGIN IMMEDIATE");
+    result = await transactions.run(context, operation);
+    connection.sqlite.exec("COMMIT");
+  } catch (error) {
+    if (connection.sqlite.isTransaction) connection.sqlite.exec("ROLLBACK");
+    throw error;
+  } finally {
+    release();
+  }
+  for (const notify of context.afterCommit) {
+    try { await notify(); } catch (error) { console.error("[db] Notificación posterior al commit:", error); }
+  }
+  return result;
+}
+
+export async function afterCommit(db: Db, notify: () => Promise<void>): Promise<void> {
+  const context = transactions.getStore();
+  if (context?.db === db) context.afterCommit.push(notify);
+  else await notify();
 }
 
 /**
@@ -25,6 +62,9 @@ export function openDatabase(filePath: string): Connection {
   sqlite.exec("PRAGMA busy_timeout = 5000");
 
   const db = drizzle(async (sql, params, method) => {
+    // Otras solicitudes esperan el cierre de la transacción: no leen saldos
+    // intermedios ni introducen escrituras en una operación ajena.
+    if (transactions.getStore()?.db !== db) await connections.get(db)?.pending;
     const stmt = sqlite.prepare(sql);
     if (method === "run") {
       stmt.run(...params);
@@ -51,6 +91,7 @@ export function openDatabase(filePath: string): Connection {
     return { rows: stmt.all(...params) as unknown as unknown[][] };
   }, { schema });
 
+  connections.set(db, { sqlite, pending: Promise.resolve() });
   return { db, sqlite };
 }
 

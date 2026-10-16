@@ -1,8 +1,14 @@
+import { toast } from "@casacarlos/ui/components/sonner";
+import { IconFileX as ModuleIcon, IconAlertTriangle, IconCheck, IconFileChart, IconFileX, IconReceipt, IconSearch } from "@casacarlos/ui";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { ModalFrame } from "@casacarlos/ui/components/modal-frame";
+
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@casacarlos/ui/components/table";
 import { useEffect, useMemo, useState } from "react";
 import type { CancelledSale, SaleLine } from "@casacarlos/contracts";
 import { formatDateTime12h } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconAlertTriangle, IconCheck, IconFileChart, IconFileX, IconReceipt, IconSearch } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Row, Section, Skeleton, StatCard, cx } from "../components/ui.js";
 
@@ -43,8 +49,9 @@ export function AnulacionesModule() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [desde, hasta]);
 
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+  const copyToClipboard = async (text: string, label: string) => {
+    try { await navigator.clipboard.writeText(text); } catch { toast.error("No se pudo copiar. Selecciona el código para copiarlo manualmente."); return; }
+    toast.success("Copiado al portapapeles");
     setCopiedKey(label);
     setTimeout(() => setCopiedKey(null), 2500);
   };
@@ -122,7 +129,7 @@ export function AnulacionesModule() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Anulaciones de ventas"
         subtitle="Registro y auditoría de ventas canceladas por error de digitación o duplicidad — trazabilidad por correlation ID, usuario e idempotencia"
         actions={
@@ -193,7 +200,7 @@ export function AnulacionesModule() {
           </div>
           <div className="ml-auto w-full max-w-xs min-w-[200px]">
             <Field label="Buscar">
-              <Input
+              <Input aria-label="Serie, cliente, DNI, motivo, ID..."
                 placeholder="Serie, cliente, DNI, motivo, ID..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -226,53 +233,53 @@ export function AnulacionesModule() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-inset text-xs uppercase tracking-wide text-subtle">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Venta</th>
-                  <th className="px-4 py-3 font-semibold">Cliente</th>
-                  <th className="px-4 py-3 text-right font-semibold">Total</th>
-                  <th className="px-4 py-3 font-semibold">Motivo de anulación</th>
-                  <th className="px-4 py-3 font-semibold">Anulado por</th>
-                  <th className="px-4 py-3 font-semibold">Fecha / Hora</th>
-                  <th className="px-4 py-3 font-semibold">Trazabilidad (Corr. ID / Idempotencia)</th>
-                  <th className="px-4 py-3 text-right font-semibold">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line-soft">
+            <Table className="w-full text-left text-sm">
+              <TableHeader className="bg-inset text-xs uppercase tracking-wide text-subtle">
+                <TableRow>
+                  <TableHead className="px-4 py-3 font-semibold">Venta</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Cliente</TableHead>
+                  <TableHead className="px-4 py-3 text-right font-semibold">Total</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Motivo de anulación</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Anulado por</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Fecha / Hora</TableHead>
+                  <TableHead className="px-4 py-3 font-semibold">Trazabilidad (Corr. ID / Idempotencia)</TableHead>
+                  <TableHead className="px-4 py-3 text-right font-semibold">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-line-soft">
                 {filtered.map((sale) => (
-                  <tr key={sale.id} className="transition-colors hover:bg-inset/40">
-                    <td className="px-4 py-3.5">
+                  <TableRow key={sale.id} className="transition-colors hover:bg-inset/40">
+                    <TableCell className="px-4 py-3.5">
                       <div className="font-semibold text-ink">
                         {sale.serie}-{sale.correlativo}
                       </div>
                       <span className="text-[11px] text-muted">ID: {sale.id.slice(0, 8)}</span>
-                    </td>
-                    <td className="px-4 py-3.5">
+                    </TableCell>
+                    <TableCell className="px-4 py-3.5">
                       <p className="font-medium text-ink">
                         {sale.clienteNombres ? `${sale.clienteNombres} ${sale.clienteApellidos ?? ""}`.trim() : "Sin cliente"}
                       </p>
                       {sale.clienteDni && <p className="text-xs text-muted">DNI {sale.clienteDni}</p>}
-                    </td>
-                    <td className="px-4 py-3.5 text-right font-semibold tabular-nums text-rose-500 line-through">
+                    </TableCell>
+                    <TableCell className="px-4 py-3.5 text-right font-semibold tabular-nums text-rose-500 line-through">
                       {format(cents(sale.totalCentimos))}
-                    </td>
-                    <td className="px-4 py-3.5">
+                    </TableCell>
+                    <TableCell className="px-4 py-3.5">
                       <span className="inline-flex items-center gap-1.5 rounded-lg bg-rose-500/10 px-2.5 py-1 text-xs font-semibold text-rose-500">
                         <IconAlertTriangle className="h-3 w-3 shrink-0" />
                         {sale.motivoAnulacion || "Anulación sin motivo especificado"}
                       </span>
-                    </td>
-                    <td className="px-4 py-3.5">
+                    </TableCell>
+                    <TableCell className="px-4 py-3.5">
                       <p className="font-medium text-ink">{sale.anuladoPorNombre ?? "Usuario de caja"}</p>
                       {sale.anuladoPorUsuarioId && (
                         <p className="text-[11px] text-muted">ID: {sale.anuladoPorUsuarioId.slice(0, 8)}</p>
                       )}
-                    </td>
-                    <td className="px-4 py-3.5 tabular-nums text-xs text-muted">
+                    </TableCell>
+                    <TableCell className="px-4 py-3.5 tabular-nums text-xs text-muted">
                       {formatDateTime12h(sale.anuladoEn ?? sale.creadoEn)}
-                    </td>
-                    <td className="px-4 py-3.5">
+                    </TableCell>
+                    <TableCell className="px-4 py-3.5">
                       <div className="flex flex-col gap-1">
                         {sale.correlationId && (
                           <div className="flex items-center gap-1.5">
@@ -280,14 +287,14 @@ export function AnulacionesModule() {
                             <code className="rounded bg-inset px-1.5 py-0.5 font-mono text-[11px] text-ink">
                               {sale.correlationId.length > 20 ? `${sale.correlationId.slice(0, 20)}…` : sale.correlationId}
                             </code>
-                            <button
+                            <ActionButton aria-label="Copiar correlation ID"
                               type="button"
                               onClick={() => copyToClipboard(sale.correlationId!, `corr_${sale.id}`)}
                               className="text-[11px] text-brand hover:underline"
                               title="Copiar correlation ID"
                             >
                               {copiedKey === `corr_${sale.id}` ? "✓ Copiado" : "Copiar"}
-                            </button>
+                            </ActionButton>
                           </div>
                         )}
                         {sale.idempotencyKey && (
@@ -296,37 +303,37 @@ export function AnulacionesModule() {
                             <code className="rounded bg-inset px-1.5 py-0.5 font-mono text-[11px] text-ink">
                               {sale.idempotencyKey.length > 20 ? `${sale.idempotencyKey.slice(0, 20)}…` : sale.idempotencyKey}
                             </code>
-                            <button
+                            <ActionButton aria-label="Copiar idempotency key"
                               type="button"
                               onClick={() => copyToClipboard(sale.idempotencyKey!, `idem_${sale.id}`)}
                               className="text-[11px] text-brand hover:underline"
                               title="Copiar idempotency key"
                             >
                               {copiedKey === `idem_${sale.id}` ? "✓ Copiado" : "Copiar"}
-                            </button>
+                            </ActionButton>
                           </div>
                         )}
                         {!sale.correlationId && !sale.idempotencyKey && (
                           <span className="text-xs text-muted">—</span>
                         )}
                       </div>
-                    </td>
-                    <td className="px-4 py-3.5 text-right">
+                    </TableCell>
+                    <TableCell className="px-4 py-3.5 text-right">
                       <Button size="sm" onClick={() => setSelectedSale(sale)}>
                         Ver detalle
                       </Button>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </Section>
 
       {/* Modal de detalle de la anulación */}
       {selectedSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in">
+        <ModalFrame title="Detalle de anulación" onClose={() => setSelectedSale(null)} busy={false}>
           <Card className="relative w-full max-w-xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between gap-4 border-b border-line-soft pb-4">
               <div>
@@ -339,13 +346,13 @@ export function AnulacionesModule() {
                 </h3>
                 <p className="text-xs text-muted">ID interno: {selectedSale.id}</p>
               </div>
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => setSelectedSale(null)}
                 className="rounded-lg p-1.5 text-muted hover:bg-inset hover:text-ink transition-colors"
               >
                 ✕
-              </button>
+              </ActionButton>
             </div>
 
             {/* Motivo destacado */}
@@ -438,7 +445,7 @@ export function AnulacionesModule() {
               <Button onClick={() => setSelectedSale(null)}>Cerrar</Button>
             </div>
           </Card>
-        </div>
+        </ModalFrame>
       )}
     </>
   );

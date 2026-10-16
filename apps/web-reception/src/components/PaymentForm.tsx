@@ -1,7 +1,12 @@
+import { IconCash, IconAlertTriangle, prepareCelebrationAudio } from "@casacarlos/ui";
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+import { Input } from "./ui.js";
+import { Select } from "./ui.js";
 import { useEffect, useMemo, useState } from "react";
 import type { CollectionAccount, PaymentDetailInput, PaymentMethod } from "@casacarlos/contracts";
 import { cents, format, subtract, sum } from "@casacarlos/money";
-import { prepareCelebrationAudio } from "@casacarlos/ui";
+
 import { api } from "../api.js";
 import { cx } from "./ui.js";
 
@@ -222,7 +227,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
       {rows.map((row, idx) => (
         <div key={idx} className="rounded-lg border border-line p-3">
           <div className="mb-2 flex items-center gap-2">
-            <select
+            <Select
               value={row.metodo}
               onChange={(e) => update(idx, { metodo: e.target.value as PaymentMethod })}
               className="flex-1 rounded-lg border border-line bg-raised px-2 py-1.5 text-ink"
@@ -232,8 +237,8 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                   {METHOD_LABEL[value]}
                 </option>
               ))}
-            </select>
-            <input
+            </Select>
+            <Input aria-label="Monto S/"
               type="number"
               step="0.10"
               value={row.monto}
@@ -242,9 +247,9 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
               className="w-28 rounded-lg border border-line bg-raised px-2 py-1.5 text-ink"
             />
             {rows.length > 1 && (
-              <button onClick={() => removeRow(idx)} className="rounded-lg px-2 py-1 text-danger hover:bg-danger/10">
+              <ActionButton onClick={() => removeRow(idx)} className="rounded-lg px-2 py-1 text-danger hover:bg-danger/10">
                 ✕
-              </button>
+              </ActionButton>
             )}
           </div>
 
@@ -313,27 +318,27 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                 {/* Encabezado: Título y Atajos de acción rápida */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line-soft pb-2.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-base">💵</span>
+                    <span className="text-base"><IconCash className="inline h-4 w-4 align-text-bottom" /></span>
                     <span className="text-xs font-bold uppercase tracking-wider text-ink">
                       Cobro con Efectivo y Vuelto
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <button
+                    <ActionButton
                       type="button"
                       onClick={handleExacto}
                       className="rounded-lg border border-brand/40 bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand transition hover:bg-brand hover:text-brand-ink active:scale-95"
                     >
                       🎯 Pago exacto ({format(cents(rowMontoCentimos))})
-                    </button>
+                    </ActionButton>
                     {row.recibido && (
-                      <button
+                      <ActionButton
                         type="button"
                         onClick={handleClearEfectivo}
                         className="rounded-lg border border-line bg-surface px-2 py-1 text-xs text-muted hover:border-danger/40 hover:bg-danger/10 hover:text-danger active:scale-95"
                       >
                         ✕ Limpiar
-                      </button>
+                      </ActionButton>
                     )}
                   </div>
                 </div>
@@ -344,7 +349,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted">
                       S/
                     </span>
-                    <input
+                    <Input aria-label={`Monto recibido (ej. ${(Math.max(50, Math.ceil(rowMontoCentimos / 1000) * 10)).toFixed(2)})`}
                       type="number"
                       step="0.10"
                       min="0"
@@ -364,7 +369,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] font-medium text-muted">Atajos:</span>
                     {getSugerenciasMonto(rowMontoCentimos).map((sug) => (
-                      <button
+                      <ActionButton
                         key={sug}
                         type="button"
                         onClick={() => handleSetDirectAmount(sug)}
@@ -376,7 +381,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                         )}
                       >
                         S/ {(sug / 100).toFixed(0)}
-                      </button>
+                      </ActionButton>
                     ))}
                   </div>
                 </div>
@@ -394,7 +399,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                       const count = row.denominaciones?.[String(b.centimos)] ?? 0;
                       return (
                         <div key={b.centimos} className="relative">
-                          <button
+                          <ActionButton
                             type="button"
                             onClick={() => handleAddDenominacion(b.centimos)}
                             className={cx(
@@ -412,16 +417,16 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                             ) : (
                               <span className="text-[10px] text-muted font-normal">billete</span>
                             )}
-                          </button>
+                          </ActionButton>
                           {count > 0 && (
-                            <button
+                            <ActionButton
                               type="button"
                               title="Restar 1"
                               onClick={(e) => handleSubDenominacion(b.centimos, e)}
                               className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full bg-danger text-white text-xs font-bold shadow-sm hover:bg-danger-hover"
                             >
                               −
-                            </button>
+                            </ActionButton>
                           )}
                         </div>
                       );
@@ -442,7 +447,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                       const count = row.denominaciones?.[String(m.centimos)] ?? 0;
                       return (
                         <div key={m.centimos} className="relative">
-                          <button
+                          <ActionButton
                             type="button"
                             onClick={() => handleAddDenominacion(m.centimos)}
                             className={cx(
@@ -458,16 +463,16 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                                 × {count}
                               </span>
                             )}
-                          </button>
+                          </ActionButton>
                           {count > 0 && (
-                            <button
+                            <ActionButton
                               type="button"
                               title="Restar 1"
                               onClick={(e) => handleSubDenominacion(m.centimos, e)}
                               className="absolute -top-1.5 -right-1.5 grid h-5 w-5 place-items-center rounded-full bg-danger text-white text-xs font-bold shadow-sm hover:bg-danger-hover"
                             >
                               −
-                            </button>
+                            </ActionButton>
                           )}
                         </div>
                       );
@@ -499,7 +504,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
                         <span className="grid h-10 w-10 place-items-center rounded-xl bg-emerald-500/25 text-xl">
-                          💵
+                          <IconCash className="inline h-4 w-4 align-text-bottom" />
                         </span>
                         <div>
                           <p className="text-xs font-bold uppercase tracking-wider text-emerald-400">
@@ -533,7 +538,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
                 ) : recibidoCentimos > 0 && recibidoCentimos < rowMontoCentimos ? (
                   <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 flex items-center justify-between text-xs text-amber-300">
                     <span>
-                      ⚠️ Recibido: S/ {(recibidoCentimos / 100).toFixed(2)} (Monto insuficiente)
+                      <IconAlertTriangle className="inline h-4 w-4 align-text-bottom" /> Recibido: S/ {(recibidoCentimos / 100).toFixed(2)} (Monto insuficiente)
                     </span>
                     <span className="font-bold">
                       Faltan S/ {(faltanteCentimos / 100).toFixed(2)} para cubrir el total
@@ -545,7 +550,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
           })()}
 
           {(row.metodo === "YAPE" || row.metodo === "PLIN" || row.metodo === "LEMON" || row.metodo === "AGORA") && (
-            <input
+            <Input aria-label={row.metodo === "YAPE" ? "Código de 3 dígitos" : "Código de operación"}
               value={row.codigoOperacion}
               onChange={(e) => update(idx, { codigoOperacion: e.target.value })}
               placeholder={row.metodo === "YAPE" ? "Código de 3 dígitos" : "Código de operación"}
@@ -555,25 +560,25 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
 
           {row.metodo === "TRANSFERENCIA" && (
             <div className="grid grid-cols-2 gap-2">
-              <input
+              <Input aria-label="ID de operación"
                 value={row.codigoOperacion}
                 onChange={(e) => update(idx, { codigoOperacion: e.target.value })}
                 placeholder="ID de operación"
                 className="rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
               />
-              <input
+              <Input aria-label="Banco origen"
                 value={row.bancoOrigen}
                 onChange={(e) => update(idx, { bancoOrigen: e.target.value })}
                 placeholder="Banco origen"
                 className="rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
               />
-              <input
+              <Input aria-label="Nombres del ordenante"
                 value={row.ordenanteNombres}
                 onChange={(e) => update(idx, { ordenanteNombres: e.target.value })}
                 placeholder="Nombres del ordenante"
                 className="rounded-lg border border-line bg-raised px-2 py-1.5 text-sm text-ink"
               />
-              <input
+              <Input aria-label="Apellidos del ordenante"
                 value={row.ordenanteApellidos}
                 onChange={(e) => update(idx, { ordenanteApellidos: e.target.value })}
                 placeholder="Apellidos del ordenante"
@@ -583,7 +588,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
           )}
 
           {(row.metodo === "POS_CREDITO" || row.metodo === "POS_DEBITO") && (
-            <input
+            <Input aria-label="N.º de operación del voucher"
               value={row.codigoOperacion}
               onChange={(e) => update(idx, { codigoOperacion: e.target.value })}
               placeholder="N.º de operación del voucher"
@@ -593,9 +598,9 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
         </div>
       ))}
 
-      <button onClick={addRow} className="self-start text-sm text-brand hover:opacity-80">
+      <ActionButton onClick={addRow} className="self-start text-sm text-brand hover:opacity-80">
         + Combinar con otro método
-      </button>
+      </ActionButton>
 
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted">Ingresado: {format(entered)}</span>
@@ -613,7 +618,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
         }, 0);
 
         return (
-          <button
+          <ActionButton
             onClick={submit}
             disabled={busy || diff !== 0}
             className="rounded-lg bg-brand py-2.5 font-medium text-brand-ink transition hover:bg-brand-hover disabled:opacity-50"
@@ -623,7 +628,7 @@ export function PaymentForm({ totalCentimos, onSubmit, busy, proposedSplit }: Pr
               : totalVueltoCentimos > 0
                 ? `Registrar pago — Dar vuelto de ${format(cents(totalVueltoCentimos))}`
                 : "Registrar pago"}
-          </button>
+          </ActionButton>
         );
       })()}
     </div>

@@ -1,7 +1,11 @@
+import { IconClock, IconCash, IconPlus as ModuleIcon, IconAlertTriangle, IconCheck, IconPrinter, IconX, RoomIllustration } from "@casacarlos/ui";
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Category, FloorBoard, KioskSession, Modality, PaymentDetailInput, PaymentWithDetails, SaleWithLines } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconAlertTriangle, IconCheck, IconPrinter, IconX, RoomIllustration } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { printReceiptForSale } from "../components/receipt.js";
 import { PaymentForm } from "../components/PaymentForm.js";
@@ -247,7 +251,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
   if (!activeSession || activeSession.estado === "ESPERA") {
     return (
       <>
-        <PageHeader
+        <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
           title="Nueva venta"
           subtitle="Elegí la modalidad — esto carga la pantalla del cliente en el kiosco"
           actions={
@@ -269,7 +273,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
             ) : modalities.length > 0 ? (
               <div className="grid gap-2 sm:grid-cols-3">
                 {modalities.map((m) => (
-                  <button
+                  <ActionButton
                     key={m.id}
                     type="button"
                     onClick={() => setModalidadId(m.id)}
@@ -282,7 +286,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                     <p className="mt-0.5 text-xs text-muted">
                       {m.duracionHoras ? `${m.duracionHoras} hrs` : ""} {m.toleranciaMin ? `· Tol. ${m.toleranciaMin} min` : ""}
                     </p>
-                  </button>
+                  </ActionButton>
                 ))}
               </div>
             ) : (
@@ -337,7 +341,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                   { id: "60min", label: "Hace 1 hora" },
                   { id: "manual", label: "Hora exacta…" },
                 ].map((pill) => (
-                  <button
+                  <ActionButton
                     key={pill.id}
                     type="button"
                     onClick={() => {
@@ -353,14 +357,14 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                     )}
                   >
                     {pill.label}
-                  </button>
+                  </ActionButton>
                 ))}
               </div>
 
               {entryMode === "manual" && (
                 <div className="mt-2.5 flex items-center gap-2">
                   <span className="text-xs font-medium text-muted">Hora de ingreso:</span>
-                  <input
+                  <Input
                     type="time"
                     value={customTime}
                     onChange={(e) => setCustomTime(e.target.value)}
@@ -371,7 +375,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
 
               {entryMode !== "ahora" && (
                 <p className="mt-1.5 text-xs font-medium text-brand">
-                  ⏱️ El tiempo de estadía y checkout se calculará a partir de este horario ingresado.
+                  <IconClock className="inline h-4 w-4 align-text-bottom" /> El tiempo de estadía y checkout se calculará a partir de este horario ingresado.
                 </p>
               )}
             </Field>
@@ -409,7 +413,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
 
     return (
       <>
-        <PageHeader
+        <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
           title="Elegir cuarto"
           subtitle="El cliente está eligiendo en el kiosco — también podés elegir por él"
           actions={
@@ -423,7 +427,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
         <Section title="Pisos">
           <div className="mb-4 flex flex-wrap gap-2">
             {floors.map((f) => (
-              <button
+              <ActionButton
                 key={f.floor.id}
                 disabled={busy}
                 onClick={async () => {
@@ -440,7 +444,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                 )}
               >
                 {f.floor.nombre}
-              </button>
+              </ActionButton>
             ))}
           </div>
 
@@ -452,7 +456,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                   const categoria = categories.find((c) => c.id === entry.room.categoriaId);
                   const precio = session?.preciosPorCategoria[entry.room.categoriaId];
                   return (
-                    <button
+                    <ActionButton
                       key={entry.room.id}
                       disabled={busy}
                       style={{ ["--i" as string]: i }}
@@ -476,7 +480,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                         <span className="text-sm font-semibold text-ink">C. {entry.room.numero}</span>
                         {precio !== undefined && <span className="text-xs font-semibold text-brand">{format(cents(precio))}</span>}
                       </div>
-                    </button>
+                    </ActionButton>
                   );
                 })}
             </div>
@@ -499,7 +503,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
     const completo = customer.nombres && customer.apellidos && customer.dni;
     return (
       <>
-        <PageHeader
+        <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
           title="Datos del cliente"
           subtitle="Este paso lo completa recepción, no el kiosco"
           actions={
@@ -514,16 +518,16 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
           <div className="flex flex-col gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Nombres">
-                <Input autoFocus placeholder="Nombres" value={customer.nombres} onChange={(e) => setCustomer((c) => ({ ...c, nombres: e.target.value }))} />
+                <Input aria-label="Nombres" autoFocus placeholder="Nombres" value={customer.nombres} onChange={(e) => setCustomer((c) => ({ ...c, nombres: e.target.value }))} />
               </Field>
               <Field label="Apellidos">
-                <Input placeholder="Apellidos" value={customer.apellidos} onChange={(e) => setCustomer((c) => ({ ...c, apellidos: e.target.value }))} />
+                <Input aria-label="Apellidos" placeholder="Apellidos" value={customer.apellidos} onChange={(e) => setCustomer((c) => ({ ...c, apellidos: e.target.value }))} />
               </Field>
               <Field label="DNI">
-                <Input placeholder="DNI" value={customer.dni} onChange={(e) => setCustomer((c) => ({ ...c, dni: e.target.value }))} />
+                <Input aria-label="DNI" placeholder="DNI" value={customer.dni} onChange={(e) => setCustomer((c) => ({ ...c, dni: e.target.value }))} />
               </Field>
               <Field label="Teléfono (opcional)">
-                <Input placeholder="Teléfono" value={customer.telefono} onChange={(e) => setCustomer((c) => ({ ...c, telefono: e.target.value }))} />
+                <Input aria-label="Teléfono" placeholder="Teléfono" value={customer.telefono} onChange={(e) => setCustomer((c) => ({ ...c, telefono: e.target.value }))} />
               </Field>
             </div>
 
@@ -562,7 +566,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
     if (!hasProducts && wantsProducts === null) {
       return (
         <>
-          <PageHeader
+          <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
             title="Productos"
             subtitle="Consulta si el huésped desea agregar productos o bebidas a su habitación"
             actions={
@@ -624,7 +628,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
 
     return (
       <>
-        <PageHeader
+        <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
           title="Productos"
           subtitle="Agrega productos de bodega a la cuenta o revisa los que elija el huésped"
           actions={
@@ -665,7 +669,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="font-semibold tabular-nums text-ink">{format(cents(l.subtotalCentimos))}</span>
                       {l.tipo === "PRODUCTO" && (
-                        <button
+                        <ActionButton aria-label="Quitar producto"
                           type="button"
                           title="Quitar producto"
                           disabled={busy}
@@ -684,7 +688,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
                           className="rounded-lg p-1.5 text-subtle hover:bg-inset hover:text-danger transition-colors disabled:opacity-40"
                         >
                           <IconX className="h-4 w-4" />
-                        </button>
+                        </ActionButton>
                       )}
                     </div>
                   </div>
@@ -739,7 +743,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
   if ((activeSession.estado === "SELECCION_PAGO" || activeSession.estado === "PAGO_PENDIENTE") && !payment) {
     return (
       <>
-        <PageHeader
+        <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
           title="Registrar pago"
           subtitle={activeSession.propuestaPago ? "El cliente ya propuso cómo pagar — completá los códigos" : "Registrá cómo paga el cliente"}
           actions={
@@ -782,7 +786,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
   if ((activeSession.estado === "SELECCION_PAGO" || activeSession.estado === "PAGO_PENDIENTE") && payment) {
     return (
       <>
-        <PageHeader title="Confirmar pago" subtitle="Revisá lo cobrado antes de aceptar" />
+        <PageHeader icon={<ModuleIcon className="h-5 w-5" />} title="Confirmar pago" subtitle="Revisá lo cobrado antes de aceptar" />
         <Stepper current={4} />
 
         <Section title="Detalle del pago" className="mx-auto max-w-lg">
@@ -879,7 +883,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title={aceptado ? "Venta confirmada" : "Pago rechazado"}
         actions={
           <Button variant="secondary" onClick={handleDone}>
@@ -902,7 +906,7 @@ export function SaleModule({ floors, categories, session, onDone, onDismissSessi
 
         {payment && payment.detalles.some((d) => d.metodo === "EFECTIVO" && (d.vueltoCentimos ?? (d.recibidoCentimos ? d.recibidoCentimos - d.montoCentimos : 0)) > 0) && (
           <div className="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-2.5 text-xs text-emerald-300">
-            <span>💵 Vuelto entregado: </span>
+            <span><IconCash className="inline h-4 w-4 align-text-bottom" /> Vuelto entregado: </span>
             <span className="font-bold text-emerald-200">
               {format(cents(payment.detalles.reduce((acc, d) => acc + (d.vueltoCentimos ?? (d.recibidoCentimos ? Math.max(0, d.recibidoCentimos - d.montoCentimos) : 0)), 0)))}
             </span>

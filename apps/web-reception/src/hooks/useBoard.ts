@@ -30,6 +30,7 @@ export function useBoard(enabled: boolean): { floors: FloorBoard[]; kioskSession
           const msg = JSON.parse(event.data as string);
           if (msg.type === "board") setFloors(msg.floors);
           if (msg.type === "kiosk") setKioskSession(msg.session);
+          if (msg.type === "cashbox_changed") window.dispatchEvent(new Event("casacarlos:cashbox-changed"));
         } catch {
           // ignore malformed frames
         }

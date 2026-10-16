@@ -1,6 +1,10 @@
+import { IconTrash, IconTag as ModuleIcon, IconBox, IconPlus, IconX } from "@casacarlos/ui";
+import { ConfirmDialog } from "@casacarlos/ui/components/confirm-dialog";
+
+
 import { useEffect, useMemo, useState } from "react";
 import type { Product, ProductCategory } from "@casacarlos/contracts";
-import { IconBox, IconPlus, IconX } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Section, Skeleton, StatCard, cx } from "../components/ui.js";
 
@@ -62,7 +66,7 @@ export function CategoriesModule() {
 
   return (
     <>
-      <PageHeader title="Categorías" subtitle="Definí una sola vez cada categoría y elegila al crear productos — así no se duplican por tipeo" />
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />} title="Categorías" subtitle="Definí una sola vez cada categoría y elegila al crear productos — así no se duplican por tipeo" />
 
       <div className="mb-5 grid gap-4 sm:grid-cols-3">
         <StatCard label="Categorías" value={categories?.length ?? "—"} icon={<IconBox className="h-4 w-4" />} />
@@ -129,43 +133,21 @@ export function CategoriesModule() {
                             <Button size="sm" disabled={busy} onClick={() => run(() => api.updateProductCategory(c.id, { activo: !c.activo }), "No se pudo cambiar el estado.")}>
                               {c.activo ? "Desactivar" : "Activar"}
                             </Button>
-                            <Button
+                            <Button aria-label={enUso > 0 ? "Tiene productos asignados" : "Borrar categoría"}
                               size="sm"
                               variant="danger"
                               disabled={busy || enUso > 0}
                               title={enUso > 0 ? "Tiene productos asignados" : "Borrar categoría"}
                               onClick={() => setConfirmDeleteId(confirming ? null : c.id)}
                             >
-                              <IconX className="h-3.5 w-3.5" />
+                              <IconTrash className="h-3.5 w-3.5" />
                             </Button>
                           </div>
                         </>
                       )}
                     </div>
 
-                    {confirming && (
-                      <div className="animate-fade mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-inset p-2.5">
-                        <span className="text-xs text-muted">¿Borrar "{c.nombre}"? No se puede deshacer.</span>
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => setConfirmDeleteId(null)}>
-                            Cancelar
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            disabled={busy}
-                            onClick={() =>
-                              run(async () => {
-                                await api.deleteProductCategory(c.id);
-                                setConfirmDeleteId(null);
-                              }, "No se pudo borrar la categoría.")
-                            }
-                          >
-                            Sí, borrar
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                    {confirming && <ConfirmDialog open title="Eliminar categoría" description={<>Se eliminará «{c.nombre}». Esta acción no se puede deshacer.{error && <p className="mt-2 text-danger">{error}</p>}</>} confirmLabel="Eliminar categoría" destructive busy={busy} onCancel={() => setConfirmDeleteId(null)} onConfirm={() => { void run(async () => { await api.deleteProductCategory(c.id); setConfirmDeleteId(null); }, "No se pudo eliminar la categoría."); }} />}
                   </div>
                 );
               })}
@@ -176,10 +158,10 @@ export function CategoriesModule() {
         <Section title="Nueva categoría" delay={80}>
           <div className="flex flex-col gap-4">
             <Field label="Nombre">
-              <Input placeholder="Bebidas, snacks, higiene…" value={nombre} onChange={(e) => setNombre(e.target.value)} />
+              <Input aria-label="Bebidas, snacks, higiene…" placeholder="Bebidas, snacks, higiene…" value={nombre} onChange={(e) => setNombre(e.target.value)} />
             </Field>
             <Field label="Descripción (opcional)">
-              <Input placeholder="Para qué sirve esta categoría" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
+              <Input aria-label="Para qué sirve esta categoría" placeholder="Para qué sirve esta categoría" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} />
             </Field>
             <Button variant="primary" icon={<IconPlus className="h-4 w-4" />} disabled={busy || !nombre.trim()} onClick={crear}>
               Crear categoría

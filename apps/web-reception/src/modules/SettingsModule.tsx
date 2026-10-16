@@ -1,7 +1,12 @@
+import { Switch } from "@casacarlos/ui/components/switch";
+import { IconSliders as ModuleIcon, IconBank, IconCheck, IconClock, IconMoon, IconPlus, IconSun, IconWallet, IconX } from "@casacarlos/ui";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+
+import { Select } from "../components/ui.js";
 import { useEffect, useRef, useState } from "react";
 import type { Brand, CollectionAccount } from "@casacarlos/contracts";
 import { WALLET_PROVIDERS } from "@casacarlos/contracts";
-import { IconBank, IconCheck, IconClock, IconMoon, IconPlus, IconSun, IconWallet, IconX } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { setBrand, useBrand } from "../hooks/useBrand.js";
 import { useTheme } from "../hooks/useTheme.js";
@@ -33,7 +38,7 @@ export function SettingsModule() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Ajustes"
         subtitle="Logo y nombre del hotel, apariencia y horario del modo oscuro, turnos de caja, cuentas de cobro y facturación electrónica SUNAT"
       />
@@ -148,10 +153,10 @@ function BrandTab() {
       <Section title="Nombre" delay={80}>
         <div className="flex flex-col gap-4">
           <Field label="Nombre del hotel">
-            <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Hospedaje Carlos" maxLength={60} />
+            <Input aria-label="Hospedaje Carlos" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Hospedaje Carlos" maxLength={60} />
           </Field>
           <Field label="Bajada (opcional)" hint="El texto chico debajo del nombre en la barra lateral.">
-            <Input value={lema} onChange={(e) => setLema(e.target.value)} placeholder="Sistema de hospedaje" maxLength={60} />
+            <Input aria-label="Sistema de hospedaje" value={lema} onChange={(e) => setLema(e.target.value)} placeholder="Sistema de hospedaje" maxLength={60} />
           </Field>
           <Button
             variant="primary"
@@ -278,12 +283,7 @@ function AppearanceTab() {
       <Section title="Programación de Modo Oscuro">
         <div className="flex flex-col gap-5">
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-raised p-3.5 transition-colors hover:border-brand/40">
-            <input
-              type="checkbox"
-              checked={autoEnabled}
-              onChange={(e) => setAutoEnabled(e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-line text-brand accent-brand focus:ring-brand"
-            />
+            <Switch checked={autoEnabled} onCheckedChange={setAutoEnabled} className="mt-0.5" />
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-ink">Activar modo oscuro automático</span>
               <span className="text-xs text-muted">
@@ -405,7 +405,7 @@ function AppearanceTab() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line-soft pt-4">
             <div className="flex items-center gap-2">
-              <Button
+              <Button aria-label="Cambiar tema de la pantalla en este momento"
                 variant="secondary"
                 size="sm"
                 onClick={toggle}
@@ -562,7 +562,7 @@ function CollectionAccountsTab() {
         <div className="flex flex-col gap-4">
           <div className="flex gap-2">
             {(["BILLETERA", "BANCO"] as const).map((tipo) => (
-              <button
+              <ActionButton
                 key={tipo}
                 onClick={() => setDraft(emptyDraft(tipo))}
                 className={cx(
@@ -572,13 +572,13 @@ function CollectionAccountsTab() {
               >
                 {tipo === "BILLETERA" ? <IconWallet className="h-4 w-4" /> : <IconBank className="h-4 w-4" />}
                 {tipo === "BILLETERA" ? "Billetera" : "Banco"}
-              </button>
+              </ActionButton>
             ))}
           </div>
 
           {draft.tipo === "BILLETERA" ? (
             <Field label="Billetera">
-              <select
+              <Select
                 value={draft.proveedor}
                 onChange={(e) => setDraft({ ...draft, proveedor: e.target.value })}
                 className="w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink"
@@ -588,11 +588,11 @@ function CollectionAccountsTab() {
                     {WALLET_LABEL[w] ?? w}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
           ) : (
             <Field label="Banco o caja" hint="Escribí el que sea — la lista es solo una ayuda.">
-              <Input
+              <Input aria-label="BCP, Interbank, Caja Ica…"
                 list="bancos-sugeridos"
                 value={draft.proveedor}
                 onChange={(e) => setDraft({ ...draft, proveedor: e.target.value })}
@@ -607,26 +607,26 @@ function CollectionAccountsTab() {
           )}
 
           <Field label="Titular">
-            <Input value={draft.titular} onChange={(e) => setDraft({ ...draft, titular: e.target.value })} placeholder="A nombre de quién está la cuenta" />
+            <Input aria-label="A nombre de quién está la cuenta" value={draft.titular} onChange={(e) => setDraft({ ...draft, titular: e.target.value })} placeholder="A nombre de quién está la cuenta" />
           </Field>
 
           {draft.tipo === "BILLETERA" ? (
             <Field label="Teléfono (opcional)">
-              <Input value={draft.telefono} onChange={(e) => setDraft({ ...draft, telefono: e.target.value })} placeholder="987 654 321" />
+              <Input aria-label="987 654 321" value={draft.telefono} onChange={(e) => setDraft({ ...draft, telefono: e.target.value })} placeholder="987 654 321" />
             </Field>
           ) : (
             <>
               <Field label="Número de cuenta">
-                <Input value={draft.numeroCuenta} onChange={(e) => setDraft({ ...draft, numeroCuenta: e.target.value })} placeholder="194-1234567-0-89" />
+                <Input aria-label="194-1234567-0-89" value={draft.numeroCuenta} onChange={(e) => setDraft({ ...draft, numeroCuenta: e.target.value })} placeholder="194-1234567-0-89" />
               </Field>
               <Field label="CCI" hint="Los 20 dígitos del código interbancario, para que le transfieran desde otro banco.">
-                <Input value={draft.cci} onChange={(e) => setDraft({ ...draft, cci: e.target.value })} placeholder="00219400123456789012" />
+                <Input aria-label="00219400123456789012" value={draft.cci} onChange={(e) => setDraft({ ...draft, cci: e.target.value })} placeholder="00219400123456789012" />
               </Field>
             </>
           )}
 
           <Field label="Nota para el huésped (opcional)">
-            <Input value={draft.notas} onChange={(e) => setDraft({ ...draft, notas: e.target.value })} placeholder="Cuenta en soles" />
+            <Input aria-label="Cuenta en soles" value={draft.notas} onChange={(e) => setDraft({ ...draft, notas: e.target.value })} placeholder="Cuenta en soles" />
           </Field>
 
           <Button variant="primary" icon={<IconPlus className="h-4 w-4" />} disabled={busy || !draft.proveedor.trim() || !draft.titular.trim()} onClick={crear}>
@@ -737,7 +737,7 @@ function AccountRow({
           >
             {cuenta.activa ? "Desactivar" : "Activar"}
           </Button>
-          <Button size="sm" variant="danger" disabled={busy} title="Borrar canal de cobro" onClick={onConfirmDelete}>
+          <Button aria-label="Borrar canal de cobro" size="sm" variant="danger" disabled={busy} title="Borrar canal de cobro" onClick={onConfirmDelete}>
             <IconX className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -747,7 +747,7 @@ function AccountRow({
         <div className="animate-fade mt-3 grid gap-3 rounded-lg bg-inset p-3 sm:grid-cols-2">
           <Field label={esBilletera ? "Billetera" : "Banco o caja"}>
             {esBilletera ? (
-              <select
+              <Select
                 value={form.proveedor}
                 onChange={(e) => setForm({ ...form, proveedor: e.target.value })}
                 className="w-full rounded-lg border border-line bg-raised px-3 py-2 text-sm text-ink"
@@ -757,7 +757,7 @@ function AccountRow({
                     {WALLET_LABEL[w] ?? w}
                   </option>
                 ))}
-              </select>
+              </Select>
             ) : (
               <Input value={form.proveedor} onChange={(e) => setForm({ ...form, proveedor: e.target.value })} />
             )}

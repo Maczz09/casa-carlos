@@ -1,5 +1,6 @@
 import type { ChargeCode } from "../entities/pricing.js";
-import type { CancelledSale, Sale, SaleLine, SaleWithLines } from "../entities/sales.js";
+import type { CancelledSale, CheckoutConfirmation, CheckoutPreview, CheckoutResult, Sale, SaleHistory, SaleLine, SaleWithLines } from "../entities/sales.js";
+import type { Stay } from "../entities/stays.js";
 
 export interface OpenSaleForStayInput {
   stayId: string;
@@ -52,8 +53,12 @@ export interface SalesPort {
   cancelLine(saleId: string, lineId: string, motivo: string, usuarioId: string): Promise<void>;
 
   getSale(id: string): Promise<SaleWithLines>;
+  getSaleHistory(id: string): Promise<SaleHistory>;
   getSaleForStay(stayId: string): Promise<SaleWithLines | null>;
-  syncOverstayCharge(stayId: string, atTime?: Date): Promise<SaleWithLines | null>;
+  checkOutStay(stayId: string, usuarioId: string, horaSalida?: string | null): Promise<Stay>;
+  previewCheckOut(stayId: string, horaSalida: string, anularHorasExtra: boolean): Promise<CheckoutPreview>;
+  confirmCheckOut(stayId: string, usuarioId: string, input: CheckoutConfirmation): Promise<CheckoutResult>;
+  syncOverstayCharge(stayId: string, atTime?: Date, usuarioId?: string): Promise<SaleWithLines | null>;
   syncAllActiveOverstays(atTime?: Date): Promise<void>;
   listOpenSales(): Promise<Sale[]>;
   /** Ventas del rango de días (YYYY-MM-DD, inclusive), más nueva primero — historial de caja. */

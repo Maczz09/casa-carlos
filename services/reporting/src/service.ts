@@ -251,7 +251,7 @@ export class ReportingService implements ReportingPort {
     for (const d of details) {
       const metodo = d.metodo as PaymentMethod;
       const entry = agg.get(metodo) ?? { count: 0, total: 0 };
-      entry.count += 1;
+      entry.count += d.montoCentimos > 0 ? 1 : 0;
       entry.total += d.montoCentimos;
       agg.set(metodo, entry);
     }

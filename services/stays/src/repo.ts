@@ -23,6 +23,7 @@ const toStay = (r: StayRow): Stay => ({
   checkinReal: r.checkinReal,
   checkoutPrevisto: r.checkoutPrevisto,
   checkoutReal: r.checkoutReal,
+  salidaDeclaradaEn: r.salidaDeclaradaEn,
   noches: r.noches,
   toleranciaMin: r.toleranciaMin,
   notificadoExcesoEn: r.notificadoExcesoEn,
@@ -50,7 +51,8 @@ export class StaysRepo {
     return toCustomer(row!);
   }
 
-  async insertStay(row: StayRow): Promise<Stay> {
+  async insertStay(input: Omit<StayRow, "salidaDeclaradaEn"> & { salidaDeclaradaEn?: string | null }): Promise<Stay> {
+    const row = { ...input, salidaDeclaradaEn: input.salidaDeclaradaEn ?? null };
     await this.db.insert(schema.staysEstadias).values(row);
     return toStay(row);
   }

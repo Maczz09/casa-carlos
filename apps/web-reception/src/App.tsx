@@ -17,7 +17,7 @@ import { ComprobantesModule } from "./modules/ComprobantesModule.js";
 import { NotificationsModule } from "./modules/NotificationsModule.js";
 import { SettingsModule } from "./modules/SettingsModule.js";
 import { UsersModule } from "./modules/UsersModule.js";
-import { Card, EmptyState } from "./components/ui.js";
+import { Button, Card, EmptyState } from "./components/ui.js";
 import { OperationalAlerts } from "./components/OperationalAlerts.js";
 import { useOperationalAlerts } from "./hooks/useOperationalAlerts.js";
 
@@ -52,7 +52,7 @@ class ModuleErrorBoundary extends Component<{ route: string; children: ReactNode
         <EmptyState
           title="No pudimos abrir este módulo"
           hint="Volvé a intentarlo en unos segundos. Si el sistema se está actualizando, el servicio terminará de reiniciar automáticamente."
-          action={<button className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-brand-ink" onClick={() => this.setState({ error: null })}>Reintentar</button>}
+          action={<Button className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-brand-ink" onClick={() => this.setState({ error: null })}>Reintentar</Button>}
         />
       </Card>
     );

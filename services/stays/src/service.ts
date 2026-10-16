@@ -1,5 +1,5 @@
 import type { Db } from "@casacarlos/db";
-import { recordAudit } from "@casacarlos/db";
+import { afterCommit, atomic, recordAudit } from "@casacarlos/db";
 import { newId } from "@casacarlos/contracts";
 import type {
   CheckInWalkInInput,
@@ -137,54 +137,87 @@ export class StaysService implements StaysPort {
   }
 
   async checkOut(stayId: string, usuarioId: string, horaSalida?: string | null): Promise<Stay> {
-    const stay = await this.mustGet(stayId);
-    if (!["EN_CURSO", "EN_TOLERANCIA", "EXCEDIDA"].includes(stay.estado)) {
-      throw new Error(`La estadía ${stayId} no puede hacer check-out desde el estado ${stay.estado}.`);
-    }
-    const exitTime = horaSalida ? new Date(horaSalida).toISOString() : new Date().toISOString();
-    const updated = await this.repo.updateStay(stayId, { estado: "FINALIZADA", checkoutReal: exitTime });
-    await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "CHECK_OUT", usuarioId, antes: stay, despues: updated });
-    await this.bus.publish("stay.checked_out", { stayId, roomId: updated.cuartoId, at: exitTime });
-    return updated;
+    return atomic(this.db, async () => {
+      const stay = await this.mustGet(stayId);
+      if (!["EN_CURSO", "EN_TOLERANCIA", "EXCEDIDA"].includes(stay.estado)) {
+        throw new Error(`La estadía ${stayId} no puede hacer check-out desde el estado ${stay.estado}.`);
+      }
+      const exitTime = horaSalida ? new Date(horaSalida).toISOString() : new Date().toISOString();
+      const updated = await this.repo.updateStay(stayId, { estado: "FINALIZADA", checkoutReal: exitTime });
+      await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "CHECK_OUT", usuarioId, antes: stay, despues: updated });
+      await afterCommit(this.db, () => this.bus.publish("stay.checked_out", { stayId, roomId: updated.cuartoId, at: exitTime }));
+      return updated;
+    });
   }
 
   async cancel(stayId: string, motivo: string, usuarioId: string): Promise<Stay> {
-    const stay = await this.mustGet(stayId);
-    const updated = await this.repo.updateStay(stayId, { estado: "ANULADA", motivoAnulacion: motivo });
-    await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "ANULAR", usuarioId, antes: stay, despues: updated, motivo });
-    await this.bus.publish("stay.cancelled", { stayId, roomId: updated.cuartoId, motivo });
-    return updated;
+    return atomic(this.db, async () => {
+      const stay = await this.mustGet(stayId);
+      const updated = await this.repo.updateStay(stayId, { estado: "ANULADA", motivoAnulacion: motivo });
+      await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "ANULAR", usuarioId, antes: stay, despues: updated, motivo });
+      await this.bus.publish("stay.cancelled", { stayId, roomId: updated.cuartoId, motivo });
+      return updated;
+    });
+  }
+
+  async declareExit(stayId: string, horaSalida: string, motivo: string, usuarioId: string): Promise<Stay> {
+    return atomic(this.db, async () => {
+      const stay = await this.mustGet(stayId);
+      if (!["EN_CURSO", "EN_TOLERANCIA", "EXCEDIDA"].includes(stay.estado)) throw new Error("La estadía no está activa.");
+      const updated = await this.repo.updateStay(stayId, { salidaDeclaradaEn: horaSalida });
+      await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "DECLARAR_SALIDA_REAL", usuarioId, antes: stay, despues: updated, motivo });
+      return updated;
+    });
+  }
+
+  async extendByHours(stayId: string, horas: number, usuarioId: string): Promise<Stay> {
+    return atomic(this.db, async () => {
+      const stay = await this.mustGet(stayId);
+      if (!Number.isSafeInteger(horas) || horas <= 0) throw new Error("Indica un número entero de horas positivo.");
+      if (stay.salidaDeclaradaEn || !["EN_CURSO", "EN_TOLERANCIA", "EXCEDIDA"].includes(stay.estado)) throw new Error("La estadía ya tiene una salida declarada o no está activa.");
+      const checkoutPrevisto = new Date(Date.parse(stay.checkoutPrevisto) + horas * 3600_000).toISOString();
+      const others = (await this.repo.listBlockingForRoom(stay.cuartoId)).filter((s) => s.id !== stay.id);
+      if (others.some((s) => windowsOverlap(new Date(stay.bloqueoDesde), new Date(checkoutPrevisto), new Date(s.bloqueoDesde), new Date(s.bloqueoHasta)))) throw new Error("La ampliación se cruza con una reserva del cuarto.");
+      const updated = await this.repo.updateStay(stayId, { checkoutPrevisto, bloqueoHasta: checkoutPrevisto, estado: "EN_CURSO" });
+      await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "AMPLIAR_HORAS", usuarioId, antes: stay, despues: updated });
+      await afterCommit(this.db, () => this.nudgeBoard(stay.cuartoId));
+      return updated;
+    });
   }
 
   async extendByBlock(stayId: string, blocks: number, usuarioId: string): Promise<Stay> {
-    const stay = await this.mustGet(stayId);
-    const modality = await this.pricing.getModality(stay.modalidadId);
-    const extraMs = modality.duracionHoras * blocks * 60 * 60_000;
-    const checkoutPrevisto = new Date(new Date(stay.checkoutPrevisto).getTime() + extraMs).toISOString();
-    const updated = await this.repo.updateStay(stayId, {
-      checkoutPrevisto,
-      bloqueoHasta: checkoutPrevisto,
-      estado: stay.estado === "EN_TOLERANCIA" || stay.estado === "EXCEDIDA" ? "EN_CURSO" : stay.estado,
+    return atomic(this.db, async () => {
+      const stay = await this.mustGet(stayId);
+      const modality = await this.pricing.getModality(stay.modalidadId);
+      const extraMs = modality.duracionHoras * blocks * 60 * 60_000;
+      const checkoutPrevisto = new Date(new Date(stay.checkoutPrevisto).getTime() + extraMs).toISOString();
+      const updated = await this.repo.updateStay(stayId, {
+        checkoutPrevisto,
+        bloqueoHasta: checkoutPrevisto,
+        estado: stay.estado === "EN_TOLERANCIA" || stay.estado === "EXCEDIDA" ? "EN_CURSO" : stay.estado,
+      });
+      await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "EXTENDER_BLOQUE", usuarioId, antes: stay, despues: updated });
+      await this.nudgeBoard(updated.cuartoId);
+      return updated;
     });
-    await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "EXTENDER_BLOQUE", usuarioId, antes: stay, despues: updated });
-    await this.nudgeBoard(updated.cuartoId);
-    return updated;
   }
 
   async addNight(stayId: string, usuarioId: string): Promise<Stay> {
-    const stay = await this.mustGet(stayId);
-    const modality = await this.pricing.getModality(stay.modalidadId);
-    const noches = stay.noches + 1;
-    const window = nightWindow(modality, new Date(stay.checkinPrevisto), noches);
-    const updated = await this.repo.updateStay(stayId, {
-      noches,
-      checkoutPrevisto: window.checkoutPrevisto.toISOString(),
-      bloqueoHasta: window.bloqueoHasta.toISOString(),
-      estado: stay.estado === "EN_TOLERANCIA" || stay.estado === "EXCEDIDA" ? "EN_CURSO" : stay.estado,
+    return atomic(this.db, async () => {
+      const stay = await this.mustGet(stayId);
+      const modality = await this.pricing.getModality(stay.modalidadId);
+      const noches = stay.noches + 1;
+      const window = nightWindow(modality, new Date(stay.checkinPrevisto), noches);
+      const updated = await this.repo.updateStay(stayId, {
+        noches,
+        checkoutPrevisto: window.checkoutPrevisto.toISOString(),
+        bloqueoHasta: window.bloqueoHasta.toISOString(),
+        estado: stay.estado === "EN_TOLERANCIA" || stay.estado === "EXCEDIDA" ? "EN_CURSO" : stay.estado,
+      });
+      await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "AGREGAR_NOCHE", usuarioId, antes: stay, despues: updated });
+      await this.nudgeBoard(updated.cuartoId);
+      return updated;
     });
-    await recordAudit(this.db, { entidad: "stays_estadias", entidadId: stayId, accion: "AGREGAR_NOCHE", usuarioId, antes: stay, despues: updated });
-    await this.nudgeBoard(updated.cuartoId);
-    return updated;
   }
 
   async getStay(id: string): Promise<StayWithCustomer> {
@@ -215,28 +248,32 @@ export class StaysService implements StaysPort {
   }
 
   async runTimers(now: Date): Promise<{ toleranceStarted: string[]; overstayed: string[] }> {
-    const toleranceStarted: string[] = [];
-    const overstayed: string[] = [];
+    return atomic(this.db, async () => {
+      const toleranceStarted: string[] = [];
+      const overstayed: string[] = [];
 
-    for (const stay of await this.repo.listEnCursoDue(now)) {
-      await this.repo.updateStay(stay.id, { estado: "EN_TOLERANCIA" });
-      toleranceStarted.push(stay.id);
-      const deadline = toleranceDeadline(new Date(stay.checkoutPrevisto), stay.toleranciaMin).toISOString();
-      await this.bus.publish("stay.tolerance_started", { stayId: stay.id, roomId: stay.cuartoId, deadline });
-      await this.bus.publish("room.status_changed", { roomId: stay.cuartoId, from: "OCUPADO", to: "EN_TOLERANCIA" });
-    }
+      for (const stay of await this.repo.listEnCursoDue(now)) {
+        if (stay.salidaDeclaradaEn) continue;
+        await this.repo.updateStay(stay.id, { estado: "EN_TOLERANCIA" });
+        toleranceStarted.push(stay.id);
+        const deadline = toleranceDeadline(new Date(stay.checkoutPrevisto), stay.toleranciaMin).toISOString();
+        await this.bus.publish("stay.tolerance_started", { stayId: stay.id, roomId: stay.cuartoId, deadline });
+        await this.bus.publish("room.status_changed", { roomId: stay.cuartoId, from: "OCUPADO", to: "EN_TOLERANCIA" });
+      }
 
-    for (const stay of await this.repo.listEnTolerancia()) {
-      const deadline = toleranceDeadline(new Date(stay.checkoutPrevisto), stay.toleranciaMin);
-      if (now < deadline) continue;
-      await this.repo.updateStay(stay.id, { estado: "EXCEDIDA" });
-      overstayed.push(stay.id);
-      const minutesOver = Math.round((now.getTime() - new Date(stay.checkoutPrevisto).getTime()) / 60_000);
-      await this.bus.publish("stay.overstayed", { stayId: stay.id, roomId: stay.cuartoId, minutesOver });
-      await this.bus.publish("room.status_changed", { roomId: stay.cuartoId, from: "EN_TOLERANCIA", to: "EXCEDIDO" });
-    }
+      for (const stay of await this.repo.listEnTolerancia()) {
+        if (stay.salidaDeclaradaEn) continue;
+        const deadline = toleranceDeadline(new Date(stay.checkoutPrevisto), stay.toleranciaMin);
+        if (now < deadline) continue;
+        await this.repo.updateStay(stay.id, { estado: "EXCEDIDA" });
+        overstayed.push(stay.id);
+        const minutesOver = Math.round((now.getTime() - new Date(stay.checkoutPrevisto).getTime()) / 60_000);
+        await this.bus.publish("stay.overstayed", { stayId: stay.id, roomId: stay.cuartoId, minutesOver });
+        await this.bus.publish("room.status_changed", { roomId: stay.cuartoId, from: "EN_TOLERANCIA", to: "EXCEDIDO" });
+      }
 
-    return { toleranceStarted, overstayed };
+      return { toleranceStarted, overstayed };
+    });
   }
 
   private async mustGet(id: string): Promise<Stay> {

@@ -10,6 +10,9 @@ import type {
   Category,
   CategoryRatesDto,
   ChargeCode,
+  CheckoutPreview,
+  CheckoutConfirmation,
+  CheckoutResult,
   CollectionAccount,
   CreateCollectionAccountInput,
   CreateUserInput,
@@ -44,8 +47,10 @@ import type {
   Sale,
   SaleLine,
   SaleWithLines,
+  SaleHistory,
   Shift,
   ShiftTemplate,
+  CashboxAutomation,
   Stay,
   StayWithCustomer,
   SunatConfig,
@@ -77,6 +82,12 @@ export type CashMovementView = CashMovement & { usuarioNombre: string };
 export type ArqueoView = Arqueo & { usuarioNombre: string };
 
 export interface ShiftSaleDetail {
+  estado: string;
+  cerradaEn: string | null;
+  cobradoTurnoCentimos: number;
+  anuladoTurnoCentimos: number;
+  devueltoTurnoCentimos: number;
+  cobros: Array<{ metodo: string; montoCentimos: number; recibidoCentimos: number | null; vueltoCentimos: number | null; codigoOperacion: string | null; usuarioNombre: string; aceptadoEn: string | null }>;
   ventaId: string;
   serie: string;
   correlativo: number;
@@ -89,6 +100,7 @@ export interface ShiftSaleDetail {
   metodosPago: string[];
   recibidoCentimos: number | null;
   vueltoCentimos: number | null;
+  cargosAnulados: Array<{ descripcion: string; cantidad: number; subtotalCentimos: number; motivo: string | null }>;
   hospedajeDescripcion: string | null;
   hospedajeMontoCentimos: number;
   horasExtra: Array<{ descripcion: string; cantidad: number; subtotalCentimos: number }>;
@@ -98,6 +110,7 @@ export interface ShiftSaleDetail {
 }
 
 export interface ShiftCuadreDto {
+  movimientos: CashMovementView[];
   shift: Shift;
   plantilla: ShiftTemplate | null;
   summary: CashSummary;
@@ -237,6 +250,11 @@ export const api = {
   checkOut: (stayId: string, horaSalida?: string | null) =>
     post<Stay>(`/api/reception/check-out/${stayId}`, { horaSalida }),
 
+  previewCheckOut: (stayId: string, horaSalida: string, anularHorasExtra: boolean) =>
+    post<CheckoutPreview>(`/api/reception/check-out-preview/${stayId}`, { horaSalida, anularHorasExtra }),
+  confirmCheckOut: (stayId: string, input: CheckoutConfirmation) =>
+    post<CheckoutResult>(`/api/reception/check-out-confirm/${stayId}`, input),
+
   startKiosk: (modalidadId: string, bloques: number, noches: number, horaEntrada?: string | null) =>
     post<KioskSession>("/api/reception/kiosk/start", { modalidadId, bloques, noches, horaEntrada }),
   setKioskCustomer: (input: { nombres: string; apellidos: string; dni: string; telefono?: string | null }) =>
@@ -287,7 +305,7 @@ export const api = {
   },
 
   createPayment: (saleId: string, detalles: PaymentDetailInput[]) => post<PaymentWithDetails>("/api/payments", { saleId, detalles }),
-  paymentForSale: (saleId: string) => get<PaymentWithDetails | null>(`/api/payments/for-sale/${saleId}`),
+  paymentsForSale: (saleId: string) => get<PaymentWithDetails[]>(`/api/payments/for-sale/${saleId}`),
   acceptPayment: async (id: string) => {
     const payment = await post<PaymentWithDetails>(`/api/payments/${id}/accept`);
     window.dispatchEvent(new Event("casacarlos:payment-success"));
@@ -397,7 +415,11 @@ export const api = {
   updateShiftTemplate: (id: string, input: { nombre?: string; horaInicio?: string; horaFin?: string; orden?: number; activa?: boolean }) =>
     put<ShiftTemplate>(`/api/cashbox/templates/${id}`, input),
   deleteShiftTemplate: (id: string) => del<void>(`/api/cashbox/templates/${id}`),
-  myShift: () => get<Shift | null>("/api/cashbox/shifts/mine"),
+  myShift: () => get<Shift | null>("/api/cashbox/shifts/current"),
+  legacyShifts: () => get<Shift[]>("/api/cashbox/shifts/legacy"),
+  cashboxAutomation: () => get<CashboxAutomation>("/api/cashbox/automation"),
+  setCashboxAutomation: (habilitado: boolean) => put<CashboxAutomation>("/api/cashbox/automation", { habilitado }),
+  applyStandardSchedule: () => post<ShiftTemplate[]>("/api/cashbox/templates/standard", {}),
   shifts: (range?: { desde: string; hasta: string }) =>
     get<Shift[]>(`/api/cashbox/shifts${range ? `?desde=${range.desde}&hasta=${range.hasta}` : ""}`),
   shift: (id: string) => get<Shift>(`/api/cashbox/shifts/${id}`),
@@ -415,6 +437,7 @@ export const api = {
     return get<CashMovementView[]>(`/api/cashbox/movements${params.size ? `?${params.toString()}` : ""}`);
   },
   shiftSummary: (id: string) => get<CashSummary>(`/api/cashbox/shifts/${id}/summary`).then(normalizeCashSummary),
+  saleHistory: (id: string) => get<SaleHistory>(`/api/sales/${id}/history`),
   shiftCuadre: (id: string) => get<ShiftCuadreDto>(`/api/cashbox/shifts/${id}/cuadre`),
   rangeSummary: (range: { desde: string; hasta: string }) => get<CashSummary>(`/api/cashbox/summary?desde=${range.desde}&hasta=${range.hasta}`).then(normalizeCashSummary),
   registrarArqueo: (id: string, denominaciones: Denominaciones) => post<Arqueo>(`/api/cashbox/shifts/${id}/arqueo`, { denominaciones }),

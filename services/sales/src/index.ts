@@ -13,8 +13,8 @@ export function createSalesService(
 ): SalesPort {
   const service = new SalesService(db, bus, rooms, pricing, stays, inventory);
 
-  bus.subscribe("payment.accepted", (payload) => service.handlePaymentAccepted(payload.saleId, payload.totalCentimos));
-  bus.subscribe("payment.rejected", (payload) => service.handlePaymentRejected(payload.saleId));
+  bus.subscribe("payment.accepted", (payload) => service.handlePaymentAccepted(payload.saleId, payload.totalCentimos, payload.aceptadoPor), { critical: true });
+  bus.subscribe("payment.rejected", (payload) => service.handlePaymentRejected(payload.saleId, payload.usuarioId, payload.motivo), { critical: true });
 
   return service;
 }

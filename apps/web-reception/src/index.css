@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import "@casacarlos/ui/styles/tokens.css";
+@source "../../../packages/ui/src";
 
 /*
  * Sistema de diseño Casa Carlos.
@@ -44,16 +46,16 @@
 
   --c-ink: #0f1b33;
   --c-muted: #55637d;
-  --c-subtle: #8c9ab3;
+  --c-subtle: #607089;
 
-  --c-brand: #0d9488;
+  --c-brand: #0f766e;
   --c-brand-hover: #0f766e;
   --c-brand-ink: #ffffff;
   --c-brand-soft: #e3f5f2;
 
   --c-danger: #e11d48;
-  --c-warn: #d97706;
-  --c-ok: #059669;
+  --c-warn: #b45309;
+  --c-ok: #047857;
 
   --shadow-card: 0 1px 2px rgb(15 27 51 / 0.06), 0 8px 24px -12px rgb(15 27 51 / 0.14);
   --shadow-pop: 0 12px 40px -12px rgb(15 27 51 / 0.28);
@@ -105,7 +107,7 @@
 
   --c-ink: #e8eef9;
   --c-muted: #93a3c1;
-  --c-subtle: #64748b;
+  --c-subtle: #93a3c1;
 
   --c-brand: #2dd4bf;
   --c-brand-hover: #5eead4;
@@ -508,3 +510,34 @@ body {
     font-weight: 700 !important;
   }
 }
+
+/* FullCalendar 7: paleta Breezy conectada a los tokens de ambos temas. */
+.reservation-calendar {
+  --fc-breezy-primary: var(--c-brand);
+  --fc-breezy-primary-over: var(--c-brand-hover);
+  --fc-breezy-primary-foreground: var(--c-brand-ink);
+  --fc-breezy-background: var(--c-surface);
+  --fc-breezy-faint: var(--c-raised);
+  --fc-breezy-muted: var(--c-inset);
+  --fc-breezy-strong: var(--c-line);
+  --fc-breezy-stronger: var(--c-line);
+  --fc-breezy-strongest: var(--c-muted);
+  --fc-breezy-foreground: var(--c-ink);
+  --fc-breezy-faint-foreground: var(--c-muted);
+  --fc-breezy-muted-foreground: var(--c-muted);
+  --fc-breezy-strong-foreground: var(--c-ink);
+  --fc-breezy-border: var(--c-line);
+  --fc-breezy-muted-border: var(--c-line-soft);
+  --fc-breezy-secondary-foreground: var(--c-ink);
+  --fc-breezy-secondary-icon: var(--c-muted);
+  --fc-breezy-event: var(--c-brand);
+  --fc-breezy-event-contrast: var(--c-brand-ink);
+  --fc-breezy-highlight: var(--c-brand-soft);
+  --fc-breezy-now: var(--c-danger);
+  --fc-breezy-ring-color: var(--c-brand);
+}
+
+.report-workbook [role="toolbar"], .report-workbook .fortune-sheet-list, .report-workbook .fortune-formula-input { background: var(--c-surface); color: var(--c-ink); border-color: var(--c-line); }
+.report-workbook [role="toolbar"] svg { fill: currentColor; }
+
+.report-workbook .fortune-name-box { background: var(--c-inset); color: var(--c-ink); border-color: var(--c-line); }

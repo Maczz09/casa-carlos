@@ -1,3 +1,6 @@
+import { AccessibleWorkbook } from "../components/AccessibleWorkbook.js";
+import { IconFileChart as ModuleIcon, IconFileChart } from "@casacarlos/ui";
+
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { Workbook } from "@fortune-sheet/react";
 import "@fortune-sheet/react/dist/index.css";
@@ -5,7 +8,7 @@ import { jsPDF } from "jspdf";
 import * as XLSX from "xlsx";
 import type { DashboardReport } from "@casacarlos/contracts";
 import { cents, format } from "@casacarlos/money";
-import { IconFileChart } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { useBrand } from "../hooks/useBrand.js";
 import { exportErrorMessage, saveExport } from "../lib/saveExport.js";
@@ -381,7 +384,7 @@ export function ReportsModule() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Reportes"
         subtitle="Hoja interactiva para analizar, copiar y exportar los datos del hotel"
         actions={<div className="flex gap-2"><Button onClick={() => void exportExcel()} disabled={!report || exporting !== null}>{exporting === "xlsx" ? "Creando…" : "Descargar Excel"}</Button><Button variant="primary" onClick={() => void exportPdf()} disabled={!report || exporting !== null}>{exporting === "pdf" ? "Creando…" : "Crear PDF"}</Button></div>}
@@ -403,7 +406,7 @@ export function ReportsModule() {
       ) : (
         <Card className="overflow-hidden p-1">
           <div className="h-[650px] min-h-[520px] overflow-hidden rounded-[14px]">
-            <Workbook
+            <AccessibleWorkbook
               key={`${desde}:${hasta}:${workbookRevision}`}
               data={workbookData}
               row={36}

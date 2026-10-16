@@ -12,8 +12,14 @@ export function cashEffect(movement: Pick<CashMovement, "tipo" | "metodo" | "mon
     case "INGRESO":
       return movement.montoCentimos;
     case "EGRESO":
-    case "VUELTO":
+    case "TRASPASO_SALIDA":
       return -movement.montoCentimos;
+    case "VUELTO":
+      // VENTA ya contiene el importe aplicado, recibido menos vuelto.
+      return 0;
+    case "DEVOLUCION":
+    case "ANULACION":
+      return movement.metodo === "EFECTIVO" ? -movement.montoCentimos : 0;
     case "VENTA":
       return movement.metodo === "EFECTIVO" ? movement.montoCentimos : 0;
     // Un ajuste corrige en cualquier dirección — el signo ya viene puesto en montoCentimos
@@ -22,6 +28,7 @@ export function cashEffect(movement: Pick<CashMovement, "tipo" | "metodo" | "mon
     case "AJUSTE":
       return movement.montoCentimos;
     case "CIERRE":
+    case "CORRECCION":
       return 0;
   }
 }

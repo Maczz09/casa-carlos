@@ -1,3 +1,8 @@
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuItem, DropdownMenuCheckboxItem, DropdownMenuSeparator } from "@casacarlos/ui/components/dropdown-menu";
+import { IconMonitor, IconMinimize } from "@casacarlos/ui";
+
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import { useEffect, useState } from "react";
 
 declare global {
@@ -139,39 +144,19 @@ export function ScreenManager() {
       {/* Banner de aviso si recepción solicitó pantalla completa y el navegador pide toque físico */}
       {hasPrompt && !isFullscreen && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-bounce">
-          <button
+          <ActionButton
             type="button"
             onClick={triggerFullscreenOnScreen2}
             className="flex items-center gap-2 rounded-2xl bg-brand px-5 py-3 text-sm font-bold text-brand-ink shadow-2xl ring-2 ring-white"
           >
-            <span>🖥️</span>
+            <span><IconMonitor className="inline h-4 w-4 align-text-bottom" /></span>
             <span>Toca aquí para activar Pantalla Completa en Pantalla 2</span>
-          </button>
+          </ActionButton>
         </div>
       )}
 
       {/* Control flotante discreto en esquina superior izquierda */}
-      <div className="fixed top-3 left-3 z-40 flex items-center gap-2 rounded-xl bg-surface/80 p-1.5 backdrop-blur-md border border-line text-xs shadow-sm transition-opacity hover:opacity-100 opacity-80 group">
-        <button
-          type="button"
-          onClick={triggerFullscreenOnScreen2}
-          title={isFullscreen ? "Salir de pantalla completa" : "Poner en Pantalla 2 y Pantalla Completa"}
-          className="flex items-center gap-1.5 rounded-lg bg-inset px-2.5 py-1 font-semibold text-ink hover:bg-line active:scale-95 transition-all"
-        >
-          <span>{isFullscreen ? "🗗" : "🖥️"}</span>
-          <span>{isFullscreen ? "Pantalla Normal" : screenCount && screenCount > 1 ? "Pantalla 2 Completa" : "Pantalla Completa"}</span>
-        </button>
-
-        <label className="flex items-center gap-1.5 px-1.5 cursor-pointer text-muted hover:text-ink select-none" title="Poner en pantalla 2 completa automáticamente">
-          <input
-            type="checkbox"
-            checked={autoScreen2}
-            onChange={(e) => toggleAuto(e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-line text-brand accent-brand cursor-pointer"
-          />
-          <span className="text-[11px] font-medium hidden sm:inline">Auto Pantalla 2</span>
-        </label>
-      </div>
+      <DropdownMenu><DropdownMenuTrigger asChild><ActionButton aria-label="Opciones de pantalla" className="fixed bottom-4 left-4 z-40 grid h-12 w-12 place-items-center rounded-full border border-line bg-surface text-muted shadow-sm"><IconMonitor className="h-5 w-5" /></ActionButton></DropdownMenuTrigger><DropdownMenuContent side="top" align="start" className="w-72"><DropdownMenuLabel>Pantalla del huésped</DropdownMenuLabel><DropdownMenuItem onSelect={() => { void triggerFullscreenOnScreen2(); }}>{isFullscreen ? <IconMinimize className="h-4 w-4" /> : <IconMonitor className="h-4 w-4" />}{isFullscreen ? "Salir de pantalla completa" : "Activar pantalla completa"}</DropdownMenuItem><DropdownMenuSeparator /><DropdownMenuCheckboxItem checked={autoScreen2} onCheckedChange={toggleAuto}>Usar pantalla 2 automáticamente</DropdownMenuCheckboxItem></DropdownMenuContent></DropdownMenu>
     </>
   );
 }

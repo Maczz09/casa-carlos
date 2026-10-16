@@ -32,17 +32,8 @@ export class ReportingRepo {
 
   /** Pagos aceptados en el rango (por `aceptadoEn`, no por creación) con su desglose por método. */
   async acceptedPaymentDetailsInRange(startIso: string, endIso: string) {
-    const pagos = await this.db
-      .select({ id: schema.paymentsPagos.id })
-      .from(schema.paymentsPagos)
-      .where(and(eq(schema.paymentsPagos.estado, "ACEPTADO"), gte(schema.paymentsPagos.aceptadoEn, startIso), lte(schema.paymentsPagos.aceptadoEn, endIso)))
-      .all();
-    if (pagos.length === 0) return [];
-    return this.db
-      .select()
-      .from(schema.paymentsDetalles)
-      .where(inArray(schema.paymentsDetalles.pagoId, pagos.map((p) => p.id)))
-      .all();
+    const movements = await this.db.select().from(schema.cashboxMovimientos).where(and(inArray(schema.cashboxMovimientos.tipo, ["VENTA", "ANULACION", "DEVOLUCION"]), gte(schema.cashboxMovimientos.ocurridoEn, startIso), lte(schema.cashboxMovimientos.ocurridoEn, endIso))).all();
+    return movements.filter((m) => m.metodo).map((m) => ({ metodo: m.metodo!, montoCentimos: m.tipo === "VENTA" ? m.montoCentimos : -m.montoCentimos }));
   }
 
   /** Estadías no anuladas cuyo bloqueo se cruza con el rango — para ocupación y horas pico. */

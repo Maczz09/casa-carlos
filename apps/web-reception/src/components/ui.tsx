@@ -1,3 +1,19 @@
+import { cn } from "@casacarlos/ui/lib/utils";
+import { Button as ShadButton } from "@casacarlos/ui/components/button";
+import { Card as ShadCard } from "@casacarlos/ui/components/card";
+import { Badge as ShadBadge } from "@casacarlos/ui/components/badge";
+import { Input as ShadInput } from "@casacarlos/ui/components/input";
+import { NativeSelect } from "@casacarlos/ui/components/native-select";
+import { Textarea as ShadTextarea } from "@casacarlos/ui/components/textarea";
+import { Label as ShadLabel } from "@casacarlos/ui/components/label";
+import { Skeleton as ShadSkeleton } from "@casacarlos/ui/components/skeleton";
+import { Alert as ShadAlert } from "@casacarlos/ui/components/alert";
+import { IconAlertTriangle, IconCheck, IconInfo } from "@casacarlos/ui";
+export { ModalFrame } from "@casacarlos/ui/components/modal-frame";
+export { ConfirmDialog } from "@casacarlos/ui/components/confirm-dialog";
+export { Checkbox } from "@casacarlos/ui/components/checkbox";
+export { Switch } from "@casacarlos/ui/components/switch";
+export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableFooter, TableCaption } from "@casacarlos/ui/components/table";
 import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from "react";
 
 /*
@@ -6,28 +22,16 @@ import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactNode, SelectHTMLAt
  * que ningún componente tenga que saber en qué tema está.
  */
 
-export function cx(...parts: Array<string | false | null | undefined>): string {
-  return parts.filter(Boolean).join(" ");
-}
+export const cx = cn;
 
 /* ---------------- Botones ---------------- */
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "warn";
 type ButtonSize = "sm" | "md" | "lg";
 
-const VARIANT: Record<ButtonVariant, string> = {
-  primary: "bg-brand text-brand-ink hover:bg-brand-hover shadow-sm",
-  secondary: "bg-inset text-ink hover:bg-line border border-line",
-  ghost: "text-muted hover:text-ink hover:bg-inset",
-  danger: "bg-danger text-white hover:opacity-90 shadow-sm",
-  warn: "bg-warn text-white hover:opacity-90 shadow-sm",
-};
 
-const SIZE: Record<ButtonSize, string> = {
-  sm: "px-2.5 py-1.5 text-xs gap-1.5 rounded-lg",
-  md: "px-3.5 py-2 text-sm gap-2 rounded-xl",
-  lg: "px-5 py-2.5 text-sm gap-2 rounded-xl",
-};
+
+
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
@@ -36,38 +40,14 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   block?: boolean;
 }
 
-export function Button({ variant = "secondary", size = "md", icon, block, className, children, ...rest }: ButtonProps) {
-  return (
-    <button
-      {...rest}
-      className={cx(
-        "inline-flex items-center justify-center font-medium transition-all duration-150",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/45",
-        "disabled:cursor-not-allowed disabled:opacity-45",
-        "active:scale-[0.97]",
-        VARIANT[variant],
-        SIZE[size],
-        block && "w-full",
-        className,
-      )}
-    >
-      {icon}
-      {children}
-    </button>
-  );
+export function Button({ variant = "secondary", size = "md", icon, block, className, children, type = "button", ...rest }: ButtonProps) {
+  return <ShadButton {...rest} type={type} variant={variant === "primary" ? "default" : variant === "danger" ? "destructive" : variant === "warn" ? "default" : variant === "secondary" ? "outline" : "ghost"} size={size === "md" ? "default" : size} className={cn("h-auto min-w-0 max-w-full shrink whitespace-normal rounded-xl", size === "sm" ? "min-h-8" : size === "lg" ? "min-h-10" : "min-h-9", variant === "warn" && "bg-warn text-white dark:text-brand-ink hover:bg-warn/90", block && "w-full", className)}>{icon}{children}</ShadButton>;
 }
 
 /* ---------------- Superficies ---------------- */
 
 export function Card({ className, children, delay }: { className?: string; children: ReactNode; delay?: number }) {
-  return (
-    <div
-      style={delay ? { animationDelay: `${delay}ms` } : undefined}
-      className={cx("animate-fade-up rounded-[18px] border border-line bg-surface shadow-[var(--shadow-card)]", className)}
-    >
-      {children}
-    </div>
-  );
+  return <ShadCard style={delay ? {animationDelay: delay + "ms"} : undefined} className={cn("animate-fade-up block flex-row gap-0 rounded-2xl border-line p-0 shadow-[var(--shadow-card)]", className)}>{children}</ShadCard>;
 }
 
 export function Section({
@@ -101,24 +81,13 @@ export function Section({
   );
 }
 
-export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: ReactNode }) {
-  return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div className="animate-fade-up">
-        <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand">Centro de operaciones</p>
-        <h1 className="text-2xl font-semibold tracking-[-0.025em] text-ink">{title}</h1>
-        {subtitle && <p className="mt-1.5 max-w-3xl text-sm leading-relaxed text-muted">{subtitle}</p>}
-      </div>
-      {actions && <div className="animate-fade-up flex flex-wrap items-center gap-2">{actions}</div>}
-    </div>
-  );
+export function PageHeader({ title, subtitle, actions, icon }: { title: string; subtitle?: string; actions?: ReactNode; icon?: ReactNode }) {
+  return <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5"><div className="animate-fade-up flex min-w-0 items-start gap-3">{icon && <span className="mt-0.5 grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-brand/15 bg-brand-soft text-brand">{icon}</span>}<div><h1 className="text-2xl font-semibold tracking-tight text-ink">{title}</h1>{subtitle && <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted">{subtitle}</p>}</div></div>{actions && <div className="animate-fade-up flex max-w-full flex-wrap items-center gap-2">{actions}</div>}</div>;
 }
 
 /* ---------------- Datos ---------------- */
 
-export function Badge({ tone = "tone-stone", children, className }: { tone?: string; children: ReactNode; className?: string }) {
-  return <span className={cx("inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold", tone, className)}>{children}</span>;
-}
+export function Badge({ tone = "tone-stone", children, className }: { tone?: string; children: ReactNode; className?: string }) { return <ShadBadge variant="secondary" className={cn("border-transparent px-2.5 text-[11px]", tone, className)}>{children}</ShadBadge>; }
 
 export function StatCard({
   label,
@@ -160,67 +129,30 @@ export function EmptyState({ icon, title, hint, action }: { icon?: ReactNode; ti
   );
 }
 
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cx("skeleton rounded-lg", className)} />;
-}
+export function Skeleton({ className }: { className?: string }) { return <ShadSkeleton className={cn("bg-inset", className)} />; }
 
 /* ---------------- Formularios ---------------- */
 
-const FIELD =
-  "w-full rounded-xl border border-line bg-raised px-3 py-2 text-sm text-ink placeholder:text-subtle transition-colors " +
-  "focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/25 disabled:opacity-50";
 
-export function Field({ label, hint, children }: { label?: string; hint?: string; children: ReactNode }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      {label && <span className="text-xs font-medium text-muted">{label}</span>}
-      {children}
-      {hint && <span className="text-xs text-subtle">{hint}</span>}
-    </label>
-  );
-}
 
-export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...rest} className={cx(FIELD, className)} />;
-}
+export function Field({ label, hint, children }: { label?: string; hint?: string; children: ReactNode }) { return <ShadLabel className="flex flex-col items-stretch gap-1.5 text-sm font-normal">{label && <span className="text-xs font-medium text-muted">{label}</span>}{children}{hint && <span className="text-xs font-normal text-muted">{hint}</span>}</ShadLabel>; }
 
-export function Select({ className, children, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select {...rest} className={cx(FIELD, "cursor-pointer", className)}>
-      {children}
-    </select>
-  );
-}
+export function Input({ className, ...rest }: InputHTMLAttributes<HTMLInputElement>) { return <ShadInput {...rest} className={cn("rounded-xl", className)} />; }
 
-export function Textarea({ className, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...rest} className={cx(FIELD, "resize-y", className)} />;
-}
+export function Select({ className, children, size, ...rest }: SelectHTMLAttributes<HTMLSelectElement>) { return <NativeSelect {...rest} className={cn("rounded-xl", className)}>{children}</NativeSelect>; }
+
+export function Textarea({ className, ...rest }: TextareaHTMLAttributes<HTMLTextAreaElement>) { return <ShadTextarea {...rest} className={cn("resize-y rounded-xl", className)} />; }
 
 /* ---------------- Navegación interna ---------------- */
 
-export function Tabs<T extends string>({ tabs, active, onChange }: { tabs: Array<{ id: T; label: string }>; active: T; onChange: (id: T) => void }) {
-  return (
-    <div className="inline-flex gap-1 rounded-xl border border-line bg-inset p-1">
-      {tabs.map((t) => (
-        <button
-          key={t.id}
-          onClick={() => onChange(t.id)}
-          className={cx(
-            "rounded-lg px-3.5 py-1.5 text-sm font-medium transition-all duration-150",
-            active === t.id ? "bg-surface text-ink shadow-sm" : "text-muted hover:text-ink",
-          )}
-        >
-          {t.label}
-        </button>
-      ))}
-    </div>
-  );
+export function Tabs<T extends string>({ tabs, active, onChange }: { tabs: Array<{id: T; label: string}>; active: T; onChange: (id: T) => void }) {
+  return <div className="max-w-full overflow-x-auto"><div role="group" aria-label="Vistas del módulo" className="inline-flex gap-1 rounded-xl border border-line bg-inset p-1">{tabs.map(t => <ShadButton key={t.id} type="button" variant="ghost" aria-pressed={active === t.id} onClick={() => onChange(t.id)} className={cn("h-8 rounded-lg px-3.5 text-xs", active === t.id ? "bg-surface text-ink shadow-sm hover:bg-surface" : "text-muted")}>{t.label}</ShadButton>)}</div></div>;
 }
 
 /** Mensaje de error/success inline — reemplaza los `<p className="text-rose-400">` sueltos. */
 export function Notice({ kind = "error", children }: { kind?: "error" | "warn" | "ok" | "info"; children: ReactNode }) {
-  const tone = kind === "error" ? "tone-red" : kind === "warn" ? "tone-amber" : kind === "ok" ? "tone-teal" : "tone-sky";
-  return <div className={cx("animate-fade rounded-xl px-3.5 py-2.5 text-sm", tone)}>{children}</div>;
+  const Icon = kind === "ok" ? IconCheck : kind === "info" ? IconInfo : IconAlertTriangle;
+  return <ShadAlert role={kind === "error" ? "alert" : "status"} className={cn("animate-fade flex items-start gap-2 border-0 rounded-xl", kind === "error" ? "tone-red" : kind === "warn" ? "tone-amber" : kind === "ok" ? "tone-teal" : "tone-sky")}><Icon className="mt-0.5 h-4 w-4 shrink-0" /><div className="min-w-0 text-sm leading-relaxed">{children}</div></ShadAlert>;
 }
 
 /** Fila etiqueta/valor — para resúmenes de venta, caja, etc. */

@@ -1,3 +1,8 @@
+import { IconUsers as ModuleIcon, IconUsers } from "@casacarlos/ui";
+import { ConfirmDialog } from "@casacarlos/ui/components/confirm-dialog";
+import { Checkbox } from "@casacarlos/ui/components/checkbox";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
+
 import { useEffect, useMemo, useState } from "react";
 import {
   APP_PERMISSIONS,
@@ -6,7 +11,7 @@ import {
   type Role,
   type User,
 } from "@casacarlos/contracts";
-import { IconUsers } from "@casacarlos/ui";
+
 import { api, ApiError } from "../api.js";
 import { Badge, Button, Card, EmptyState, Field, Input, Notice, PageHeader, Select, Skeleton, cx } from "../components/ui.js";
 
@@ -67,6 +72,9 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState<UserForm>(blankForm);
+  const [deactivating, setDeactivating] = useState<User | null>(null);
+  const [search, setSearch] = useState("");
+  const [accountState, setAccountState] = useState("TODOS");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
@@ -158,7 +166,7 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
   };
 
   const deactivate = async (user: User) => {
-    if (!window.confirm(`¿Desactivar a ${user.nombres} ${user.apellidos}? Su historial se conservará.`)) return;
+
     setBusy(true);
     setError(null);
     try {
@@ -166,6 +174,7 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
       await load();
       setSelectedId(null);
       setCreating(false);
+      setDeactivating(null);
       setOk("Usuario desactivado. Sus movimientos e historial siguen intactos.");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "No se pudo desactivar el usuario.");
@@ -174,12 +183,14 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
     }
   };
 
+  const visibleUsers = users?.filter(user => `${user.nombres} ${user.apellidos} ${user.usuario}`.toLowerCase().includes(search.toLowerCase()) && (accountState === "TODOS" || user.activo === (accountState === "ACTIVOS")));
   const showingForm = creating || selected;
   const complete = form.usuario.trim().length >= 3 && form.nombres.trim() && form.apellidos.trim() && (!creating || form.password.length >= 6);
 
   return (
     <>
-      <PageHeader
+      <ConfirmDialog open={!!deactivating} title="Desactivar cuenta" description={<>{deactivating?.nombres} {deactivating?.apellidos} dejará de tener acceso. Su historial y movimientos se conservan.{error && <p className="mt-2 text-danger">{error}</p>}</>} confirmLabel="Desactivar usuario" destructive busy={busy} onCancel={() => setDeactivating(null)} onConfirm={() => { if (deactivating) void deactivate(deactivating); }} />
+      <PageHeader icon={<ModuleIcon className="h-5 w-5" />}
         title="Usuarios y accesos"
         subtitle="Cuentas del personal, estado y permisos efectivos por módulo"
         actions={<Button variant="primary" onClick={startCreate}>+ Nuevo usuario</Button>}
@@ -194,14 +205,15 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
             <h2 className="font-semibold text-ink">Personal</h2>
             <p className="mt-0.5 text-xs text-muted">{users?.length ?? 0} cuentas registradas</p>
           </div>
+          <div className="grid gap-2 border-b border-line p-4 sm:grid-cols-[1fr_auto]"><Input aria-label="Buscar personal" placeholder="Buscar nombre o usuario…" value={search} onChange={e => setSearch(e.target.value)} /><Select aria-label="Estado de cuentas" value={accountState} onChange={e => setAccountState(e.target.value)}><option value="TODOS">Todas las cuentas</option><option value="ACTIVOS">Activas</option><option value="INACTIVOS">Inactivas</option></Select></div>
           {users === null ? (
             <div className="flex flex-col gap-2 p-4">{Array.from({ length: 4 }).map((_, index) => <Skeleton key={index} className="h-16" />)}</div>
-          ) : users.length === 0 ? (
-            <EmptyState icon={<IconUsers className="h-6 w-6" />} title="Todavía no hay usuarios" hint="Crea la primera cuenta del personal." />
+          ) : visibleUsers?.length === 0 ? (
+            <EmptyState icon={<IconUsers className="h-6 w-6" />} title="Sin cuentas para mostrar" hint="Cambia los filtros o crea una cuenta del personal." />
           ) : (
             <div className="divide-y divide-line-soft">
-              {users.map((user) => (
-                <button
+              {visibleUsers?.map((user) => (
+                <ActionButton
                   key={user.id}
                   onClick={() => startEdit(user)}
                   className={cx("flex w-full items-center gap-3 px-5 py-4 text-left transition-colors hover:bg-inset/60", selectedId === user.id && "bg-brand-soft")}
@@ -217,7 +229,7 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
                     <Badge tone={user.rol === "ADMIN" ? "tone-violet" : "tone-sky"}>{user.rol === "ADMIN" ? "Admin" : "Recepción"}</Badge>
                     {!user.activo && <span className="text-[10px] font-medium text-danger">Inactivo</span>}
                   </span>
-                </button>
+                </ActionButton>
               ))}
             </div>
           )}
@@ -235,7 +247,7 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
                 <p className="mt-1 text-sm text-muted">{creating ? "Los permisos se pueden ajustar antes de guardar." : "Los cambios de acceso se aplican en el siguiente ingreso."}</p>
               </div>
               {!creating && selected && selected.id !== currentUser.id && selected.activo && (
-                <Button size="sm" variant="danger" onClick={() => deactivate(selected)} disabled={busy}>Desactivar</Button>
+                <Button size="sm" variant="danger" onClick={() => { setError(null); setDeactivating(selected); }} disabled={busy}>Desactivar</Button>
               )}
             </div>
 
@@ -243,7 +255,7 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
               <Field label="Nombres"><Input value={form.nombres} onChange={(e) => setForm((current) => ({ ...current, nombres: e.target.value }))} /></Field>
               <Field label="Apellidos"><Input value={form.apellidos} onChange={(e) => setForm((current) => ({ ...current, apellidos: e.target.value }))} /></Field>
               <Field label="Usuario"><Input value={form.usuario} onChange={(e) => setForm((current) => ({ ...current, usuario: e.target.value }))} /></Field>
-              <Field label="WhatsApp"><Input value={form.telefonoWhatsapp} onChange={(e) => setForm((current) => ({ ...current, telefonoWhatsapp: e.target.value }))} placeholder="Opcional" /></Field>
+              <Field label="WhatsApp"><Input aria-label="Opcional" value={form.telefonoWhatsapp} onChange={(e) => setForm((current) => ({ ...current, telefonoWhatsapp: e.target.value }))} placeholder="Opcional" /></Field>
               <Field label={creating ? "Contraseña" : "Nueva contraseña (opcional)"}><Input type="password" value={form.password} onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))} /></Field>
               <Field label={creating ? "PIN rápido (opcional)" : "Nuevo PIN (opcional)"}><Input inputMode="numeric" value={form.pin} onChange={(e) => setForm((current) => ({ ...current, pin: e.target.value }))} /></Field>
               <Field label="Rol">
@@ -269,7 +281,7 @@ export function UsersModule({ currentUser }: { currentUser: User }) {
                   const checked = form.permisos.includes(permission);
                   return (
                     <label key={permission} className={cx("flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors", checked ? "border-brand/40 bg-brand-soft" : "border-line hover:bg-inset/60")}>
-                      <input type="checkbox" checked={checked} onChange={() => togglePermission(permission)} className="mt-0.5 h-4 w-4 accent-[var(--c-brand)]" />
+                      <Checkbox checked={checked} onCheckedChange={() => togglePermission(permission)} className="mt-0.5 h-4 w-4 accent-[var(--c-brand)]" />
                       <span><span className="block text-sm font-medium text-ink">{item.label}</span><span className="block text-xs leading-relaxed text-muted">{item.description}</span></span>
                     </label>
                   );

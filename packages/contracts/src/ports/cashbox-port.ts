@@ -1,4 +1,4 @@
-import type { Arqueo, CashMovement, CashMovementType, CashSummary, Denominaciones, Shift, ShiftTemplate } from "../entities/cashbox.js";
+import type { Arqueo, CashboxAutomation, CashMovement, CashMovementType, CashSummary, Denominaciones, Shift, ShiftTemplate } from "../entities/cashbox.js";
 import type { PaymentMethod } from "../entities/payments.js";
 import type { DateRange } from "../entities/common.js";
 
@@ -55,17 +55,24 @@ export interface CashMovementFilter {
 
 /**
  * Public surface of `cashbox`. Escucha `payment.accepted` para registrar
- * cada método de pago como movimiento del turno abierto de quien aceptó el
- * pago — nunca escribe en `payments_*` ni `sales_*`.
+ * cada método de pago en el turno activo compartido del hotel. El movimiento
+ * conserva al usuario que aceptó el pago; nunca escribe en `payments_*` ni `sales_*`.
  */
 export interface CashboxPort {
-  createShiftTemplate(input: CreateShiftTemplateInput): Promise<ShiftTemplate>;
-  updateShiftTemplate(id: string, input: UpdateShiftTemplateInput): Promise<ShiftTemplate>;
-  deleteShiftTemplate(id: string): Promise<void>;
+  createShiftTemplate(input: CreateShiftTemplateInput, usuarioId?: string): Promise<ShiftTemplate>;
+  updateShiftTemplate(id: string, input: UpdateShiftTemplateInput, usuarioId?: string): Promise<ShiftTemplate>;
+  deleteShiftTemplate(id: string, usuarioId?: string): Promise<void>;
+  applyStandardSchedule(usuarioId: string): Promise<ShiftTemplate[]>;
+  getShiftTemplate(id: string): Promise<ShiftTemplate | null>;
   listShiftTemplates(): Promise<ShiftTemplate[]>;
 
   openShift(input: OpenShiftInput): Promise<Shift>;
   closeShift(input: CloseShiftInput): Promise<Shift>;
+  getOpenShift(): Promise<Shift | null>;
+  getLegacyOpenShifts(): Promise<Shift[]>;
+  getAutomation(): Promise<CashboxAutomation>;
+  setAutomation(habilitado: boolean, usuarioId: string): Promise<CashboxAutomation>;
+  runTimers(now?: Date): Promise<void>;
   getOpenShiftForUser(usuarioId: string): Promise<Shift | null>;
   getShift(id: string): Promise<Shift>;
   listShifts(range?: DateRange): Promise<Shift[]>;

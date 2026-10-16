@@ -34,6 +34,7 @@ export const salesLineas = sqliteTable("sales_lineas", {
     .references(() => salesVentas.id),
   tipo: text("tipo", { enum: ["HOSPEDAJE", "PRODUCTO", "CARGO_EXTRA"] }).notNull(),
   referenciaId: text("referencia_id"),
+  intervaloMinutos: integer("intervalo_minutos"),
   descripcion: text("descripcion").notNull(),
   cantidad: integer("cantidad").notNull().default(1),
   precioUnitarioCentimos: integer("precio_unitario_centimos").notNull(),

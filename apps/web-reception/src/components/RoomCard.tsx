@@ -1,3 +1,4 @@
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import type { RoomBoardEntry } from "@casacarlos/contracts";
 import { IconBroom, RoomIllustration, STATUS_STYLE } from "@casacarlos/ui";
 import { api } from "../api.js";
@@ -28,7 +29,7 @@ export function RoomCard({ entry, beds, fans, onClick }: Props) {
     >
       <div className="h-1.5 w-full" style={{ background: style.accent }} />
 
-      <button type="button" onClick={() => clickable && onClick(entry)} disabled={!clickable} className="block w-full text-left disabled:cursor-default">
+      <ActionButton type="button" onClick={() => clickable && onClick(entry)} disabled={!clickable} className="block w-full text-left disabled:cursor-default">
         <div className="relative bg-inset/60 p-1.5">
           <div className="aspect-[220/110] transition-transform duration-300 group-hover:scale-[1.03]">
             <RoomIllustration beds={beds} fans={fans} floorFill={style.floorFill} muted={style.muted} />
@@ -62,17 +63,17 @@ export function RoomCard({ entry, beds, fans, onClick }: Props) {
             </p>
           )}
         </div>
-      </button>
+      </ActionButton>
 
       {entry.estado === "DISPONIBLE" && (
-        <button
+        <ActionButton aria-label="Marcar en limpieza"
           type="button"
           title="Marcar en limpieza"
           onClick={() => void api.markCleaning(entry.room.id)}
           className="absolute bottom-2.5 right-2.5 rounded-full border border-line bg-surface p-1.5 text-subtle opacity-0 shadow-sm transition-all duration-200 hover:text-sky-500 group-hover:opacity-100"
         >
           <IconBroom className="h-4 w-4" />
-        </button>
+        </ActionButton>
       )}
     </div>
   );

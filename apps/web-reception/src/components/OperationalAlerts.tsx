@@ -1,3 +1,4 @@
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import type { OperationalAlert } from "../hooks/useOperationalAlerts.js";
 import { cx } from "./ui.js";
 
@@ -6,7 +7,7 @@ export function OperationalAlerts({ alerts, onDismiss }: { alerts: OperationalAl
   return (
     <div className="pointer-events-none fixed right-4 top-20 z-[80] flex w-[min(92vw,380px)] flex-col gap-2">
       {alerts.map((alert) => (
-        <button
+        <ActionButton
           key={alert.id}
           onClick={() => onDismiss(alert.id)}
           className={cx(
@@ -16,7 +17,7 @@ export function OperationalAlerts({ alerts, onDismiss }: { alerts: OperationalAl
         >
           <span className="block text-sm font-semibold text-ink">{alert.title}</span>
           <span className="mt-1 block text-xs leading-relaxed text-muted">{alert.message} · Tocá para cerrar</span>
-        </button>
+        </ActionButton>
       ))}
     </div>
   );

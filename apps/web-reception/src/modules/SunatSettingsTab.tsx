@@ -1,3 +1,4 @@
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import { useEffect, useRef, useState } from "react";
 import type { SunatConfig, SunatMode } from "@casacarlos/contracts";
 import { api, ApiError } from "../api.js";
@@ -181,7 +182,7 @@ export function SunatTab() {
         <Section title="Modo de trabajo" subtitle="Se puede cambiar cuando haga falta: no hay que reinstalar ni reiniciar nada">
           <div className="flex flex-col gap-3">
             {MODOS.map((m) => (
-              <button
+              <ActionButton
                 key={m}
                 onClick={() => setModo(m)}
                 className={cx("rounded-xl border px-4 py-3 text-left transition-colors", modo === m ? "border-brand bg-brand-soft" : "border-line hover:bg-inset")}
@@ -191,7 +192,7 @@ export function SunatTab() {
                   <Badge tone={MODO_INFO[m].tono}>{m}</Badge>
                 </div>
                 <p className="mt-1 text-xs text-muted">{MODO_INFO[m].detalle}</p>
-              </button>
+              </ActionButton>
             ))}
             {modo === "PRODUCCION" && config.modo !== "PRODUCCION" && (
               <Notice kind="warn">
@@ -229,7 +230,7 @@ export function SunatTab() {
             </div>
 
             <Field label="Contraseña del certificado" hint="La que entrega SUNAT junto con el archivo. Se verifica antes de reemplazar al anterior.">
-              <Input type="password" value={certPassword} onChange={(e) => setCertPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
+              <Input aria-label="Contraseña del certificado" type="password" value={certPassword} onChange={(e) => setCertPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password" />
             </Field>
             <input
               ref={certInput}
@@ -288,7 +289,7 @@ export function SunatTab() {
               label="Clave SOL"
               hint={config.solPasswordConfigurada ? "Ya hay una clave guardada. Dejalo vacío para conservarla." : "Todavía no hay ninguna clave guardada."}
             >
-              <Input
+              <Input aria-label="Clave SOL"
                 type="password"
                 value={solPassword}
                 onChange={(e) => setSolPassword(e.target.value)}

@@ -333,8 +333,8 @@ export function buildShiftClosureReceiptHtml(cuadre: ShiftCuadreDto, impresoPorN
   const declarado = shift.efectivoDeclaradoCentimos !== null ? (shift.efectivoDeclaradoCentimos / 100).toFixed(2) : isProvisional ? "— (Sin arqueo)" : "—";
   const difCentimos = shift.diferenciaCentimos ?? 0;
   const difFormatted = (Math.abs(difCentimos) / 100).toFixed(2);
-  const estadoCuadre = shift.efectivoDeclaradoCentimos === null && isProvisional
-    ? "EN CURSO (PENDIENTE DE ARQUEO)"
+  const estadoCuadre = shift.efectivoDeclaradoCentimos === null
+    ? shift.tipoCierre === "AUTOMATICO" ? "RELEVO AUTOMÁTICO (SIN ARQUEO FÍSICO)" : "PENDIENTE DE ARQUEO"
     : difCentimos === 0 ? "CUADRADO (S/ 0.00)" : difCentimos < 0 ? `FALTANTE (-S/ ${difFormatted})` : `SOBRANTE (+S/ ${difFormatted})`;
 
   const intervinientesHtml =

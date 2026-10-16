@@ -1,3 +1,8 @@
+import { ConfirmDialog } from "@casacarlos/ui/components/confirm-dialog";
+import { IconSun, IconMoon, IconMonitor, IconRefresh } from "@casacarlos/ui";
+
+
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { api } from "../api.js";
 import { cx } from "./ui.js";
@@ -10,6 +15,8 @@ export interface KioskRemoteViewerProps {
 }
 
 export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps) {
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [iframeKey, setIframeKey] = useState(0);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -83,13 +90,13 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
   };
 
   const cancelKiosk = async () => {
-    if (!window.confirm("¿Deseas reiniciar la sesión actual del kiosco y volver a la pantalla de bienvenida?")) {
-      return;
-    }
+    setBusy(true);
+    setResetError(null);
     try {
       await api.cancelKiosk("Reiniciado desde recepción");
+      setConfirmReset(false);
       setIframeKey((k) => k + 1);
-    } catch {}
+    } catch { setResetError("No se pudo reiniciar la sesión. Intenta nuevamente."); } finally { setBusy(false); }
   };
 
   // Conectar eventos del iframe cuando cargue
@@ -124,7 +131,7 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
     return (
       <aside aria-label="Control remoto del kiosco" className="fixed bottom-4 right-4 z-50 flex items-center gap-1.5 select-none animate-fade-up">
         <div className="flex items-center gap-1.5 rounded-full border border-line bg-surface/95 px-3 py-1.5 shadow-[var(--shadow-card)] backdrop-blur-md transition-all hover:shadow-[var(--shadow-pop)] ring-1 ring-black/5 dark:ring-white/10">
-          <button
+          <ActionButton aria-label="Abrir en pantalla dividida mitad y mitad (50% Recepción / 50% Kiosco)"
             type="button"
             onClick={() => onModeChange("split")}
             className="flex items-center gap-2 text-xs font-bold text-ink hover:text-brand transition-colors"
@@ -135,10 +142,10 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
             </span>
             <span>Control Kiosco</span>
-          </button>
+          </ActionButton>
 
           <div className="flex items-center gap-1 border-l border-line pl-1.5">
-            <button
+            <ActionButton aria-label="Dividir pantalla mitad y mitad (50/50)"
               type="button"
               onClick={() => onModeChange("split")}
               title="Dividir pantalla mitad y mitad (50/50)"
@@ -146,18 +153,18 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
             >
               <span>🗖</span>
               <span>50/50</span>
-            </button>
+            </ActionButton>
 
-            <button
+            <ActionButton
               type="button"
               onClick={() => onModeChange("pip")}
               title="Abrir como ventana flotante pequeña"
               className="rounded-md border border-line bg-inset px-1.5 py-0.5 text-[11px] font-semibold text-ink hover:bg-raised active:scale-95 transition-all"
             >
               🗗 Flotante
-            </button>
+            </ActionButton>
 
-            <button
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(-240)}
               disabled={busy}
@@ -165,8 +172,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="flex h-6 w-6 items-center justify-center rounded-full bg-inset text-xs font-bold text-ink hover:bg-raised active:scale-95 disabled:opacity-50"
             >
               ▲
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(240)}
               disabled={busy}
@@ -174,7 +181,7 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="flex h-6 w-6 items-center justify-center rounded-full bg-inset text-xs font-bold text-ink hover:bg-raised active:scale-95 disabled:opacity-50"
             >
               ▼
-            </button>
+            </ActionButton>
           </div>
         </div>
       </aside>
@@ -202,43 +209,43 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            <button
+            <ActionButton aria-label="Cambiar modo claro / oscuro en la pantalla del kiosco"
               type="button"
               onClick={toggleKioskTheme}
               title="Cambiar modo claro / oscuro en la pantalla del kiosco"
               className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-semibold text-ink hover:bg-inset active:scale-95 flex items-center gap-1.5 shadow-sm transition-all"
             >
-              <span>{kioskTheme === "dark" ? "☀️" : "🌙"}</span>
+              <span>{kioskTheme === "dark" ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}</span>
               <span className="text-[11px] hidden sm:inline">{kioskTheme === "dark" ? "Modo Claro" : "Modo Oscuro"}</span>
-            </button>
+            </ActionButton>
 
-            <button
+            <ActionButton aria-label="Enviar kiosco a Pantalla 2 en Pantalla Completa"
               type="button"
               onClick={sendFullscreenCommand}
               title="Enviar kiosco a Pantalla 2 en Pantalla Completa"
               className="rounded-lg border border-line bg-surface px-2.5 py-1 text-xs font-bold text-brand hover:bg-brand-soft active:scale-95 flex items-center gap-1 shadow-sm transition-all"
             >
-              <span>🖥️</span>
+              <span><IconMonitor className="inline h-4 w-4 align-text-bottom" /></span>
               <span className="text-[11px] hidden sm:inline">P2 Completa</span>
-            </button>
+            </ActionButton>
 
-            <button
+            <ActionButton
               type="button"
               onClick={() => onModeChange("pip")}
               title="Cambiar a ventana flotante pequeña"
               className="rounded-lg border border-line bg-surface px-2 py-1 text-xs font-semibold text-ink hover:bg-inset active:scale-95 transition-all"
             >
               🗗 Flotante
-            </button>
+            </ActionButton>
 
-            <button
+            <ActionButton
               type="button"
               onClick={() => onModeChange("closed")}
               className="rounded-lg border border-line bg-surface p-1 text-muted hover:bg-inset hover:text-ink active:scale-95 transition-all"
               title="Cerrar vista dividida"
             >
               ✕
-            </button>
+            </ActionButton>
           </div>
         </div>
 
@@ -246,7 +253,7 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
         <div className="flex items-center justify-between border-b border-line bg-inset/90 px-3 py-1.5 text-xs shrink-0 flex-wrap gap-1">
           <div className="flex items-center gap-1">
             <span className="text-[11px] font-bold text-muted mr-1">Scroll P2:</span>
-            <button
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(undefined, "top")}
               disabled={busy}
@@ -254,8 +261,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="rounded border border-line bg-surface px-2 py-0.5 text-xs font-medium text-ink hover:bg-inset active:scale-95 transition-all"
             >
               ⤒ Inicio
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(-250)}
               disabled={busy}
@@ -263,8 +270,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="flex items-center gap-1 rounded border border-line bg-surface px-2.5 py-0.5 text-xs font-bold text-ink hover:bg-raised active:scale-95 transition-all shadow-sm"
             >
               ▲ Subir
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(250)}
               disabled={busy}
@@ -272,8 +279,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="flex items-center gap-1 rounded border border-line bg-brand px-2.5 py-0.5 text-xs font-bold text-brand-ink hover:opacity-90 active:scale-95 transition-all shadow-sm"
             >
               ▼ Bajar
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(undefined, "bottom")}
               disabled={busy}
@@ -281,28 +288,28 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="rounded border border-line bg-surface px-2 py-0.5 text-xs font-medium text-ink hover:bg-inset active:scale-95 transition-all"
             >
               ⤓ Final
-            </button>
+            </ActionButton>
           </div>
 
           <div className="flex items-center gap-1.5">
-            <button
+            <ActionButton aria-label="Recargar vista previa del kiosco"
               type="button"
               onClick={reloadKiosk}
               title="Recargar vista previa del kiosco"
               className="flex items-center gap-1 rounded border border-line bg-surface px-2 py-0.5 text-[11px] font-semibold text-muted hover:text-ink active:scale-95 transition-all"
             >
-              <span>🔄</span>
+              <span><IconRefresh className="inline h-4 w-4 align-text-bottom" /></span>
               <span>Recargar</span>
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton aria-label="Reiniciar kiosco y cancelar la sesión activa"
               type="button"
-              onClick={cancelKiosk}
+              onClick={() => { setResetError(null); setConfirmReset(true); }}
               title="Reiniciar kiosco y cancelar la sesión activa"
               className="flex items-center gap-1 rounded border border-line bg-surface px-2 py-0.5 text-[11px] font-semibold text-danger hover:bg-danger-soft active:scale-95 transition-all"
             >
               <span>🛑</span>
               <span>Reiniciar</span>
-            </button>
+            </ActionButton>
           </div>
         </div>
 
@@ -329,13 +336,13 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
             <span className="font-semibold text-ink">💡 Control Directo:</span>
             <span>Haz clic o usa la rueda del ratón aquí para manejar la Pantalla 2.</span>
           </div>
-          <button
+          <ActionButton
             type="button"
             onClick={sendFullscreenCommand}
             className="text-brand font-bold hover:underline"
           >
             Activar Pantalla Completa P2
-          </button>
+          </ActionButton>
         </div>
       </div>
     );
@@ -360,7 +367,7 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
           </div>
 
           <div className="flex items-center gap-1">
-            <button
+            <ActionButton aria-label="Dividir pantalla mitad y mitad (50/50)"
               type="button"
               onClick={() => onModeChange("split")}
               title="Dividir pantalla mitad y mitad (50/50)"
@@ -368,34 +375,34 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
             >
               <span>🗖</span>
               <span>Dividir 50/50</span>
-            </button>
+            </ActionButton>
 
-            <button
+            <ActionButton aria-label="Cambiar modo claro / oscuro en la pantalla del kiosco"
               type="button"
               onClick={toggleKioskTheme}
               title="Cambiar modo claro / oscuro en la pantalla del kiosco"
               className="rounded-lg border border-line bg-surface px-2 py-1 text-xs font-semibold text-ink hover:bg-inset active:scale-95 flex items-center gap-1"
             >
-              <span>{kioskTheme === "dark" ? "☀️" : "🌙"}</span>
-            </button>
+              <span>{kioskTheme === "dark" ? <IconSun className="h-4 w-4" /> : <IconMoon className="h-4 w-4" />}</span>
+            </ActionButton>
 
-            <button
+            <ActionButton
               type="button"
               onClick={sendFullscreenCommand}
               title="Enviar kiosco a Pantalla 2 en Pantalla Completa"
               className="rounded-lg border border-line bg-surface px-2 py-1 text-xs font-bold text-brand hover:bg-brand-soft active:scale-95"
             >
-              🖥️ P2
-            </button>
+              <IconMonitor className="inline h-4 w-4 align-text-bottom" /> P2
+            </ActionButton>
 
-            <button
+            <ActionButton
               type="button"
               onClick={() => onModeChange("closed")}
               className="ml-1 rounded-lg p-1 text-subtle hover:bg-inset hover:text-ink active:scale-95"
               title="Minimizar visor"
             >
               ✕
-            </button>
+            </ActionButton>
           </div>
         </div>
 
@@ -403,7 +410,7 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
         <div className="flex items-center justify-between border-b border-line bg-inset/90 px-3 py-1.5 text-xs">
           <span className="text-[11px] font-semibold text-muted">Scroll:</span>
           <div className="flex items-center gap-1">
-            <button
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(undefined, "top")}
               disabled={busy}
@@ -411,8 +418,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="rounded border border-line bg-surface px-1.5 py-0.5 text-xs font-medium text-ink hover:bg-inset active:scale-95"
             >
               ⤒
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(-240)}
               disabled={busy}
@@ -420,8 +427,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="flex items-center gap-0.5 rounded border border-line bg-surface px-2 py-0.5 text-xs font-bold text-ink hover:bg-inset active:scale-95"
             >
               ▲ Subir
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(240)}
               disabled={busy}
@@ -429,8 +436,8 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="flex items-center gap-0.5 rounded border border-line bg-brand px-2 py-0.5 text-xs font-bold text-brand-ink hover:opacity-90 active:scale-95"
             >
               ▼ Bajar
-            </button>
-            <button
+            </ActionButton>
+            <ActionButton
               type="button"
               onClick={() => void handleDirectScroll(undefined, "bottom")}
               disabled={busy}
@@ -438,7 +445,7 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
               className="rounded border border-line bg-surface px-1.5 py-0.5 text-xs font-medium text-ink hover:bg-inset active:scale-95"
             >
               ⤓
-            </button>
+            </ActionButton>
           </div>
         </div>
 
@@ -462,13 +469,13 @@ export function KioskRemoteViewer({ mode, onModeChange }: KioskRemoteViewerProps
         {/* Barra inferior explicativa */}
         <div className="flex items-center justify-between border-t border-line bg-inset/80 px-3 py-1.5 text-[11px] text-muted">
           <span>Rueda de ratón sincroniza la P2</span>
-          <button
+          <ActionButton
             type="button"
             onClick={() => onModeChange("split")}
             className="text-brand font-bold hover:underline"
           >
             Abrir en 50/50
-          </button>
+          </ActionButton>
         </div>
       </div>
     </aside>

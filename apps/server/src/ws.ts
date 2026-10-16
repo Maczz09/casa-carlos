@@ -64,6 +64,7 @@ export function registerWebSocketGateway(
 
   bus.subscribeAll((event) => {
     void broadcastBoard();
+    if (event.startsWith("shift.") || event === "cashbox.changed" || event === "payment.accepted" || event === "sale.cancelled" || event === "sale.refunded") send(receptionSockets, { type: "cashbox_changed" });
     if (event === "inventory.catalog_changed") void broadcastProducts();
   });
   kiosk.onChange(() => broadcastKioskSession());
@@ -78,6 +79,7 @@ export function registerWebSocketGateway(
     }
 
     receptionSockets.add(socket);
+    socket.send(JSON.stringify({ type: "cashbox_changed" }));
     socket.send(JSON.stringify({ type: "board", floors: await rooms.getBoard(false) }));
     socket.send(JSON.stringify({ type: "kiosk", session: kiosk.getCurrent() }));
     socket.send(JSON.stringify({ type: "products", products: await publicProducts() }));

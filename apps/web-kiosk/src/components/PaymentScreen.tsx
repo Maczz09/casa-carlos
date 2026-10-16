@@ -1,3 +1,5 @@
+import { IconCreditCard } from "@casacarlos/ui";
+import { ActionButton } from "@casacarlos/ui/components/action-button";
 import { useEffect, useState } from "react";
 import type { CollectionAccount, KioskSession, PaymentMethod } from "@casacarlos/contracts";
 import { cents, format, sum } from "@casacarlos/money";
@@ -106,7 +108,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
           {metodos.map((m) => {
             const active = method === m;
             return (
-              <button
+              <ActionButton
                 key={m}
                 onClick={() => setMethod(m)}
                 className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-95 ${
@@ -117,11 +119,11 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
               >
                 <span>{METHOD_LABEL[m] ?? m}</span>
                 {active && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
-              </button>
+              </ActionButton>
             );
           })}
           {metodos.length > 1 && (
-            <button
+            <ActionButton
               onClick={() => setMethod("HIBRIDO")}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all active:scale-95 ${
                 method === "HIBRIDO"
@@ -131,7 +133,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
             >
               <span>Combinar métodos</span>
               {method === "HIBRIDO" && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
-            </button>
+            </ActionButton>
           )}
         </div>
 
@@ -151,7 +153,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
             </div>
 
             <div className="space-y-2">
-              <h3 className="font-serif text-3xl font-bold text-ink">
+              <h3 className="font-sans text-3xl font-bold text-ink">
                 Pago en Efectivo
               </h3>
               <p className="text-base text-muted">
@@ -161,7 +163,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
 
             <div className="rounded-3xl border border-line bg-surface px-8 py-5 shadow-sm ring-1 ring-line w-full">
               <p className="text-xs uppercase tracking-wider text-subtle">Monto total a cancelar</p>
-              <p className="font-serif text-5xl font-bold text-ink mt-1">{format(cents(totalCentimos))}</p>
+              <p className="font-sans text-5xl font-bold text-ink mt-1">{format(cents(totalCentimos))}</p>
             </div>
 
             <p className="text-xs text-subtle">
@@ -174,16 +176,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
         {isPos && (
           <div className="animate-fade-up flex flex-1 flex-col items-center justify-center gap-6 py-6 text-center max-w-lg mx-auto">
             <div className="relative flex h-28 w-28 items-center justify-center rounded-3xl bg-brand/15 text-brand shadow-lg">
-              <svg viewBox="0 0 64 64" className="h-16 w-16" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="14" y="8" width="36" height="48" rx="6" />
-                <rect x="20" y="14" width="24" height="14" rx="2" />
-                <circle cx="26" cy="36" r="2" />
-                <circle cx="38" cy="36" r="2" />
-                <circle cx="26" cy="44" r="2" />
-                <circle cx="38" cy="44" r="2" />
-                <path d="M48 20a10 10 0 0 1 0 14" strokeWidth="2" strokeDasharray="2 2" className="animate-pulse" />
-                <path d="M52 16a16 16 0 0 1 0 22" strokeWidth="2" />
-              </svg>
+              <IconCreditCard className="h-12 w-12" />
             </div>
 
             <div className="space-y-2">
@@ -191,7 +184,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
                 <span className="h-2 w-2 rounded-full bg-brand animate-ping" />
                 Terminal POS Listo
               </span>
-              <h3 className="font-serif text-3xl font-bold text-ink">
+              <h3 className="font-sans text-3xl font-bold text-ink">
                 Acerque o inserte su tarjeta en el terminal POS
               </h3>
               <p className="text-sm text-muted max-w-md">
@@ -201,7 +194,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
 
             <div className="rounded-3xl border border-line bg-surface px-8 py-5 shadow-sm ring-1 ring-line w-full">
               <p className="text-xs uppercase tracking-wider text-subtle">Monto total a cobrar en POS</p>
-              <p className="font-serif text-5xl font-bold text-ink mt-1">{format(cents(totalCentimos))}</p>
+              <p className="font-sans text-5xl font-bold text-ink mt-1">{format(cents(totalCentimos))}</p>
             </div>
 
             <p className="text-xs text-subtle">
@@ -214,7 +207,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
         {method === "TRANSFERENCIA" && (
           <div className="animate-fade-up flex flex-1 flex-col items-center justify-center gap-6 py-4 text-center max-w-2xl mx-auto w-full">
             <div className="space-y-1">
-              <h3 className="font-serif text-3xl font-bold text-ink">
+              <h3 className="font-sans text-3xl font-bold text-ink">
                 Transferencia Bancaria
               </h3>
               <p className="text-sm text-muted">
@@ -236,7 +229,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
 
             <div className="rounded-2xl border border-line bg-surface px-8 py-4 shadow-sm ring-1 ring-line">
               <p className="text-xs uppercase tracking-wider text-subtle">Monto total a transferir</p>
-              <p className="font-serif text-4xl font-bold text-ink mt-0.5">{format(cents(totalCentimos))}</p>
+              <p className="font-sans text-4xl font-bold text-ink mt-0.5">{format(cents(totalCentimos))}</p>
             </div>
           </div>
         )}
@@ -245,7 +238,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
         {!isPos && method !== "EFECTIVO" && method !== "TRANSFERENCIA" && method !== "HIBRIDO" && (
           <div className="animate-fade-up flex flex-1 flex-col items-center justify-center gap-6 py-4 text-center max-w-lg mx-auto w-full">
             <div className="space-y-1">
-              <h3 className="font-serif text-3xl font-bold text-ink">
+              <h3 className="font-sans text-3xl font-bold text-ink">
                 Escanee el código QR desde su app {METHOD_LABEL[method] ?? method}
               </h3>
               <p className="text-sm text-muted">
@@ -268,7 +261,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
 
             <div className="rounded-2xl border border-line bg-surface px-8 py-4 shadow-sm ring-1 ring-line">
               <p className="text-xs uppercase tracking-wider text-subtle">Total a yapear / transferir</p>
-              <p className="font-serif text-4xl font-bold text-ink mt-0.5">{format(cents(totalCentimos))}</p>
+              <p className="font-sans text-4xl font-bold text-ink mt-0.5">{format(cents(totalCentimos))}</p>
             </div>
           </div>
         )}
@@ -277,7 +270,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
         {method === "HIBRIDO" && (
           <div className="animate-fade-up w-full max-w-4xl space-y-6 py-4">
             <div className="text-center space-y-1">
-              <h3 className="font-serif text-3xl font-bold text-ink">
+              <h3 className="font-sans text-3xl font-bold text-ink">
                 Pago Combinado
               </h3>
               <p className="text-sm text-muted">
@@ -337,14 +330,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
                         </span>
                       </div>
                       <div className="my-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-brand/15 text-brand">
-                        <svg viewBox="0 0 64 64" className="h-12 w-12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="14" y="8" width="36" height="48" rx="6" />
-                          <rect x="20" y="14" width="24" height="14" rx="2" />
-                          <circle cx="26" cy="36" r="2" />
-                          <circle cx="38" cy="36" r="2" />
-                          <circle cx="26" cy="44" r="2" />
-                          <circle cx="38" cy="44" r="2" />
-                        </svg>
+                        <IconCreditCard className="h-12 w-12" />
                       </div>
                       <p className="text-base font-semibold text-ink">Pase su tarjeta por el POS</p>
                       <p className="text-xs text-muted mt-1">Acerque o inserte su tarjeta en el terminal en recepción.</p>
@@ -386,7 +372,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
         )}
 
         {/* Botón opcional para pantallas táctiles */}
-        <button
+        <ActionButton
           disabled={busy || (!isPos && method !== "EFECTIVO" && method !== "HIBRIDO" && cuentasDelMetodo.length === 0) || (method === "HIBRIDO" && !hybridOk)}
           onClick={() => {
             prepareCelebrationAudio();
@@ -399,7 +385,7 @@ export function PaymentScreen({ session, totalCentimos, collectionAccounts, onPr
           className="mt-6 w-full max-w-md rounded-2xl bg-brand py-4 text-lg font-medium text-brand-ink shadow-[var(--shadow-card)] transition-transform active:scale-[0.98] disabled:opacity-40"
         >
           Ya completé el pago, avisar a recepción
-        </button>
+        </ActionButton>
       </div>
     </Shell>
   );
@@ -423,7 +409,7 @@ function AccountCard({ cuenta, montoCentimos }: { cuenta: CollectionAccount; mon
           </span>
         )}
       </div>
-      <p className="mt-1 font-serif text-2xl text-ink">{cuenta.titular}</p>
+      <p className="mt-1 font-sans text-2xl text-ink">{cuenta.titular}</p>
 
       {!esBanco &&
         (cuenta.qrUrl ? (

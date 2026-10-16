@@ -31,7 +31,7 @@
 ; que poder actualizarla en el mismo lugar sin dejar una segunda instalación
 ; huérfana. Ver PrepareToInstall más abajo.
 #define AppName "Hospedaje Carlos"
-#define AppVersion "1.2.0"
+#define AppVersion "1.5.0"
 #define AppPublisher "Hospedaje Carlos"
 #define ServiceName "CasaCarlos"
 
@@ -77,7 +77,7 @@ Source: "..\tsconfig.base.json"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\.puppeteerrc.cjs"; DestDir: "{app}"; Flags: ignoreversion
 
 Source: "..\apps\server\*"; DestDir: "{app}\apps\server"; Excludes: "node_modules,dist,src\daemon,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
-Source: "..\apps\web-reception\*"; DestDir: "{app}\apps\web-reception"; Excludes: "node_modules,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "..\apps\web-reception\*"; DestDir: "{app}\apps\web-reception"; Excludes: "node_modules,*.tsbuildinfo,ui-gallery.html,src\dev"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\apps\web-kiosk\*"; DestDir: "{app}\apps\web-kiosk"; Excludes: "node_modules,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\apps\whatsapp-agent\*"; DestDir: "{app}\apps\whatsapp-agent"; Excludes: "node_modules,dist,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion
 Source: "..\packages\*"; DestDir: "{app}\packages"; Excludes: "node_modules,dist,*.tsbuildinfo"; Flags: recursesubdirs createallsubdirs ignoreversion

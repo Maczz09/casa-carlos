@@ -1,3 +1,4 @@
+import { Input } from "./ui.js";
 import { cents, format } from "@casacarlos/money";
 
 interface Props {
@@ -36,7 +37,7 @@ export function DenominationCounter({ value, onChange }: Props) {
           return (
             <label key={d.centimos} className="flex items-center justify-between gap-2 text-sm">
               <span className={count > 0 ? "font-medium text-ink" : "text-muted"}>{d.label}</span>
-              <input
+              <Input
                 type="number"
                 min={0}
                 value={value[String(d.centimos)] ?? ""}

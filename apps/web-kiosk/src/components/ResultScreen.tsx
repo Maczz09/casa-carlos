@@ -1,4 +1,6 @@
-import { CelebrationOverlay, SuccessMotion } from "@casacarlos/ui";
+import { IconCheck, IconX, CelebrationOverlay, SuccessMotion } from "@casacarlos/ui";
+
+
 
 interface Props {
   accepted: boolean;
@@ -16,9 +18,9 @@ export function ResultScreen({ accepted, roomNumber, hotel }: Props) {
         }`}
       >
         {accepted && <SuccessMotion className="absolute -inset-14" />}
-        {accepted ? "✓" : "✕"}
+        {accepted ? <IconCheck className="h-10 w-10" /> : <IconX className="h-10 w-10" />}
       </div>
-      <h1 className="animate-fade-up mt-6 font-serif text-4xl text-ink" style={{ animationDelay: "80ms" }}>
+      <h1 className="animate-fade-up mt-6 font-sans text-4xl text-ink" style={{ animationDelay: "80ms" }}>
         {accepted ? `¡Bienvenido a ${hotel}!` : "No pudimos confirmar el pago"}
       </h1>
       <p className="animate-fade-up mt-3 max-w-sm text-lg text-muted" style={{ animationDelay: "160ms" }}>

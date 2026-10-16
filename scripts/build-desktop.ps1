@@ -87,7 +87,12 @@ if (-not (Test-Path $iconPath)) {
   $bitmap.Dispose()
 }
 
-if (Test-Path $publishDir) {
+$resolvedRoot = [System.IO.Path]::GetFullPath($root).TrimEnd('\') + '\'
+$resolvedPublish = [System.IO.Path]::GetFullPath($publishDir)
+if (-not $resolvedPublish.StartsWith($resolvedRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+  throw "La carpeta de publicación queda fuera del proyecto: $resolvedPublish"
+}
+if (Test-Path -LiteralPath $publishDir) {
   Remove-Item -LiteralPath $publishDir -Recurse -Force
 }
 New-Item -ItemType Directory -Force -Path $publishDir | Out-Null
